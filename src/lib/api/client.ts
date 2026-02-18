@@ -1,5 +1,5 @@
 import type { ClientConfig } from "../config";
-import { InitResponseSchema, GetNewMapResponseSchema, type InitResponse, type GetNewMapResponse } from "./types";
+import { InitRequestSchema, InitResponseSchema, GetNewMapResponseSchema, type InitResponse, type GetNewMapResponse } from "../contracts/compat";
 import type { TokenStore } from "../auth/tokenStore";
 
 export class ApiClient {
@@ -9,48 +9,40 @@ export class ApiClient {
   ) {}
 
   async init(): Promise<InitResponse> {
-    // Current server expects POST /init
-    const res = await this.requestJson("POST", "/init", {
-      apiVersion: this.config.apiVersion,
-    }, { auth: false });
-
+    const body = InitRequestSchema.parse({ apiVersion: this.config.apiVersion });
+    const res = await this.requestJson("POST", "/init", body, { auth: false });
     return InitResponseSchema.parse(res);
   }
 
   async getNewMap(): Promise<GetNewMapResponse> {
-    // Current server supports GET/POST on /api/:apiVersion/bm/getnewmap
     const path = `/api/${encodeURIComponent(this.config.apiVersion)}/bm/getnewmap`;
     const res = await this.requestJson("GET", path, undefined, { auth: true });
     return GetNewMapResponseSchema.parse(res);
   }
 
   async baseLoad(payload: Record<string, unknown>): Promise<unknown> {
-    // Current server expects POST /base/load (and inferno variant).
     return this.requestJson("POST", "/base/load", payload, { auth: true });
   }
 
   async baseSave(payload: Record<string, unknown>): Promise<unknown> {
-    // Current server expects POST /base/save (and inferno variant).
     return this.requestJson("POST", "/base/save", payload, { auth: true });
   }
-
-  // ---- core helpers
 
   private async requestJson(
     method: "GET" | "POST",
     path: string,
     body?: unknown,
     opts?: { auth?: boolean }
-  ): Promise<any> {
+  ): Promise<unknown> {
     const url = new URL(path, this.config.baseUrl).toString();
     const headers: Record<string, string> = {
-      "Accept": "application/json",
+      Accept: "application/json",
     };
 
     const useAuth = opts?.auth ?? true;
     if (useAuth) {
       const token = await this.tokenStore.get();
-      if (token) headers["Authorization"] = `Bearer ${token}`;
+      if (token) headers.Authorization = `Bearer ${token}`;
     }
 
     let fetchOpts: RequestInit = { method, headers };
@@ -62,16 +54,23 @@ export class ApiClient {
     const res = await fetch(url, fetchOpts);
     const text = await res.text();
 
-    // Most endpoints return JSON; keep robust for debugging.
-    let data: any;
-    try { data = text ? JSON.parse(text) : {}; }
-    catch { data = { raw: text }; }
+    let data: unknown;
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = { raw: text };
+    }
 
     if (!res.ok) {
-      const msg = typeof data?.error === "string" ? data.error : `HTTP ${res.status} ${res.statusText}`;
+      const err = asRecord(data)?.error;
+      const msg = typeof err === "string" ? err : `HTTP ${res.status} ${res.statusText}`;
       throw new Error(`${msg} (${method} ${path})`);
     }
 
     return data;
   }
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null ? value as Record<string, unknown> : null;
 }
