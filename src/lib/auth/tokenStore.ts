@@ -1,7 +1,7 @@
 /**
  * SECURITY NOTE:
  * - Do NOT use localStorage/sessionStorage for long-lived auth tokens.
- * - For desktop (.exe) we recommend storing the token in the OS credential store via a Tauri keyring plugin.
+ * - For desktop (.exe) we store the token in OS credential store via Tauri command + keyring.
  * - For web deployment, prefer HttpOnly cookies issued by the server (session/refresh token model).
  */
 
@@ -22,20 +22,39 @@ export class MemoryTokenStore implements TokenStore {
   }
 }
 
+type TauriCore = {
+  invoke: <T = unknown>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
+};
+
 /**
- * Placeholder for desktop secure storage.
- *
- * TODO phase 2:
- *  - Replace fallback with Tauri keyring/stronghold implementation.
+ * Desktop secure storage backed by OS keychain/keyring (via Tauri Rust command).
+ * Security rule: if Tauri runtime exists, keyring failures MUST bubble up (no memory fallback).
  */
 export class DesktopSecureTokenStore implements TokenStore {
-  private readonly fallback = new MemoryTokenStore();
-
   async get(): Promise<string | null> {
-    return this.fallback.get();
+    const core = getTauriCore();
+    if (!core) {
+      throw new Error("DesktopSecureTokenStore requires Tauri runtime");
+    }
+    return core.invoke<string | null>("get_auth_token");
   }
 
   async set(token: string | null): Promise<void> {
-    await this.fallback.set(token);
+    const core = getTauriCore();
+    if (!core) {
+      throw new Error("DesktopSecureTokenStore requires Tauri runtime");
+    }
+
+    if (token) {
+      await core.invoke("set_auth_token", { token });
+      return;
+    }
+
+    await core.invoke("clear_auth_token");
   }
+}
+
+function getTauriCore(): TauriCore | null {
+  const tauri = (window as { __TAURI__?: { core?: TauriCore } }).__TAURI__;
+  return tauri?.core ?? null;
 }

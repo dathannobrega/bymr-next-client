@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "tauri": "tauri",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepare:tauri-config": "node scripts/prepare-tauri-config.mjs"
   },
   "dependencies": {
     "pixi.js": "^8.16.0",

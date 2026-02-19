@@ -7,6 +7,8 @@ export type ClientConfig = {
   cdnUrl: string;
   /** Enable verbose logs in client */
   debug: boolean;
+  /** Extra strict allowlist for XHR/fetch destinations. */
+  allowedConnectOrigins?: string[];
 };
 
 /**
@@ -23,6 +25,7 @@ export async function loadClientConfig(): Promise<ClientConfig> {
     apiVersion: import.meta.env.VITE_BYMR_API_VERSION,
     cdnUrl: import.meta.env.VITE_BYMR_CDN_URL,
     debug: import.meta.env.VITE_BYMR_DEBUG === "true",
+    allowedConnectOrigins: parseCsv(import.meta.env.VITE_BYMR_ALLOWED_CONNECT_ORIGINS),
   };
 
   const merged: ClientConfig = {
@@ -39,6 +42,10 @@ export async function loadClientConfig(): Promise<ClientConfig> {
   if (!merged.apiVersion) throw new Error("Missing config.apiVersion");
   if (!merged.cdnUrl) throw new Error("Missing config.cdnUrl");
 
+  const requiredOrigins = [new URL(merged.baseUrl).origin, new URL(merged.cdnUrl).origin];
+  const configured = merged.allowedConnectOrigins ?? [];
+  merged.allowedConnectOrigins = Array.from(new Set([...configured, ...requiredOrigins]));
+
   return merged;
 }
 
@@ -50,4 +57,10 @@ async function tryLoadJson<T>(path: string): Promise<T | undefined> {
   } catch {
     return undefined;
   }
+}
+
+function parseCsv(value?: string): string[] | undefined {
+  if (!value) return undefined;
+  const list = value.split(",").map((v) => v.trim()).filter(Boolean);
+  return list.length ? list : undefined;
 }

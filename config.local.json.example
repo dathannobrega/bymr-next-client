@@ -1,0 +1,9 @@
+{
+  "baseUrl": "http://localhost:3001",
+  "apiVersion": "v1.5.0-beta",
+  "cdnUrl": "http://localhost:3001",
+  "debug": true,
+  "allowedConnectOrigins": [
+    "http://localhost:3001"
+  ]
+}
