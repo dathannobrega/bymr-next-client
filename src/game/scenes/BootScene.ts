@@ -53,7 +53,7 @@ export class BootScene {
       status.text = "Base load failed; rendering default yard.";
     }
 
-    const yard = new YardScene({ root, base: parsed, cdnUrl: config.cdnUrl });
+    const yard = new YardScene({ root, base: parsed, cdnUrl: config.cdnUrl, api });
     await yard.run();
   }
 

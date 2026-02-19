@@ -1,11 +1,14 @@
 import { Assets, Container, Graphics, Rectangle, Sprite, Text, Texture } from "pixi.js";
+import type { ApiClient } from "../../lib/api/client";
 import type { ParsedBaseLoad, YardBuilding } from "../../lib/base/baseLoad";
+import { applyCmdDeltaToBase } from "../../lib/game/cmdDelta";
 import { TILE_H, TILE_W, roundDeterministic, worldToScreen } from "./iso";
 
 type YardSceneDeps = {
   root: Container;
   base: ParsedBaseLoad;
   cdnUrl: string;
+  api: ApiClient;
 };
 
 type Camera = {
@@ -24,18 +27,23 @@ export class YardScene {
 
   private grid = new Graphics();
   private buildingLayer = new Container();
+  private buildingTexture: Texture = Texture.WHITE;
 
   private tooltip = new Text({ text: "", style: { fill: 0xffffff, fontSize: 13 } as any });
   private tooltipBg = new Graphics();
 
   private selectedTile = new Graphics();
   private hoveredTile = new Graphics();
+  private statusText = new Text({ text: "", style: { fill: 0xa9bdff, fontSize: 12 } as any });
 
   private camera: Camera = { x: 0, y: 0, zoom: 1 };
   private dragging = false;
   private lastPointer = { x: 0, y: 0 };
+  private baseState: ParsedBaseLoad;
 
-  constructor(private readonly deps: YardSceneDeps) {}
+  constructor(private readonly deps: YardSceneDeps) {
+    this.baseState = deps.base;
+  }
 
   async run(): Promise<void> {
     const { root, base } = this.deps;
@@ -52,17 +60,20 @@ export class YardScene {
     root.addChild(this.world, this.overlay, this.uiLayer);
 
     this.buildGrid(base.yardWidth, base.yardHeight);
-    await this.renderBuildings(base.buildings);
+    this.buildingTexture = await this.loadBuildingTexture();
+    this.renderBuildings(this.baseState.buildings);
     this.initCamera(base.yardWidth, base.yardHeight);
     this.setupInput(base.yardWidth, base.yardHeight);
     this.setupTooltip();
 
     const footer = new Text({
-      text: `Buildings: ${base.buildings.length} • Wheel: zoom • Drag: pan`,
+      text: `Buildings: ${base.buildings.length} • Wheel: zoom • Drag: pan • Shift+Click: PlaceBuilding`,
       style: { fill: 0x8fa5d6, fontSize: 12 } as any,
     });
     footer.position.set(12, 110);
-    this.uiLayer.addChild(footer);
+    this.statusText.position.set(12, 132);
+    this.statusText.text = "Build mode: ready";
+    this.uiLayer.addChild(footer, this.statusText);
   }
 
   private initCamera(cols: number, rows: number): void {
@@ -115,10 +126,24 @@ export class YardScene {
       this.showTooltip(`Tile (${tile.tx}, ${tile.ty})`, current.x + 14, current.y + 14);
     });
 
-    this.world.on("click", (e) => {
+    this.world.on("click", async (e) => {
       const tile = this.pointerToTile(e.global.x, e.global.y);
       if (!tile) return;
       this.drawTileOutline(this.selectedTile, tile.tx, tile.ty, 0xf7d774, 3);
+
+      const shiftClick = "shiftKey" in e.nativeEvent && Boolean((e.nativeEvent as MouseEvent).shiftKey);
+      if (!shiftClick) return;
+
+      try {
+        this.statusText.text = `PlaceBuilding -> (${tile.tx}, ${tile.ty})...`;
+        const response = await this.deps.api.placeBuilding({ buildingType: "hq", x: tile.tx, y: tile.ty });
+        const delta = Array.isArray(response.delta) ? response.delta : [];
+        this.baseState = applyCmdDeltaToBase(this.baseState, delta as Record<string, unknown>[]);
+        this.renderBuildings(this.baseState.buildings);
+        this.statusText.text = `PlaceBuilding ok (seq=${response.seq ?? "?"})`;
+      } catch (err) {
+        this.statusText.text = `PlaceBuilding falhou: ${String((err as Error)?.message ?? err)}`;
+      }
     });
 
     window.addEventListener(
@@ -153,27 +178,18 @@ export class YardScene {
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
         const p = worldToScreen(x, y);
-        this.grid.poly([
-          p.x,
-          p.y,
-          p.x + TILE_W / 2,
-          p.y + TILE_H / 2,
-          p.x,
-          p.y + TILE_H,
-          p.x - TILE_W / 2,
-          p.y + TILE_H / 2,
-        ]);
+        this.grid.poly([p.x, p.y, p.x + TILE_W / 2, p.y + TILE_H / 2, p.x, p.y + TILE_H, p.x - TILE_W / 2, p.y + TILE_H / 2]);
         this.grid.stroke({ width: 1, color: 0x203249, alpha: 0.9 });
       }
     }
   }
 
-  private async renderBuildings(buildings: YardBuilding[]): Promise<void> {
-    const texture = await this.loadBuildingTexture();
+  private renderBuildings(buildings: YardBuilding[]): void {
+    this.buildingLayer.removeChildren();
 
     buildings.forEach((building) => {
       const p = worldToScreen(building.x, building.y);
-      const sprite = new Sprite(texture);
+      const sprite = new Sprite(this.buildingTexture);
       sprite.anchor.set(0.5, 0.9);
       sprite.position.set(p.x, p.y + TILE_H * 0.58);
       sprite.eventMode = "static";
@@ -183,7 +199,8 @@ export class YardScene {
 
       sprite.on("pointerenter", (e) => {
         sprite.tint = 0xb9f5bb;
-        this.showTooltip(`${building.type} #${building.id}`, e.global.x + 14, e.global.y + 14);
+        const suffix = typeof building.level === "number" ? ` Lv.${building.level}` : "";
+        this.showTooltip(`${building.type} #${building.id}${suffix}`, e.global.x + 14, e.global.y + 14);
       });
       sprite.on("pointerleave", () => {
         sprite.tint = 0x8be28d;
@@ -212,16 +229,7 @@ export class YardScene {
   private drawTileOutline(target: Graphics, tx: number, ty: number, color: number, width: number): void {
     const p = worldToScreen(tx, ty);
     target.clear();
-    target.poly([
-      p.x,
-      p.y,
-      p.x + TILE_W / 2,
-      p.y + TILE_H / 2,
-      p.x,
-      p.y + TILE_H,
-      p.x - TILE_W / 2,
-      p.y + TILE_H / 2,
-    ]);
+    target.poly([p.x, p.y, p.x + TILE_W / 2, p.y + TILE_H / 2, p.x, p.y + TILE_H, p.x - TILE_W / 2, p.y + TILE_H / 2]);
     target.stroke({ width, color, alpha: 0.95 });
   }
 
@@ -238,13 +246,7 @@ export class YardScene {
 
     const pad = 6;
     this.tooltipBg.clear();
-    this.tooltipBg.roundRect(
-      this.tooltip.x - pad,
-      this.tooltip.y - pad,
-      this.tooltip.width + pad * 2,
-      this.tooltip.height + pad * 2,
-      6
-    );
+    this.tooltipBg.roundRect(this.tooltip.x - pad, this.tooltip.y - pad, this.tooltip.width + pad * 2, this.tooltip.height + pad * 2, 6);
     this.tooltipBg.fill({ color: 0x111a28, alpha: 0.92 });
     this.tooltipBg.stroke({ width: 1, color: 0x4f6485, alpha: 1 });
     this.tooltipBg.visible = true;
@@ -255,7 +257,6 @@ export class YardScene {
     this.tooltipBg.visible = false;
   }
 }
-
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));

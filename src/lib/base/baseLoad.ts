@@ -10,6 +10,7 @@ export type YardBuilding = {
   type: string;
   x: number;
   y: number;
+  level?: number;
 };
 
 export type ParsedBaseLoad = {
@@ -60,6 +61,7 @@ function parseBuilding(value: unknown): YardBuilding | null {
     type: String(value.type ?? value.Type ?? "unknown"),
     x,
     y,
+    level: optionalNumberFromUnknown(value.level ?? value.Level),
   };
 }
 
@@ -70,6 +72,12 @@ function numberFromUnknown(value: unknown, fallback: number): number {
     if (Number.isFinite(parsed)) return parsed;
   }
   return fallback;
+}
+
+function optionalNumberFromUnknown(value: unknown): number | undefined {
+  if (value === undefined || value === null) return undefined;
+  const parsed = numberFromUnknown(value, NaN);
+  return Number.isNaN(parsed) ? undefined : parsed;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
