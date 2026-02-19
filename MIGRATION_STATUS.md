@@ -35,7 +35,7 @@ Checklist por épico com referência de PR(s).
 ## E03 — Build mode (server authoritative)
 - [x] E03-S00 Cliente preparado para `/cmd` (`op/args/seq/idempotencyKey` + `ApiClient.cmd()`)
 - [x] E03-S01 cliente integrado para ops reais (`PlaceBuilding`, `MoveBuilding`, `UpgradeBuilding`)
-- [ ] E03-S01 `PlaceBuilding` via `/cmd`
+- [x] E03-S01 `PlaceBuilding` via `/cmd` (cliente: Shift+Click no YardScene, aplica delta canônico)
 - [ ] E03-S02 `MoveBuilding`
 - [ ] E03-S03 `UpgradeBuilding`
 - PRs: —
