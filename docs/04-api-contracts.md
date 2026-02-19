@@ -16,30 +16,65 @@ Key endpoints already present include:
 
 **Compatibility note:** legacy save schema expects many fields as stringified JSON; server transforms via Zod.
 
-## Proposed additions (for server-authoritative)
+## `/cmd` production contract (server-authoritative)
 ### `POST /api/:apiVersion/cmd`
-Body:
+Body envelope:
 ```json
 {
   "op": "PlaceBuilding",
-  "args": { "buildingType": 123, "x": 10, "y": 15 },
+  "args": { "buildingType": "hq", "x": 10, "y": 15 },
   "seq": 42,
-  "idempotencyKey": "Z9x3...nanoid",
-  "clientTime": 1730000000
+  "idempotencyKey": "Z9x3...nanoid"
 }
 ```
 
-Response:
+Supported ops in client:
+- `PlaceBuilding`
+- `MoveBuilding`
+- `UpgradeBuilding`
+
+Success response:
 ```json
 {
   "ok": true,
+  "seq": 42,
   "serverTime": 1730000012,
   "delta": [
-    { "op": "addBuilding", "id": 991, "type": 123, "x": 10, "y": 15, "level": 1 }
+    { "op": "addBuilding", "id": "991", "type": "hq", "x": 10, "y": 15, "level": 1 }
   ]
 }
 ```
 
+Structured error response:
+```json
+{
+  "error": "Replay blocked",
+  "code": "ANTI_REPLAY",
+  "traceId": "trace-123"
+}
+```
+
+### Server-side requirements (mandatory)
+- Validate `op` and `args` with server schemas (never trust client shape).
+- Enforce `seq` monotonic progression per session/user.
+- Enforce idempotency in Redis with key format: `cmd:<userId>:<idempotencyKey>`.
+- Return same deterministic outcome for repeated idempotency key.
+- Apply rate limit per `op` and log rejects with `traceId`.
+
+## Base endpoints hardening
+### `POST /base/load`
+- Must accept `{ baseId, mode }`.
+- Should return normalized shape:
+  - `yardWidth`
+  - `yardHeight`
+  - `buildings[]`
+
+### `POST /base/save`
+- Transitional endpoint for **non-critical** actions only.
+- Must require `action` in allowlist (`SetDecorationVisibility`, `SetCosmeticLoadout`, `SetUiPreference`).
+- Must persist audit payload (`audit.action`, `audit.at`, `audit.clientVersion`).
+
+## Future additions
 ### `GET /api/:apiVersion/state`
 Returns normalized snapshot without stringified blobs (for new clients only).
 
