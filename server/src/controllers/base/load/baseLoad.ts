@@ -1,4 +1,5 @@
 import z from "zod";
+import { randomUUID } from "node:crypto";
 
 import { devConfig } from "../../../config/DevSettings.js";
 import { Save } from "../../../models/save.model.js";
@@ -24,16 +25,20 @@ import { infernoModeBuild } from "./modes/infernoModeBuild.js";
 import { validateAttack } from "../../../services/maproom/validateAttack.js";
 import { BaseLoadSchema } from "../../../zod/BaseLoadSchema.js";
 import { discordAgeErr } from "../../../errors/errors.js";
-import { coerceBuildingTypeFromRecord } from "../../../utils/buildingType.js";
-import { getLegacyFootprintTilesByCode } from "../../../utils/buildingFootprint.js";
-
-const YARD_WIDTH = 20;
-const YARD_HEIGHT = 14;
+import {
+  YARD_HEIGHT,
+  YARD_WIDTH,
+  deriveYardTheme,
+  toNormalizedBuildings,
+  toResourceSummary,
+} from "../../../services/state/normalizeState.js";
 
 const NextClientBaseLoadSchema = z.object({
   baseId: z.string().min(1),
   mode: z.enum(["view", "build"]),
 });
+
+const TRUE_LIKE_VALUES = new Set(["1", "true", "yes", "enabled"]);
 
 type ParsedLoadRequest = {
   baseid: string;
@@ -55,6 +60,11 @@ export const baseLoad: KoaController = async (ctx) => {
 
   try {
     const parsedRequest = parseLoadRequest(ctx.request.body, user);
+    if (parsedRequest.nextClient && isNextClientBaseLoadDeprecated()) {
+      respondNextClientBaseLoadDeprecated(ctx, user, parsedRequest.baseid);
+      return;
+    }
+
     const { baseid, type, attackData } = parsedRequest;
 
     let baseSave: Save = null;
@@ -162,6 +172,35 @@ export const baseLoad: KoaController = async (ctx) => {
   }
 };
 
+function isNextClientBaseLoadDeprecated(): boolean {
+  const rawValue = process.env.DISABLE_NEXT_CLIENT_BASE_LOAD?.trim().toLowerCase();
+  if (!rawValue) return false;
+  return TRUE_LIKE_VALUES.has(rawValue);
+}
+
+function respondNextClientBaseLoadDeprecated(
+  ctx: Parameters<KoaController>[0],
+  user: User,
+  baseId: string
+): void {
+  const traceId = randomUUID();
+  logger.info(
+    `event=base_load userId=${user.userid} ip=${ctx.ip} baseId=${baseId} result=rejected code=NEXT_CLIENT_BASE_LOAD_DEPRECATED traceId=${traceId}`
+  );
+
+  ctx.status = Status.CONFLICT;
+  ctx.body = {
+    error: "Endpoint /base/load is deprecated for next-client. Use /api/:apiVersion/state.",
+    code: "NEXT_CLIENT_BASE_LOAD_DEPRECATED",
+    traceId,
+    details: {
+      baseId,
+      migrationPath: "/api/:apiVersion/state",
+      flag: "DISABLE_NEXT_CLIENT_BASE_LOAD",
+    },
+  };
+}
+
 function parseLoadRequest(rawBody: unknown, user: User): ParsedLoadRequest {
   const nextClient = NextClientBaseLoadSchema.safeParse(rawBody);
   if (nextClient.success) {
@@ -205,7 +244,10 @@ function resolveBaseId(baseId: string, user: User): string {
 }
 
 function toNextClientBaseLoad(save: Save) {
-  const buildings = toNextClientBuildings(save);
+  const buildings = toNormalizedBuildings(save, {
+    yardWidth: YARD_WIDTH,
+    yardHeight: YARD_HEIGHT,
+  });
   const resources = toResourceSummary(save.resources);
   return {
     yardWidth: YARD_WIDTH,
@@ -214,128 +256,6 @@ function toNextClientBaseLoad(save: Save) {
     buildings,
     resources,
   };
-}
-
-function toNextClientBuildings(save: Save): Array<{
-  id: string;
-  type: string;
-  x: number;
-  y: number;
-  level?: number;
-  footprintW?: number;
-  footprintH?: number;
-  countdownUpgrade?: number;
-  upgradeToLevel?: number;
-}> {
-  const buildingData = asRecord(save.buildingdata) ?? {};
-  const out: Array<{
-    id: string;
-    type: string;
-    x: number;
-    y: number;
-    level?: number;
-    footprintW?: number;
-    footprintH?: number;
-    countdownUpgrade?: number;
-    upgradeToLevel?: number;
-  }> = [];
-
-  for (const [key, value] of Object.entries(buildingData)) {
-    const raw = asRecord(value);
-    if (!raw) continue;
-
-    const x = parseIntSafe(raw.x ?? raw.X, Number.NaN);
-    const y = parseIntSafe(raw.y ?? raw.Y, Number.NaN);
-    if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
-    if (x < 0 || y < 0 || x >= YARD_WIDTH || y >= YARD_HEIGHT) continue;
-
-    const id = String(raw.id ?? key);
-    const type = coerceBuildingTypeFromRecord(raw.type, raw.t);
-    const typeCode = parseIntSafe(raw.t, Number.NaN);
-    const defaultFootprint = getLegacyFootprintTilesByCode(
-      Number.isFinite(typeCode) ? typeCode : undefined
-    );
-    const footprintWRaw = parseIntSafe(raw.footprintW ?? raw.fw, Number.NaN);
-    const footprintHRaw = parseIntSafe(raw.footprintH ?? raw.fh, Number.NaN);
-    const footprintW =
-      Number.isFinite(footprintWRaw) && footprintWRaw > 0
-        ? footprintWRaw
-        : defaultFootprint.width;
-    const footprintH =
-      Number.isFinite(footprintHRaw) && footprintHRaw > 0
-        ? footprintHRaw
-        : defaultFootprint.height;
-
-    const levelRaw = parseIntSafe(raw.level ?? raw.l, Number.NaN);
-    const level = Number.isFinite(levelRaw) && levelRaw > 0 ? levelRaw : undefined;
-    const countdownUpgradeRaw = parseIntSafe(raw.countdownUpgrade ?? raw.cU, Number.NaN);
-    const countdownUpgrade =
-      Number.isFinite(countdownUpgradeRaw) && countdownUpgradeRaw > 0
-        ? countdownUpgradeRaw
-        : undefined;
-    const upgradeToLevelRaw = parseIntSafe(raw.upgradeToLevel, Number.NaN);
-    const upgradeToLevel =
-      Number.isFinite(upgradeToLevelRaw) && upgradeToLevelRaw > 0
-        ? upgradeToLevelRaw
-        : undefined;
-
-    out.push({
-      id,
-      type,
-      x,
-      y,
-      ...(level !== undefined ? { level } : {}),
-      ...(footprintW > 1 ? { footprintW } : {}),
-      ...(footprintH > 1 ? { footprintH } : {}),
-      ...(countdownUpgrade !== undefined ? { countdownUpgrade } : {}),
-      ...(upgradeToLevel !== undefined ? { upgradeToLevel } : {}),
-    });
-  }
-
-  return out;
-}
-
-function toResourceSummary(resources: unknown): Record<string, number> {
-  const value = asRecord(resources) ?? {};
-  return {
-    r1: parseIntSafe(value.r1, 0),
-    r2: parseIntSafe(value.r2, 0),
-    r3: parseIntSafe(value.r3, 0),
-    r4: parseIntSafe(value.r4, 0),
-    r1max: parseIntSafe(value.r1max, 10000),
-    r2max: parseIntSafe(value.r2max, 10000),
-    r3max: parseIntSafe(value.r3max, 10000),
-    r4max: parseIntSafe(value.r4max, 10000),
-  };
-}
-
-function deriveYardTheme(save: Save): "grass" | "sand" | "lava" | "rock" | "crater" {
-  switch (save.type) {
-    case BaseType.INFERNO:
-    case BaseType.INFERNO_TRIBE:
-      return "lava";
-    case BaseType.OUTPOST:
-      return "sand";
-    case BaseType.TRIBE:
-      return "rock";
-    default:
-      return "grass";
-  }
-}
-
-function parseIntSafe(value: unknown, fallback: number): number {
-  if (typeof value === "number" && Number.isFinite(value)) return Math.trunc(value);
-  if (typeof value === "string") {
-    const parsed = Number.parseInt(value, 10);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return fallback;
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return typeof value === "object" && value !== null
-    ? (value as Record<string, unknown>)
-    : null;
 }
 
 function formatError(err: unknown): string {

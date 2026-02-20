@@ -331,8 +331,8 @@ scripts/ACADEMYPOPUP.as	ui_behavior_flash	rewrite_ui	pending
 scripts/ACADEMYPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	pending		
 scripts/ACHIEVEMENTS.as	core_gameplay_or_flow	split_port	pending		
 scripts/AIATTACKPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	pending		
-scripts/ATTACK.as	core_gameplay_or_flow	split_port	pending		
-scripts/BASE.as	core_gameplay_or_flow	split_port	in_progress	server/src/controllers/cmd/cmd.ts,server/src/utils/buildingFootprint.ts,src/game/scenes/YardScene.ts	Fluxo core expandido com validação de footprint e render de área
+scripts/ATTACK.as	core_gameplay_or_flow	split_port	in_progress	server/src/controllers/combat/startReplay.ts,server/src/controllers/combat/streamReplay.ts,server/src/services/combat/replayEngine.ts,src/lib/contracts/combat.ts	Baseline de replay autoritativo migrado (start + stream SSE); regras completas ainda pendentes (E05-S02)
+scripts/BASE.as	core_gameplay_or_flow	split_port	in_progress	server/src/controllers/cmd/cmd.ts,server/src/services/state/normalizeState.ts,server/src/controllers/state/getState.ts,src/game/scenes/YardScene.ts,server/src/controllers/base/save/baseSave.ts	Fluxo core expandido com footprint/render de área, snapshot canônico `/state` e gate de deprecação gradual de base/save para next-client
 scripts/BDECORATION.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BEXPIRABLE.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BFOUNDATION.as	building_gameplay_logic	port_rules_and_data	in_progress	server/src/controllers/cmd/cmd.ts,server/src/utils/buildingFootprint.ts,src/lib/base/footprint.ts	Regras de footprint/ocupação migradas parcialmente para contratos autoritativos
@@ -381,10 +381,10 @@ scripts/BUILDINGBUTTON.as	core_gameplay_or_flow	split_port	pending
 scripts/BUILDINGBUTTONSOON.as	flash_symbol_wrapper	reference_only	pending		
 scripts/BUILDINGBUTTON_CLIP.as	flash_symbol_wrapper	reference_only	pending		
 scripts/BUILDINGINFO.as	core_gameplay_or_flow	split_port	pending		
-scripts/BUILDINGOPTIONS.as	core_gameplay_or_flow	split_port	pending		
-scripts/BUILDINGOPTIONSPOPUP.as	ui_behavior_flash	rewrite_ui	pending		
-scripts/BUILDINGOPTIONSPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BUILDINGS.as	core_gameplay_or_flow	split_port	pending		
+scripts/BUILDINGOPTIONS.as	core_gameplay_or_flow	split_port	migrated	src/game/scenes/YardScene.ts,src/lib/base/buildingType.ts,server/src/controllers/cmd/cmd.ts,src/lib/game/cmdDelta.ts	Painel operacional de building migrado para overlay HTML no novo client (place/move/upgrade/cancel/collect) com execução server-authoritative via /cmd
+scripts/BUILDINGOPTIONSPOPUP.as	ui_behavior_flash	rewrite_ui	migrated	src/game/scenes/YardScene.ts	Popup legado substituído por painel runtime (Building Ops) no Yard com paridade operacional
+scripts/BUILDINGOPTIONSPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts	Símbolo Flash desativado; equivalente funcional implementado em overlay HTML (Building Ops)
+scripts/BUILDINGS.as	core_gameplay_or_flow	split_port	in_progress	server/src/controllers/state/getState.ts,src/lib/base/stateSnapshot.ts,src/game/scenes/YardScene.ts,src/lib/base/buildingType.ts	Estado canônico + render no Yard migrados; catálogo legado inicial e filtros de tipo portados, faltando paridade total de catálogo visual/compras
 scripts/BUILDINGSARROW.as	flash_symbol_wrapper	reference_only	pending		
 scripts/BUILDINGSPOPUP.as	core_gameplay_or_flow	split_port	pending		
 scripts/BUILDINGSPOPUPINFO_CLIP.as	flash_symbol_wrapper	reference_only	pending		
@@ -464,7 +464,7 @@ scripts/DROPZONE.as	core_gameplay_or_flow	split_port	pending
 scripts/DROPZONE_CLIP.as	flash_symbol_wrapper	reference_only	pending		
 scripts/Dynamic.as	misc_actionscript	analyze_case_by_case	pending		
 scripts/EFFECTS.as	core_gameplay_or_flow	split_port	pending		
-scripts/ERRORMESSAGE.as	ui_behavior_flash	rewrite_ui	pending		
+scripts/ERRORMESSAGE.as	ui_behavior_flash	rewrite_ui	in_progress	server/src/middleware/clientSafeError.ts,src/lib/api/client.ts,src/lib/contracts/http.ts,src/game/scenes/LoginScene.ts	Erro estruturado legado mapeado para UX no novo client (code/traceId/issues), sem leak de stack em produção; modal global full-stop ainda pendente
 scripts/ERRORMESSAGE_CLIP.as	flash_symbol_wrapper	reference_only	pending		
 scripts/EventRewardRibbon.as	flash_symbol_wrapper	reference_only	pending		
 scripts/EventStoreDisplayItem.as	flash_symbol_wrapper	reference_only	pending		

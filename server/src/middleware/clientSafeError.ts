@@ -1,4 +1,5 @@
 import type { Context, Next } from "koa";
+import { z } from "zod";
 import { logger } from "../utils/logger.js";
 import { Status } from "../enums/StatusCodes.js";
 
@@ -39,11 +40,14 @@ export class ClientSafeError extends Error {
 
   // Create the json to return safely to client
   toSafeJson() {
+    const exposeInternalStacks =
+      process.env.ENV === "local" && process.env.EXPOSE_ERROR_STACKS === "true";
+
     const responseBody = {
       error: undefined as string | undefined,
       status: this.status,
       data: this.data,
-      internalInfo: this.internalInfo?.stack, // This should be removed from the codebase
+      internalInfo: exposeInternalStacks ? this.internalInfo?.stack : undefined,
       message: this.message,
     };
 
@@ -63,17 +67,37 @@ export const ErrorInterceptor = async (ctx: Context, next: Next) => {
   try {
     await next();
   } catch (err) {
+    const isZodError = err instanceof z.ZodError;
+
     // Check if the error is client safe
-    const isSafe = err instanceof ClientSafeError;
-    let clientError = isSafe
-      ? err
-      : new ClientSafeError({
-          message: "Something went wrong, please contact support.",
-          status: Status.INTERNAL_SERVER_ERROR,
-          data: {},
-          internalInfo: err,
-          isClientFriendly: true,
-        });
+    const isSafe = err instanceof ClientSafeError || isZodError;
+    let clientError: ClientSafeError;
+
+    if (err instanceof ClientSafeError) {
+      clientError = err;
+    } else if (isZodError) {
+      const issues = [...new Set(err.issues.map((issue) => {
+        const path = issue.path.join(".");
+        return path ? `${path}: ${issue.message}` : issue.message;
+      }))];
+
+      clientError = new ClientSafeError({
+        message: issues[0] ?? "Invalid request payload.",
+        status: Status.BAD_REQUEST,
+        data: { code: "VALIDATION_ERROR", issues },
+        internalInfo: err,
+        isClientFriendly: true,
+      });
+    } else {
+      clientError = new ClientSafeError({
+        message: "Something went wrong, please contact support.",
+        status: Status.INTERNAL_SERVER_ERROR,
+        data: {},
+        internalInfo: err as Error,
+        isClientFriendly: true,
+      });
+    }
+
     const errorObj = clientError.toSafeJson();
     if (!isSafe) logger.error(`${JSON.stringify(errorObj)}`);
 

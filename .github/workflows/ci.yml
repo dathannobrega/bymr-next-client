@@ -27,6 +27,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Guard legacy runtime
+        run: npm run guard:legacy-runtime
+
       - name: Test
         run: npm test
 

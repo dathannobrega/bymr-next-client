@@ -39,6 +39,7 @@ export const initialPlayerCellData: KoaController = async (ctx) => {
     ctx.body = {
       error: 0,
       celldata: [mapCellToV3Payload(homeCell, refreshedSave, user)],
+      bookmarks: user.bookmarks ?? [],
     };
   } catch (error) {
     logger.error("Failed to init worldmap v3 data", error);
@@ -72,5 +73,6 @@ function mapCellToV3Payload(cell: WorldMapCell, save: Save, owner: User) {
     fbid: "",
     b: cell.base_type,
     i: cell.terrainHeight ?? 0,
+    m: save.monsters ?? {},
   };
 }

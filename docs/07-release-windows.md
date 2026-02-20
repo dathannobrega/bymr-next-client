@@ -35,3 +35,15 @@ Use Tauri updater once you have a stable release channel.
   - `Build Web` -> artifact `bymr-web-dist`
   - `Build Desktop (windows)` -> artifact `bymr-desktop-windows`
   - `Build Desktop (macos)` -> artifact `bymr-desktop-macos`
+
+## Orquestração via Docker
+Para disparar os builds desktop de Windows/macOS e baixar artefatos sem instalar toolchain local:
+```bash
+export GH_TOKEN=seu_token_github
+export BYMR_GH_REPO=owner/repo
+docker compose --profile release run --rm desktop-release-orchestrator
+```
+
+Notas:
+- O container `desktop-release-orchestrator` não compila localmente os binários de macOS/Windows em Linux.
+- Ele dispara o workflow do GitHub Actions (runners nativos por SO) e baixa os artefatos em `dist/desktop-artifacts`.

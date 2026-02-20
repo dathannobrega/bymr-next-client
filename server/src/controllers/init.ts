@@ -16,6 +16,8 @@ export const init: KoaController = async (ctx) => {
   const expectedVersion = getApiVersion();
   const requiredClientBuild = process.env.REQUIRED_CLIENT_BUILD?.trim() || undefined;
   const downloadUrl = process.env.CLIENT_DOWNLOAD_URL?.trim() || undefined;
+  const canonicalStateRequired = isTrueLike(process.env.REQUIRE_NEXT_CLIENT_CANONICAL_STATE)
+    || isTrueLike(process.env.DISABLE_NEXT_CLIENT_BASE_LOAD);
 
   const buildMismatch = Boolean(requiredClientBuild && clientBuild !== requiredClientBuild);
   const invalidVersion = !apiVersion || apiVersion !== expectedVersion || buildMismatch;
@@ -29,6 +31,11 @@ export const init: KoaController = async (ctx) => {
       versionMismatch: true,
       requiredClientBuild,
       downloadUrl,
+      protocol: {
+        canonicalStateRequired,
+        legacyBaseLoadFallbackAllowed: !canonicalStateRequired,
+        stateStreamRequired: canonicalStateRequired,
+      },
       received: {
         apiVersion,
         runtime,
@@ -40,5 +47,24 @@ export const init: KoaController = async (ctx) => {
   }
 
   ctx.status = Status.OK;
-  ctx.body = { debugMode: devConfig.debugMode, requiredClientBuild, downloadUrl, versionMismatch: false };
+  ctx.body = {
+    debugMode: devConfig.debugMode,
+    requiredClientBuild,
+    downloadUrl,
+    versionMismatch: false,
+    protocol: {
+      canonicalStateRequired,
+      legacyBaseLoadFallbackAllowed: !canonicalStateRequired,
+      stateStreamRequired: canonicalStateRequired,
+    },
+  };
 };
+
+function isTrueLike(value: string | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === "1"
+    || normalized === "true"
+    || normalized === "yes"
+    || normalized === "enabled";
+}

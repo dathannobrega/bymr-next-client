@@ -120,6 +120,7 @@ function mapCellToV3Payload(cell: WorldMapCell, owner?: User) {
     fbid: "",
     b: cell.base_type ?? 0,
     i: cell.terrainHeight ?? 0,
+    m: save?.monsters ?? {},
   };
 }
 

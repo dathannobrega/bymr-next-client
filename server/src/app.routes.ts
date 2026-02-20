@@ -42,6 +42,10 @@ import { wildMonsterInvasion } from "./controllers/events/wildMonsterInvasion.js
 import { init } from "./controllers/init.js";
 import { RateLimit } from "koa2-ratelimit";
 import { cmd } from "./controllers/cmd/cmd.js";
+import { getState } from "./controllers/state/getState.js";
+import { streamState } from "./controllers/state/streamState.js";
+import { startCombatReplay } from "./controllers/combat/startReplay.js";
+import { streamCombatReplay } from "./controllers/combat/streamReplay.js";
 
 /**
  * Rate limit for user registration
@@ -179,6 +183,56 @@ router.post(
   verifyUserAuth,
   logRequest("Authoritative command"),
   cmd
+);
+
+/**
+ * Canonical state snapshot endpoint
+ * @name GET /api/:apiVersion/state
+ */
+router.get(
+  "/api/:apiVersion/state",
+  apiVersion,
+  verifyUserAuth,
+  logRequest("State snapshot"),
+  getState
+);
+
+/**
+ * Server-side event stream endpoint
+ * @name GET /api/:apiVersion/stream
+ */
+router.get(
+  "/api/:apiVersion/stream",
+  apiVersion,
+  verifyUserAuth,
+  logRequest("State stream"),
+  streamState
+);
+
+/**
+ * Start authoritative combat replay
+ * @name POST /api/:apiVersion/combat/start
+ */
+router.post(
+  "/api/:apiVersion/combat/start",
+  apiVersion,
+  verifyUserAuth,
+  verifyAccountStatus,
+  logRequest("Start combat replay"),
+  startCombatReplay
+);
+
+/**
+ * Stream authoritative combat replay events
+ * @name GET /api/:apiVersion/combat/replay/:replayId
+ */
+router.get(
+  "/api/:apiVersion/combat/replay/:replayId",
+  apiVersion,
+  verifyUserAuth,
+  verifyAccountStatus,
+  logRequest("Stream combat replay"),
+  streamCombatReplay
 );
 
 /**

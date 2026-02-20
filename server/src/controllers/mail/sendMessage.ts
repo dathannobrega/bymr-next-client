@@ -10,6 +10,7 @@ import { findOrCreateThread } from "../../services/mail/findOrCreateThread.js";
 import { countUnreadMessage } from "../../services/mail/countUnreadMessage.js";
 import { mailboxErr } from "../../errors/errors.js";
 import { logger } from "../../utils/logger.js";
+import { Save } from "../../models/save.model.js";
 
 /**
  * Controller to send message
@@ -84,9 +85,9 @@ export const sendMessage: KoaController = async (ctx) => {
     await postgres.em.persistAndFlush(thread);
 
     const count = await countUnreadMessage(messageTargetId);
-
-    recipient.save.unreadmessages = count;
-    await postgres.em.persistAndFlush(recipient);
+    const recipientSave = recipient.save ?? (await Save.createMainSave(postgres.em, recipient));
+    recipientSave.unreadmessages = count;
+    await postgres.em.persistAndFlush(recipientSave);
 
     ctx.status = Status.OK;
     ctx.body = {
@@ -95,7 +96,17 @@ export const sendMessage: KoaController = async (ctx) => {
       threadid: thread.threadid,
     };
   } catch (err) {
-    logger.error("Error sending message:", err);
+    let detail: string;
+    if (err instanceof Error) {
+      detail = `${err.name}: ${err.message}\n${err.stack ?? ""}`;
+    } else {
+      try {
+        detail = JSON.stringify(err);
+      } catch {
+        detail = String(err);
+      }
+    }
+    logger.error(`Error sending message: ${detail}`);
     throw mailboxErr();
   }
 };

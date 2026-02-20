@@ -12,13 +12,19 @@ const passwordError =
  * - Must contain at least one uppercase letter.
  * - Must contain at least one special character.
  */
-const passwordSchema = z.preprocess((arg) => {
+const passwordSchema = z.string().trim()
+  .min(8, passwordLengthError)
+  .regex(new RegExp(".*[A-Z].*"), passwordError)
+  .regex(new RegExp(".*[`~<>?,./!@#$%^&*()\\-_+=\"'|{}\\[\\];:\\\\].*"), passwordError);
+
+// Login keeps backward compatibility with legacy accounts that may still use weak passwords.
+const loginPasswordSchema = z.preprocess((arg) => {
   if (typeof arg === "string" && arg === "") {
     return undefined;
   } else {
     return arg;
   }
-}, z.string().trim().min(8, passwordLengthError).regex(new RegExp(".*[A-Z].*"), passwordError).regex(new RegExp(".*[`~<>?,./!@#$%^&*()\\-_+=\"'|{}\\[\\];:\\\\].*"), passwordError).optional());
+}, z.string().trim().min(1).optional());
 
 /**
  * Schema to validate email addresses.
@@ -35,8 +41,19 @@ const emailSchema = z.string().trim().email(emailError).toLowerCase();
  */
 export const UserLoginSchema = z.object({
   email: emailSchema.optional(),
-  password: passwordSchema.optional(),
+  password: loginPasswordSchema,
   token: z.string().optional(),
+}).superRefine((value, ctx) => {
+  const hasToken = Boolean(value.token);
+  const hasEmailPassword = Boolean(value.email && value.password);
+
+  if (!hasToken && !hasEmailPassword) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Provide either token or email/password.",
+      path: [],
+    });
+  }
 });
 
 /**

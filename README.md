@@ -54,6 +54,11 @@ npm run build
 cp .env.docker.example .env
 ```
 
+Flag de rollout para corte do endpoint legado de save no next-client:
+- `BYMR_DISABLE_NEXT_CLIENT_BASE_SAVE=true` (server rejeita payload next-client em `/base/save` com `NEXT_CLIENT_BASE_SAVE_DEPRECATED`, mantendo compat legado).
+- `BYMR_DISABLE_NEXT_CLIENT_BASE_LOAD=true` (server rejeita payload next-client em `/base/load` com `NEXT_CLIENT_BASE_LOAD_DEPRECATED`).
+- `BYMR_REQUIRE_NEXT_CLIENT_CANONICAL_STATE=true` (server sinaliza no `/init` modo estrito canônico; cliente não usa fallback de `/base/load`).
+
 2. Suba os serviços:
 
 ```bash
@@ -82,6 +87,15 @@ docker compose up -d client
 Perfis opcionais:
 - Seed de banco: `docker compose --profile seed up server-seed`
 - pgAdmin: `docker compose --profile tools up -d pgadmin`
+- Smoke API snapshot (com server ativo): `./scripts/smoke-state-snapshot.sh`
+- Smoke API stream SSE (com server ativo): `./scripts/smoke-state-stream.sh`
+- Smoke Maproom v3 + ações avançadas (com server ativo): `./scripts/smoke-maproom-v3.sh`
+- Smoke combate autoritativo baseline (com server ativo): `./scripts/smoke-combat-replay.sh`
+- Smoke social baseline (worlds + leaderboards + attacklogs): `./scripts/smoke-social.sh`
+- Smoke mensageria (targets/threads/read/send/report): `./scripts/smoke-mail.sh`
+- Smoke hardening `/cmd` (idempotência/seq/rate-limit/anti-replay): `./scripts/smoke-cmd-hardening.sh`
+- Smoke bootstrap de conta/base (login/register + state + maproom): `./scripts/smoke-auth-bootstrap.sh`
+- Build desktop remoto (Windows/macOS via GitHub Actions): `docker compose --profile release run --rm desktop-release-orchestrator`
 
 ## Executar (Desktop / Tauri)
 
@@ -96,6 +110,17 @@ Build desktop (.exe no Windows):
 ```bash
 npm run tauri build
 ```
+
+Importante:
+- O build desktop não roda no container Docker `client` padrão (falta Rust/cargo nesse container).
+- Execute o build desktop no host com Node.js + Rust instalados.
+- Para gerar executáveis Windows + macOS com container, use o orquestrador de release:
+```bash
+export GH_TOKEN=seu_token_github
+export BYMR_GH_REPO=owner/repo
+docker compose --profile release run --rm desktop-release-orchestrator
+```
+- Esse container dispara o workflow `.github/workflows/build-clients.yml` e baixa os artefatos para `dist/desktop-artifacts`.
 
 Guia de release Windows: [`docs/07-release-windows.md`](docs/07-release-windows.md).
 
@@ -121,6 +146,7 @@ BYMR_ENV=staging npm run tauri build
 ```bash
 npm run typecheck
 npm run lint
+npm run guard:legacy-runtime
 npm test
 npm run build
 ```

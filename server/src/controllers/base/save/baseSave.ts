@@ -49,6 +49,8 @@ const NextClientBaseSaveSchema = z
     }
   });
 
+const TRUE_LIKE_VALUES = new Set(["1", "true", "yes", "enabled"]);
+
 /**
  * Controller responsible for saving the user's base data.
  *
@@ -63,6 +65,11 @@ export const baseSave: KoaController = async (ctx) => {
 
   const nextClientPayload = NextClientBaseSaveSchema.safeParse(ctx.request.body);
   if (nextClientPayload.success) {
+    if (isNextClientBaseSaveDeprecated()) {
+      respondNextClientBaseSaveDeprecated(ctx, user, nextClientPayload.data);
+      return;
+    }
+
     try {
       await handleNextClientNonCriticalSave(ctx, user, userSave, nextClientPayload.data);
     } catch (err) {
@@ -228,6 +235,36 @@ export const baseSave: KoaController = async (ctx) => {
     ctx.body = { error: `Failed to save for user: ${user.username}` };
   }
 };
+
+function isNextClientBaseSaveDeprecated(): boolean {
+  const rawValue = process.env.DISABLE_NEXT_CLIENT_BASE_SAVE?.trim().toLowerCase();
+  if (!rawValue) return false;
+  return TRUE_LIKE_VALUES.has(rawValue);
+}
+
+function respondNextClientBaseSaveDeprecated(
+  ctx: Parameters<KoaController>[0],
+  user: User,
+  payload: z.infer<typeof NextClientBaseSaveSchema>
+): void {
+  const traceId = randomUUID();
+
+  logger.info(
+    `event=base_save userId=${user.userid} ip=${ctx.ip} action=${payload.action} result=rejected code=NEXT_CLIENT_BASE_SAVE_DEPRECATED traceId=${traceId}`
+  );
+
+  ctx.status = Status.CONFLICT;
+  ctx.body = {
+    error: "Endpoint /base/save is deprecated for next-client. Use /api/:apiVersion/cmd.",
+    code: "NEXT_CLIENT_BASE_SAVE_DEPRECATED",
+    traceId,
+    details: {
+      action: payload.action,
+      migrationPath: "/api/:apiVersion/cmd",
+      flag: "DISABLE_NEXT_CLIENT_BASE_SAVE",
+    },
+  };
+}
 
 async function handleNextClientNonCriticalSave(
   ctx: Parameters<KoaController>[0],

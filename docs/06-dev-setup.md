@@ -40,6 +40,16 @@ Override manually when needed:
 BYMR_TAURI_TARGETS=app,dmg npm run tauri build
 ```
 
+Notes:
+- Desktop build requires host toolchain (`node/npm` + `cargo/rustc`) available on PATH.
+- `docker compose` service `client` is for web runtime only and does not include Rust toolchain for Tauri build.
+- Para gerar executáveis Windows/macOS via container, use o orquestrador remoto (GitHub Actions nativo por SO):
+```bash
+export GH_TOKEN=seu_token_github
+export BYMR_GH_REPO=owner/repo
+docker compose --profile release run --rm desktop-release-orchestrator
+```
+
 ## CI builds
 - Quality gates: `.github/workflows/ci.yml`
 - Client artifacts (web + desktop): `.github/workflows/build-clients.yml`

@@ -34,6 +34,7 @@ import {
   getLegacyFootprintTilesByCode,
   isFootprintWithinBounds,
 } from "../../utils/buildingFootprint.js";
+import { publishStateStreamDelta } from "../../services/stream/stateStreamBus.js";
 
 type BuildingDataRecord = Record<string, unknown>;
 
@@ -230,6 +231,15 @@ export const cmd: KoaController = async (ctx) => {
 
     await redis.setex(seqKey, SEQ_TTL_SECONDS, String(envelope.seq));
     await redis.setex(idempotencyKey, IDEMPOTENCY_TTL_SECONDS, JSON.stringify(response));
+
+    publishStateStreamDelta({
+      userId: user.userid,
+      baseId: String(save.baseid),
+      seq: envelope.seq,
+      serverTime,
+      op,
+      delta,
+    });
 
     logCmdTelemetry({
       userId: user.userid,

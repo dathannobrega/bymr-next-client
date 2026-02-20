@@ -13,6 +13,13 @@ export const InitResponseSchema = z.object({
   downloadUrl: z.string().url().optional(),
   versionMismatch: z.boolean().optional(),
   error: z.string().optional(),
+  protocol: z
+    .object({
+      canonicalStateRequired: z.boolean().optional(),
+      legacyBaseLoadFallbackAllowed: z.boolean().optional(),
+      stateStreamRequired: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 export const LoginRequestSchema = z
@@ -29,6 +36,25 @@ export const LoginResponseSchema = z.object({
   error: z.union([z.number(), z.string()]).optional(),
   token: z.string().min(1),
   userId: z.union([z.number(), z.string()]).optional(),
+});
+
+const RegisterPasswordSchema = z.string().trim()
+  .min(8)
+  .regex(new RegExp(".*[A-Z].*"))
+  .regex(new RegExp(".*[`~<>?,./!@#$%^&*()\\-_+=\"'|{}\\[\\];:\\\\].*"));
+
+export const RegisterRequestSchema = z.object({
+  username: z.string().trim().min(2).max(12),
+  email: z.string().email(),
+  password: RegisterPasswordSchema,
+});
+
+export const RegisterResponseSchema = z.object({
+  user: z.object({
+    userid: z.union([z.number(), z.string()]),
+    username: z.string().optional(),
+    email: z.string().optional(),
+  }),
 });
 
 const GetNewMapV3Schema = z.object({
@@ -56,4 +82,6 @@ export type InitRequest = z.infer<typeof InitRequestSchema>;
 export type InitResponse = z.infer<typeof InitResponseSchema>;
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 export type LoginResponse = z.infer<typeof LoginResponseSchema>;
+export type RegisterRequest = z.infer<typeof RegisterRequestSchema>;
+export type RegisterResponse = z.infer<typeof RegisterResponseSchema>;
 export type GetNewMapResponse = z.infer<typeof GetNewMapResponseSchema>;

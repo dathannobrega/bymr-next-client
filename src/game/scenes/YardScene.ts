@@ -1,17 +1,25 @@
 import { Assets, Container, Graphics, Rectangle, Sprite, Text, Texture } from "pixi.js";
-import type { ApiClient } from "../../lib/api/client";
+import type { ApiClient, StateStreamSubscription } from "../../lib/api/client";
 import type { ParsedBaseLoad, YardBuilding } from "../../lib/base/baseLoad";
 import {
+  describePlacementType,
   getPlacementTypeExamples,
+  listPlacementTypeCatalogEntries,
   normalizePlacementBuildingTypeInput,
+  type PlacementTypeCatalogEntry,
 } from "../../lib/base/buildingType";
 import {
   getFootprintCells,
   getLegacyFootprintTilesByType,
   type BuildingFootprint,
 } from "../../lib/base/footprint";
+import { stateSnapshotToParsedBaseLoad } from "../../lib/base/stateSnapshot";
+import type { StateStreamEvent } from "../../lib/contracts/stream";
+import type { StateSnapshotResponse } from "../../lib/contracts/state";
 import { applyCmdDeltaToBase } from "../../lib/game/cmdDelta";
 import { TILE_H, TILE_W, roundDeterministic, worldToScreen } from "./iso";
+import { MaproomOverlay } from "./MaproomOverlay";
+import { SocialOverlay } from "./SocialOverlay";
 
 type YardSceneDeps = {
   root: Container;
@@ -28,6 +36,8 @@ type Camera = {
 
 const MIN_ZOOM = 0.45;
 const MAX_ZOOM = 2.2;
+const STREAM_RETRY_BASE_MS = 1200;
+const STREAM_RETRY_MAX_MS = 15000;
 
 const TERRAIN_ASSET_BY_THEME: Record<NonNullable<ParsedBaseLoad["yardTheme"]>, string[]> = {
   grass: [
@@ -71,6 +81,21 @@ export class YardScene {
   private lastPointer = { x: 0, y: 0 };
   private baseState: ParsedBaseLoad;
   private selectedBuildingId: string | null = null;
+  private lastAppliedSeq = 0;
+  private reconnectAttempts = 0;
+  private streamStopped = false;
+  private streamGeneration = 0;
+  private streamSubscription: StateStreamSubscription | null = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private maproomOverlay: MaproomOverlay | null = null;
+  private socialOverlay: SocialOverlay | null = null;
+  private selectedTileCoord: { x: number; y: number } | null = null;
+
+  private buildingControlWrapper: HTMLDivElement | null = null;
+  private buildingControlDetails: HTMLDivElement | null = null;
+  private buildingControlTypeSelect: HTMLSelectElement | null = null;
+  private buildingControlSearchInput: HTMLInputElement | null = null;
+  private buildingControlVisible = true;
 
   constructor(private readonly deps: YardSceneDeps) {
     this.baseState = deps.base;
@@ -111,7 +136,7 @@ export class YardScene {
     const buildingSource = this.buildingTexture ? "texture" : "fallback";
 
     const footer = new Text({
-      text: `Buildings: ${base.buildings.length} • Wheel: zoom • Drag: pan • Shift+Click: Place/Move • Alt+Click/U: Upgrade • X: Cancel upgrade • C: Collect • B: type`,
+      text: `Buildings: ${base.buildings.length} • Wheel: zoom • Drag: pan • Click: selecionar tile • Shift+Click: Place/Move rápido • Alt+Click/U: Upgrade • X: Cancel upgrade • C: Collect • B/O: painel de building • M: Maproom • L: Social`,
       style: { fill: 0x8fa5d6, fontSize: 12 } as any,
     });
     footer.position.set(12, 110);
@@ -123,6 +148,12 @@ export class YardScene {
       `• terrain=${terrainSource} • buildings=${buildingSource}`;
     this.updateResourcesText();
     this.uiLayer.addChild(footer, this.statusText, this.resourcesText);
+    this.ensureBuildingControlPanel();
+
+    this.maproomOverlay = new MaproomOverlay(this.deps.api);
+    this.socialOverlay = new SocialOverlay(this.deps.api);
+    this.startStateStream();
+    window.addEventListener("beforeunload", () => this.stopStateStream(), { once: true });
   }
 
   private initCamera(cols: number, rows: number): void {
@@ -202,6 +233,7 @@ export class YardScene {
     this.world.on("click", async (e) => {
       const tile = this.pointerToTile(e.global.x, e.global.y);
       if (!tile) return;
+      this.selectedTileCoord = { x: tile.tx, y: tile.ty };
       this.drawFootprintOutline(
         this.selectedTile,
         tile.tx,
@@ -210,34 +242,17 @@ export class YardScene {
         0xf7d774,
         3
       );
+      this.renderBuildingControlPanel();
 
       const shiftClick = "shiftKey" in e.nativeEvent && Boolean((e.nativeEvent as MouseEvent).shiftKey);
       if (!shiftClick) return;
 
-      try {
-        if (this.selectedBuildingId) {
-          this.statusText.text = `MoveBuilding #${this.selectedBuildingId} -> (${tile.tx}, ${tile.ty})...`;
-          const response = await this.deps.api.moveBuilding({
-            buildingId: this.selectedBuildingId,
-            toX: tile.tx,
-            toY: tile.ty,
-          });
-          this.applyDelta(response.delta);
-          this.statusText.text = `MoveBuilding ok (seq=${response.seq ?? "?"})`;
-          return;
-        }
-
-        this.statusText.text = `PlaceBuilding -> (${tile.tx}, ${tile.ty})...`;
-        const response = await this.deps.api.placeBuilding({
-          buildingType: this.placementType,
-          x: tile.tx,
-          y: tile.ty,
-        });
-        this.applyDelta(response.delta);
-        this.statusText.text = `PlaceBuilding ${this.placementType} ok (seq=${response.seq ?? "?"})`;
-      } catch (err) {
-        this.statusText.text = `Cmd falhou: ${String((err as Error)?.message ?? err)}`;
+      if (this.selectedBuildingId) {
+        await this.executeMoveSelectedToTile(tile.tx, tile.ty);
+        return;
       }
+
+      await this.executePlaceAtTile(tile.tx, tile.ty);
     });
 
     window.addEventListener("keydown", (e) => {
@@ -246,6 +261,21 @@ export class YardScene {
       const key = e.key.toLowerCase();
       if (key === "b") {
         this.promptPlacementType();
+        return;
+      }
+
+      if (key === "m") {
+        this.maproomOverlay?.toggle();
+        return;
+      }
+
+      if (key === "l") {
+        this.socialOverlay?.toggle();
+        return;
+      }
+
+      if (key === "o") {
+        this.toggleBuildingControlPanel();
         return;
       }
 
@@ -377,6 +407,7 @@ export class YardScene {
       });
       sprite.on("click", async (e) => {
         this.selectedBuildingId = building.id;
+        this.selectedTileCoord = { x: building.x, y: building.y };
         this.drawFootprintOutline(
           this.selectedTile,
           building.x,
@@ -385,6 +416,7 @@ export class YardScene {
           0xf7d774,
           3
         );
+        this.renderBuildingControlPanel();
 
         const altClick = "altKey" in e.nativeEvent && Boolean((e.nativeEvent as MouseEvent).altKey);
         if (!altClick) return;
@@ -497,6 +529,112 @@ export class YardScene {
     this.tooltipBg.visible = false;
   }
 
+  private startStateStream(): void {
+    this.streamStopped = false;
+    this.reconnectAttempts = 0;
+    this.openStateStream();
+  }
+
+  private openStateStream(): void {
+    this.clearReconnectTimer();
+    this.streamSubscription?.close();
+    this.streamGeneration += 1;
+    const generation = this.streamGeneration;
+
+    this.streamSubscription = this.deps.api.openStateStream(
+      { baseId: "home", scope: "main" },
+      {
+        onOpen: () => {
+          this.reconnectAttempts = 0;
+          this.statusText.text = "State stream connected.";
+        },
+        onEvent: (event) => this.handleStreamEvent(event),
+        onError: (error) => {
+          this.statusText.text = `State stream offline: ${error.message}`;
+          this.scheduleReconnect();
+        },
+      }
+    );
+
+    void this.streamSubscription.closed.then(() => {
+      if (!this.streamStopped && generation === this.streamGeneration) {
+        this.scheduleReconnect();
+      }
+    });
+  }
+
+  private handleStreamEvent(event: StateStreamEvent): void {
+    if (event.type === "ready") {
+      this.statusText.text = `State stream ready (${event.payload.connectionId.slice(0, 8)})`;
+      return;
+    }
+
+    if (event.type === "tick") {
+      return;
+    }
+
+    if (event.type === "snapshot") {
+      this.applySnapshot(event.payload.snapshot);
+      this.statusText.text = "State stream snapshot synchronized.";
+      return;
+    }
+
+    const streamSeq = event.payload.seq;
+    if (streamSeq <= this.lastAppliedSeq) {
+      return;
+    }
+
+    this.lastAppliedSeq = streamSeq;
+    this.applyDelta(event.payload.delta);
+    this.statusText.text = `State delta applied (seq=${streamSeq})`;
+  }
+
+  private applySnapshot(snapshot: StateSnapshotResponse): void {
+    const nextBase = stateSnapshotToParsedBaseLoad(snapshot);
+    const sizeChanged =
+      nextBase.yardWidth !== this.baseState.yardWidth ||
+      nextBase.yardHeight !== this.baseState.yardHeight;
+
+    this.baseState = nextBase;
+    if (sizeChanged) {
+      this.buildGrid(nextBase.yardWidth, nextBase.yardHeight);
+      this.initCamera(nextBase.yardWidth, nextBase.yardHeight);
+    }
+
+    this.renderBuildings(nextBase.buildings);
+    this.updateResourcesText();
+  }
+
+  private scheduleReconnect(): void {
+    if (this.streamStopped || this.reconnectTimer) return;
+
+    this.reconnectAttempts += 1;
+    const retryInMs = Math.min(
+      STREAM_RETRY_MAX_MS,
+      STREAM_RETRY_BASE_MS * 2 ** Math.max(0, this.reconnectAttempts - 1)
+    );
+
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      if (!this.streamStopped) {
+        this.openStateStream();
+      }
+    }, retryInMs);
+  }
+
+  private stopStateStream(): void {
+    this.streamStopped = true;
+    this.clearReconnectTimer();
+    this.streamSubscription?.close();
+    this.streamSubscription = null;
+  }
+
+  private clearReconnectTimer(): void {
+    if (!this.reconnectTimer) return;
+    clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = null;
+  }
+
   private applyDelta(delta: unknown): void {
     const items = Array.isArray(delta) ? (delta as Record<string, unknown>[]) : [];
     this.baseState = applyCmdDeltaToBase(this.baseState, items);
@@ -504,10 +642,18 @@ export class YardScene {
     this.updateResourcesText();
   }
 
+  private applyCmdResponse(response: { seq?: number; delta?: unknown }): void {
+    if (typeof response.seq === "number") {
+      this.lastAppliedSeq = Math.max(this.lastAppliedSeq, response.seq);
+    }
+    this.applyDelta(response.delta);
+  }
+
   private updateResourcesText(): void {
     const resources = this.baseState.resources;
     if (!resources) {
       this.resourcesText.text = "Resources: n/a";
+      this.renderBuildingControlPanel();
       return;
     }
 
@@ -516,6 +662,7 @@ export class YardScene {
       `r2=${resources.r2}/${resources.r2max} ` +
       `r3=${resources.r3}/${resources.r3max} ` +
       `r4=${resources.r4}/${resources.r4max}`;
+    this.renderBuildingControlPanel();
   }
 
   private getSelectedBuildingId(): string | null {
@@ -532,16 +679,18 @@ export class YardScene {
     const buildingId = this.getSelectedBuildingId();
     if (!buildingId) {
       this.statusText.text = "Nenhum building selecionado para upgrade.";
+      this.renderBuildingControlPanel();
       return;
     }
 
     try {
       this.statusText.text = `UpgradeBuilding #${buildingId}...`;
       const response = await this.deps.api.upgradeBuilding({ buildingId });
-      this.applyDelta(response.delta);
+      this.applyCmdResponse(response);
       this.statusText.text = `UpgradeBuilding ok (seq=${response.seq ?? "?"})`;
     } catch (err) {
       this.statusText.text = `Upgrade falhou: ${String((err as Error)?.message ?? err)}`;
+      this.renderBuildingControlPanel();
     }
   }
 
@@ -549,16 +698,18 @@ export class YardScene {
     const buildingId = this.getSelectedBuildingId();
     if (!buildingId) {
       this.statusText.text = "Nenhum building selecionado para cancelar upgrade.";
+      this.renderBuildingControlPanel();
       return;
     }
 
     try {
       this.statusText.text = `CancelUpgrade #${buildingId}...`;
       const response = await this.deps.api.cancelUpgrade({ buildingId });
-      this.applyDelta(response.delta);
+      this.applyCmdResponse(response);
       this.statusText.text = `CancelUpgrade ok (seq=${response.seq ?? "?"})`;
     } catch (err) {
       this.statusText.text = `CancelUpgrade falhou: ${String((err as Error)?.message ?? err)}`;
+      this.renderBuildingControlPanel();
     }
   }
 
@@ -566,20 +717,300 @@ export class YardScene {
     const buildingId = this.getSelectedBuildingId();
     if (!buildingId) {
       this.statusText.text = "Nenhum building selecionado para coletar.";
+      this.renderBuildingControlPanel();
       return;
     }
 
     try {
       this.statusText.text = `CollectHarvester #${buildingId}...`;
       const response = await this.deps.api.collectHarvester({ buildingId });
-      this.applyDelta(response.delta);
+      this.applyCmdResponse(response);
       this.statusText.text = `CollectHarvester ok (seq=${response.seq ?? "?"})`;
     } catch (err) {
       this.statusText.text = `Collect falhou: ${String((err as Error)?.message ?? err)}`;
+      this.renderBuildingControlPanel();
+    }
+  }
+
+  private async executePlaceAtTile(x: number, y: number): Promise<void> {
+    try {
+      this.statusText.text = `PlaceBuilding -> (${x}, ${y})...`;
+      const response = await this.deps.api.placeBuilding({
+        buildingType: this.placementType,
+        x,
+        y,
+      });
+      this.applyCmdResponse(response);
+      this.statusText.text = `PlaceBuilding ${this.placementType} ok (seq=${response.seq ?? "?"})`;
+    } catch (err) {
+      this.statusText.text = `Cmd falhou: ${String((err as Error)?.message ?? err)}`;
+      this.renderBuildingControlPanel();
+    }
+  }
+
+  private async executeMoveSelectedToTile(x: number, y: number): Promise<void> {
+    const buildingId = this.getSelectedBuildingId();
+    if (!buildingId) {
+      this.statusText.text = "Nenhum building selecionado para mover.";
+      this.renderBuildingControlPanel();
+      return;
+    }
+
+    try {
+      this.statusText.text = `MoveBuilding #${buildingId} -> (${x}, ${y})...`;
+      const response = await this.deps.api.moveBuilding({
+        buildingId,
+        toX: x,
+        toY: y,
+      });
+      this.applyCmdResponse(response);
+      this.statusText.text = `MoveBuilding ok (seq=${response.seq ?? "?"})`;
+    } catch (err) {
+      this.statusText.text = `Move falhou: ${String((err as Error)?.message ?? err)}`;
+      this.renderBuildingControlPanel();
+    }
+  }
+
+  private ensureBuildingControlPanel(): void {
+    if (typeof document === "undefined" || this.buildingControlWrapper) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.style.position = "fixed";
+    wrapper.style.left = "12px";
+    wrapper.style.top = "184px";
+    wrapper.style.width = "min(94vw, 410px)";
+    wrapper.style.maxHeight = "42vh";
+    wrapper.style.overflow = "auto";
+    wrapper.style.zIndex = "9997";
+    wrapper.style.background = "rgba(9, 16, 28, 0.96)";
+    wrapper.style.border = "1px solid #2f3a55";
+    wrapper.style.borderRadius = "10px";
+    wrapper.style.padding = "10px";
+    wrapper.style.color = "#ffffff";
+    wrapper.style.display = "block";
+
+    wrapper.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+        <strong style="font-size:13px;">Building Ops</strong>
+        <button data-building-toggle style="padding:4px 8px;background:#2d3d60;border:none;color:#fff;border-radius:6px;cursor:pointer;">Ocultar (O)</button>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+        <input data-building-search placeholder="Filtrar tipo/código/classe"
+          style="flex:1;min-width:170px;padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;" />
+        <select data-building-type
+          style="flex:1;min-width:170px;padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;"></select>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+        <button data-building-place style="padding:6px 8px;background:#3a78e0;border:none;color:#fff;border-radius:6px;cursor:pointer;">Place no tile</button>
+        <button data-building-move style="padding:6px 8px;background:#2a9d7b;border:none;color:#fff;border-radius:6px;cursor:pointer;">Mover selecionado</button>
+        <button data-building-upgrade style="padding:6px 8px;background:#7b57d6;border:none;color:#fff;border-radius:6px;cursor:pointer;">Upgrade</button>
+        <button data-building-cancel style="padding:6px 8px;background:#a65a2a;border:none;color:#fff;border-radius:6px;cursor:pointer;">Cancelar</button>
+        <button data-building-collect style="padding:6px 8px;background:#20905e;border:none;color:#fff;border-radius:6px;cursor:pointer;">Coletar</button>
+        <button data-building-clear style="padding:6px 8px;background:#37445f;border:none;color:#fff;border-radius:6px;cursor:pointer;">Desselecionar</button>
+      </div>
+      <div data-building-details style="font-size:12px;color:#d5e0ff;line-height:1.45;background:#141f36;border:1px solid #2f3a55;border-radius:8px;padding:8px;"></div>
+    `;
+
+    wrapper.querySelector<HTMLButtonElement>("[data-building-toggle]")?.addEventListener("click", () => {
+      this.toggleBuildingControlPanel();
+    });
+
+    wrapper.querySelector<HTMLButtonElement>("[data-building-place]")?.addEventListener("click", () => {
+      const tile = this.selectedTileCoord;
+      if (!tile) {
+        this.statusText.text = "Selecione um tile para PlaceBuilding.";
+        this.renderBuildingControlPanel();
+        return;
+      }
+      void this.executePlaceAtTile(tile.x, tile.y);
+    });
+
+    wrapper.querySelector<HTMLButtonElement>("[data-building-move]")?.addEventListener("click", () => {
+      const tile = this.selectedTileCoord;
+      if (!tile) {
+        this.statusText.text = "Selecione um tile para MoveBuilding.";
+        this.renderBuildingControlPanel();
+        return;
+      }
+      void this.executeMoveSelectedToTile(tile.x, tile.y);
+    });
+
+    wrapper.querySelector<HTMLButtonElement>("[data-building-upgrade]")?.addEventListener("click", () => {
+      void this.executeUpgradeForSelected();
+    });
+
+    wrapper.querySelector<HTMLButtonElement>("[data-building-cancel]")?.addEventListener("click", () => {
+      void this.executeCancelUpgradeForSelected();
+    });
+
+    wrapper.querySelector<HTMLButtonElement>("[data-building-collect]")?.addEventListener("click", () => {
+      void this.executeCollectForSelected();
+    });
+
+    wrapper.querySelector<HTMLButtonElement>("[data-building-clear]")?.addEventListener("click", () => {
+      this.selectedBuildingId = null;
+      if (this.selectedTileCoord) {
+        const footprint = getLegacyFootprintTilesByType(this.placementType);
+        this.drawFootprintOutline(
+          this.selectedTile,
+          this.selectedTileCoord.x,
+          this.selectedTileCoord.y,
+          footprint,
+          0xf7d774,
+          3
+        );
+      } else {
+        this.selectedTile.clear();
+      }
+      this.statusText.text = "Seleção de building limpa.";
+      this.renderBuildingControlPanel();
+    });
+
+    this.buildingControlTypeSelect = wrapper.querySelector<HTMLSelectElement>("[data-building-type]");
+    this.buildingControlSearchInput = wrapper.querySelector<HTMLInputElement>("[data-building-search]");
+    this.buildingControlDetails = wrapper.querySelector<HTMLDivElement>("[data-building-details]");
+
+    this.buildingControlTypeSelect?.addEventListener("change", () => {
+      const nextType = this.buildingControlTypeSelect?.value;
+      if (!nextType) return;
+
+      const normalized = normalizePlacementBuildingTypeInput(nextType);
+      if (!normalized) {
+        this.statusText.text = `Tipo inválido: ${nextType}`;
+        this.renderBuildingControlPanel();
+        return;
+      }
+
+      this.placementType = normalized.canonicalType;
+      const footprint = getLegacyFootprintTilesByType(this.placementType);
+      this.statusText.text = `placeType atualizado: ${this.placementType} (${footprint.width}x${footprint.height})`;
+
+      if (this.selectedTileCoord) {
+        this.drawFootprintOutline(
+          this.selectedTile,
+          this.selectedTileCoord.x,
+          this.selectedTileCoord.y,
+          this.resolveCurrentActionFootprint(),
+          0xf7d774,
+          3
+        );
+      }
+
+      this.renderBuildingControlPanel();
+    });
+
+    this.buildingControlSearchInput?.addEventListener("input", () => {
+      this.renderBuildingControlPanel();
+    });
+
+    this.buildingControlWrapper = wrapper;
+    document.body.appendChild(wrapper);
+    this.renderBuildingControlPanel();
+  }
+
+  private toggleBuildingControlPanel(forceOpen?: boolean): void {
+    this.buildingControlVisible = forceOpen ?? !this.buildingControlVisible;
+    if (this.buildingControlWrapper) {
+      this.buildingControlWrapper.style.display = this.buildingControlVisible ? "block" : "none";
+    }
+    if (this.buildingControlVisible) {
+      this.renderBuildingControlPanel();
+    }
+  }
+
+  private renderBuildingControlPanel(): void {
+    const wrapper = this.buildingControlWrapper;
+    const details = this.buildingControlDetails;
+    const typeSelect = this.buildingControlTypeSelect;
+    const searchInput = this.buildingControlSearchInput;
+    if (!wrapper || !details || !typeSelect) return;
+
+    if (!this.buildingControlVisible) {
+      wrapper.style.display = "none";
+      return;
+    }
+
+    wrapper.style.display = "block";
+
+    const selectedBuilding = this.getSelectedBuilding();
+    if (!selectedBuilding && this.selectedBuildingId) {
+      this.selectedBuildingId = null;
+    }
+
+    const filterRaw = searchInput?.value.trim().toLowerCase() ?? "";
+    const filtered = listPlacementTypeCatalogEntries().filter((entry) => {
+      if (!filterRaw) return true;
+      return (
+        String(entry.code).includes(filterRaw) ||
+        entry.canonicalType.toLowerCase().includes(filterRaw) ||
+        entry.label.toLowerCase().includes(filterRaw) ||
+        entry.legacyClass.toLowerCase().includes(filterRaw) ||
+        entry.category.toLowerCase().includes(filterRaw)
+      );
+    });
+
+    this.renderPlacementTypeSelectOptions(typeSelect, filtered);
+
+    const placementInfo = describePlacementType(this.placementType);
+    const placementFootprint = getLegacyFootprintTilesByType(this.placementType);
+    const tileLabel = this.selectedTileCoord
+      ? `(${this.selectedTileCoord.x}, ${this.selectedTileCoord.y})`
+      : "nenhum";
+
+    const selectedBuildingText = selectedBuilding
+      ? `${selectedBuilding.type} #${selectedBuilding.id} @ (${selectedBuilding.x}, ${selectedBuilding.y})` +
+        `${selectedBuilding.level ? ` Lv.${selectedBuilding.level}` : ""}` +
+        `${selectedBuilding.countdownUpgrade ? ` | upgrade em ${selectedBuilding.countdownUpgrade}s` : ""}`
+      : "nenhum";
+
+    const lines = [
+      `Tipo de place: ${placementInfo?.label ?? this.placementType} (${this.placementType})`,
+      `Footprint atual: ${placementFootprint.width}x${placementFootprint.height}`,
+      `Tile selecionado: ${tileLabel}`,
+      `Building selecionado: ${selectedBuildingText}`,
+      `Status: ${this.statusText.text || "ready"}`,
+      "Ações: clique em um tile e use os botões (ou Shift+Click para atalho).",
+    ];
+
+    details.innerHTML = lines.map((line) => escapeHtml(line)).join("<br>");
+  }
+
+  private renderPlacementTypeSelectOptions(
+    selectEl: HTMLSelectElement,
+    entries: PlacementTypeCatalogEntry[]
+  ): void {
+    const activeType = this.placementType;
+    const nextEntries = entries.length > 0 ? entries : listPlacementTypeCatalogEntries();
+
+    selectEl.innerHTML = nextEntries
+      .map((entry) => {
+        const label = `${entry.code} • ${entry.label} [${entry.category}]`;
+        return `<option value=\"${escapeHtml(entry.canonicalType)}\">${escapeHtml(label)}</option>`;
+      })
+      .join("");
+
+    const hasActive = nextEntries.some((entry) => entry.canonicalType === activeType);
+    if (hasActive) {
+      selectEl.value = activeType;
+      return;
+    }
+
+    const fallback = nextEntries[0];
+    if (fallback) {
+      this.placementType = fallback.canonicalType;
+      selectEl.value = fallback.canonicalType;
     }
   }
 
   private promptPlacementType(): void {
+    if (this.buildingControlTypeSelect) {
+      this.toggleBuildingControlPanel(true);
+      this.buildingControlTypeSelect.focus();
+      this.statusText.text = "Use o painel Building Ops para alterar o tipo.";
+      this.renderBuildingControlPanel();
+      return;
+    }
+
     const examples = getPlacementTypeExamples().join(", ");
     const nextType = window.prompt(
       `Tipo para PlaceBuilding (${examples})`,
@@ -590,12 +1021,14 @@ export class YardScene {
     const normalized = normalizePlacementBuildingTypeInput(nextType);
     if (!normalized) {
       this.statusText.text = `Tipo inválido: ${nextType}`;
+      this.renderBuildingControlPanel();
       return;
     }
 
     this.placementType = normalized.canonicalType;
     const footprint = getLegacyFootprintTilesByType(this.placementType);
     this.statusText.text = `placeType atualizado: ${this.placementType} (${footprint.width}x${footprint.height})`;
+    this.renderBuildingControlPanel();
   }
 }
 
@@ -649,6 +1082,16 @@ function resolveRuntimeAssetUrl(relativePath: string): string | null {
 
 function ensureTrailingSlash(url: string): string {
   return url.endsWith("/") ? url : `${url}/`;
+}
+
+function escapeHtml(text: string): string {
+  return text.replace(/[&<>\"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[char] ?? char));
 }
 
 function isRenderableTexture(texture: Texture): boolean {

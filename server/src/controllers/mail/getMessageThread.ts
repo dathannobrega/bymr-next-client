@@ -8,6 +8,7 @@ import { countUnreadMessage } from "../../services/mail/countUnreadMessage.js";
 import { findUserMessages } from "../../services/mail/findUserMessages.js";
 import { Message } from "../../models/message.model.js";
 import { FilterFrontendKeys } from "../../utils/FrontendKey.js";
+import { Save } from "../../models/save.model.js";
 
 /**
  * Controller to get multiple messages with single threadid.
@@ -20,8 +21,8 @@ import { FilterFrontendKeys } from "../../utils/FrontendKey.js";
 export const getMessageThread: KoaController = async (ctx) => {
   try {
     const user: User = ctx.authUser;
-    const userSave = user.save;
     await postgres.em.populate(user, ["save"]);
+    const userSave = user.save ?? (await Save.createMainSave(postgres.em, user));
 
     const { threadid } = GetMessageSchema.parse(ctx.request.body);
 
@@ -44,7 +45,7 @@ export const getMessageThread: KoaController = async (ctx) => {
       const count = await countUnreadMessage(user.userid);
 
       userSave.unreadmessages = count;
-      await postgres.em.flush();
+      await postgres.em.persistAndFlush(userSave);
     }
 
     const thread = Object.fromEntries(

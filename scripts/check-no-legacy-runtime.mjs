@@ -1,14 +1,29 @@
 import { readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 
-const listFiles = (cmd) =>
-  execSync(cmd, { encoding: "utf8" })
+const hasCommand = (name) => {
+  try {
+    execSync(`command -v ${name}`, { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const hasRipgrep = hasCommand("rg");
+
+const listFiles = (roots) => {
+  const escapedRoots = roots.map((root) => `'${root.replace(/'/g, "'\\''")}'`).join(" ");
+  const cmd = hasRipgrep ? `rg --files ${escapedRoots}` : `find ${escapedRoots} -type f`;
+
+  return execSync(cmd, { encoding: "utf8" })
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
+};
 
-const runtimeFiles = listFiles("rg --files src server/src public");
-const clientFiles = listFiles("rg --files src");
+const runtimeFiles = listFiles(["src", "server/src", "public"]);
+const clientFiles = listFiles(["src"]);
 
 const stripComments = (source) =>
   source

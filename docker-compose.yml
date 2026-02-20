@@ -47,6 +47,9 @@ services:
       REDIS_URL: redis://redis:6379
       USE_VERSION_MANAGEMENT: ${BYMR_USE_VERSION_MANAGEMENT:-enabled}
       AVATAR_URL: ${BYMR_AVATAR_URL:-https://api.dicebear.com/9.x/bottts-neutral/jpg}
+      DISABLE_NEXT_CLIENT_BASE_SAVE: ${BYMR_DISABLE_NEXT_CLIENT_BASE_SAVE:-false}
+      DISABLE_NEXT_CLIENT_BASE_LOAD: ${BYMR_DISABLE_NEXT_CLIENT_BASE_LOAD:-false}
+      REQUIRE_NEXT_CLIENT_CANONICAL_STATE: ${BYMR_REQUIRE_NEXT_CLIENT_CANONICAL_STATE:-false}
     volumes:
       - ./server:/workspace/server
       - bymr_server_node_modules:/workspace/server/node_modules
@@ -80,6 +83,9 @@ services:
       REDIS_URL: redis://redis:6379
       USE_VERSION_MANAGEMENT: ${BYMR_USE_VERSION_MANAGEMENT:-enabled}
       AVATAR_URL: ${BYMR_AVATAR_URL:-https://api.dicebear.com/9.x/bottts-neutral/jpg}
+      DISABLE_NEXT_CLIENT_BASE_SAVE: ${BYMR_DISABLE_NEXT_CLIENT_BASE_SAVE:-false}
+      DISABLE_NEXT_CLIENT_BASE_LOAD: ${BYMR_DISABLE_NEXT_CLIENT_BASE_LOAD:-false}
+      REQUIRE_NEXT_CLIENT_CANONICAL_STATE: ${BYMR_REQUIRE_NEXT_CLIENT_CANONICAL_STATE:-false}
     volumes:
       - ./server:/workspace/server
       - bymr_server_node_modules:/workspace/server/node_modules
@@ -147,6 +153,9 @@ services:
       REDIS_URL: redis://redis:6379
       USE_VERSION_MANAGEMENT: ${BYMR_USE_VERSION_MANAGEMENT:-enabled}
       AVATAR_URL: ${BYMR_AVATAR_URL:-https://api.dicebear.com/9.x/bottts-neutral/jpg}
+      DISABLE_NEXT_CLIENT_BASE_SAVE: ${BYMR_DISABLE_NEXT_CLIENT_BASE_SAVE:-false}
+      DISABLE_NEXT_CLIENT_BASE_LOAD: ${BYMR_DISABLE_NEXT_CLIENT_BASE_LOAD:-false}
+      REQUIRE_NEXT_CLIENT_CANONICAL_STATE: ${BYMR_REQUIRE_NEXT_CLIENT_CANONICAL_STATE:-false}
     volumes:
       - ./server:/workspace/server
       - bymr_server_node_modules:/workspace/server/node_modules
@@ -178,6 +187,26 @@ services:
         condition: service_healthy
     volumes:
       - bymr_pgadmin_data:/var/lib/pgadmin
+
+  desktop-release-orchestrator:
+    image: ghcr.io/cli/cli:2.74.2
+    profiles: ["release"]
+    working_dir: /workspace
+    environment:
+      GH_TOKEN: ${GH_TOKEN:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      BYMR_GH_REPO: ${BYMR_GH_REPO:-}
+      BYMR_GH_REF: ${BYMR_GH_REF:-main}
+      BYMR_GH_WORKFLOW: ${BYMR_GH_WORKFLOW:-build-clients.yml}
+      BYMR_GH_WAIT: ${BYMR_GH_WAIT:-true}
+      BYMR_GH_DOWNLOAD_DIR: ${BYMR_GH_DOWNLOAD_DIR:-dist/desktop-artifacts}
+    volumes:
+      - ./:/workspace
+    command:
+      - sh
+      - -c
+      - |
+        ./scripts/build-desktop-artifacts-via-gh.sh
 
 volumes:
   bymr_postgres_data:

@@ -19,7 +19,7 @@ Objetivo: garantir migração completa sem perda de feature/asset antes da exclu
 - [ ] Fontes (`font_asset`) com licença validada ou substituídas
 - [ ] `morphshapes/*.swf` extraído/convertido (sem SWF em runtime)
 - [ ] Paridade de comandos críticos de base/combat/social validada contra documentação
-- [ ] E2E em Docker: login -> load -> place/move/upgrade/cancel/collect -> save non-critical
+- [ ] E2E em Docker: login -> state(snapshot) -> load -> place/move/upgrade/cancel/collect -> save non-critical
 - [ ] Builds CI: web + desktop (windows/macos) com artifacts válidos
 - [ ] Plano de rollback/cutover atualizado (`docs/08-cutover-plan.md`)
 
@@ -31,9 +31,10 @@ Objetivo: garantir migração completa sem perda de feature/asset antes da exclu
   - `notes`: decisão técnica, risco e justificativa
 
 Status atual desta rodada:
-- `pending`: 448
-- `in_progress`: 4
-- `migrated`: 19
+- `pending`: 442
+- `in_progress`: 7
+- `migrated`: 21
+- `archived`: 1
 
 ## Execução iniciada nesta rodada
 - [x] Comandos autoritativos adicionais migrados: `CancelUpgrade` e `CollectHarvester`
@@ -42,6 +43,23 @@ Status atual desta rodada:
 - [x] Terrain pipeline inicial migrado do legado para runtime novo (`yardbg` + fallback local/CDN)
 - [x] Footprints legados iniciais migrados para validação autoritativa de ocupação (`PlaceBuilding`/`MoveBuilding`) e preview no renderer
 - [x] Smoke test API em Docker: `PlaceBuilding` -> `UpgradeBuilding(defer)` -> `CancelUpgrade` -> `CollectHarvester`
+- [x] Gate de deprecação gradual de `/base/save` para next-client (feature flag `DISABLE_NEXT_CLIENT_BASE_SAVE`)
+- [x] Gate de deprecação gradual de `/base/load` para next-client (feature flag `DISABLE_NEXT_CLIENT_BASE_LOAD`) com fallback legado controlado por capacidade do `/init`
+- [x] `guard:legacy-runtime` integrado ao CI para bloquear regressão de runtime Flash/SWF/storage inseguro
+- [x] Snapshot canônico `GET /api/:apiVersion/state` implementado e cliente novo inicializando preferencialmente por esse contrato
+- [x] Stream canônico `GET /api/:apiVersion/stream` implementado (SSE auth + deltas `/cmd`) e cliente novo conectado com reconexão/dedupe
+- [x] Maproom v3 do cliente novo integrado (`initworldmap/getcells/relocate`) com smoke de regressão dedicado
+- [x] Ações avançadas maproom no cliente novo integradas (`takeoverCell`, `transferassets`, `savebookmarks`) com UI operacional e validação de rota no smoke
+- [x] Combate baseline autoritativo integrado (`combat/start` + `combat/replay/:replayId`) com smoke SSE dedicado
+- [x] Social baseline integrado (`worlds`, `leaderboards`, `attacklogs`) com overlay runtime (`L`) e smoke dedicado
+- [x] Mensageria in-game integrada no overlay social (`threads/read/send/report`) com smoke dedicado
+- [x] Hardening de `/cmd` validado por smoke dedicado (idempotência/seq/anti-replay/rate-limit)
+- [x] Auth hardening: payload inválido de login/registro/reset retorna `400 VALIDATION_ERROR` (sem `500`) + validação de UX no LoginScene
+- [x] Container de orquestração de release desktop (`desktop-release-orchestrator`) para disparar build Windows/macOS via GitHub Actions e baixar artefatos
+- [x] `BUILDINGOPTIONS`/`BUILDINGOPTIONSPOPUP` migrados para painel runtime `Building Ops` no Yard (place/move/upgrade/cancel/collect sem dependência de atalhos ocultos)
+- [x] Catálogo legado inicial de tipos de building migrado (`src/lib/base/buildingType.ts`) com filtro por código/tipo/classe no painel
+- [x] Hardening de erro HTTP no client para envelope `errorDetails` (code/traceId/issues) mantendo mensagens estruturadas no novo client
+- [x] Login server com compatibilidade legada restaurada (senha no login aceita formato legado; política forte mantida em `register/reset`)
 
 ## Validação rápida (comandos)
 ```bash
@@ -56,4 +74,28 @@ docker compose run --rm client sh -lc 'npm ci && npm run typecheck && npm run li
 
 # qualidade do server (via Docker)
 docker compose run --rm server sh -lc 'bun install --frozen-lockfile && bun run typecheck'
+
+# smoke do snapshot canônico (requer stack server ativa)
+./scripts/smoke-state-snapshot.sh
+
+# smoke bootstrap de conta/base (register/login + state + maproom)
+./scripts/smoke-auth-bootstrap.sh
+
+# smoke do stream canônico (SSE + delta de /cmd)
+./scripts/smoke-state-stream.sh
+
+# smoke maproom v3 + ações avançadas (init/getcells/relocate/savebookmarks + guardrails takeover/transfer)
+./scripts/smoke-maproom-v3.sh
+
+# smoke combate autoritativo baseline (start + replay SSE)
+./scripts/smoke-combat-replay.sh
+
+# smoke social baseline (worlds + leaderboards + attacklogs)
+./scripts/smoke-social.sh
+
+# smoke mensageria (targets + threads + read + send + report)
+./scripts/smoke-mail.sh
+
+# smoke hardening do /cmd (idempotência + seq + anti-replay + rate-limit)
+./scripts/smoke-cmd-hardening.sh
 ```

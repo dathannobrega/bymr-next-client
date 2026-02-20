@@ -12,7 +12,15 @@ export class LoginScene {
 
   async run(): Promise<void> {
     const existing = await this.deps.tokenStore.get();
-    if (existing) return;
+    if (existing) {
+      try {
+        const restored = await this.deps.api.login({ token: existing });
+        await this.deps.tokenStore.set(restored.token);
+        return;
+      } catch {
+        await this.deps.tokenStore.set(null);
+      }
+    }
 
     await new Promise<void>((resolve) => {
       const wrapper = document.createElement("div");
@@ -27,12 +35,15 @@ export class LoginScene {
       wrapper.style.color = "#fff";
       wrapper.innerHTML = `
         <h3 style="margin:0 0 8px 0;font-size:14px">Login</h3>
-        <p style="margin:0 0 8px 0;font-size:12px;line-height:1.4">Entre com email/senha (ou token manual para dev).</p>
+        <p style="margin:0 0 8px 0;font-size:12px;line-height:1.4">Entre com email/senha, crie conta, ou use token manual.</p>
+        <input id="bymr-username-input" type="text" placeholder="username (para criar conta)"
+          style="width:100%;box-sizing:border-box;padding:8px;margin-bottom:8px;background:#0f1422;color:#fff;border:1px solid #3a4666" />
         <input id="bymr-email-input" type="email" placeholder="email"
           style="width:100%;box-sizing:border-box;padding:8px;margin-bottom:8px;background:#0f1422;color:#fff;border:1px solid #3a4666" />
         <input id="bymr-password-input" type="password" placeholder="password"
           style="width:100%;box-sizing:border-box;padding:8px;margin-bottom:8px;background:#0f1422;color:#fff;border:1px solid #3a4666" />
         <button id="bymr-login-submit" style="width:100%;padding:8px;background:#3dbe7a;color:#fff;border:none;cursor:pointer;margin-bottom:8px">Entrar com email/senha</button>
+        <button id="bymr-register-submit" style="width:100%;padding:8px;background:#2d8cff;color:#fff;border:none;cursor:pointer;margin-bottom:8px">Criar conta e entrar</button>
         <div style="margin:0 0 8px 0;font-size:11px;color:#9bb1de">ou token manual</div>
         <input id="bymr-token-input" type="password" placeholder="Bearer token"
           style="width:100%;box-sizing:border-box;padding:8px;margin-bottom:8px;background:#0f1422;color:#fff;border:1px solid #3a4666" />
@@ -51,6 +62,13 @@ export class LoginScene {
         if (errorEl) errorEl.textContent = message;
       };
 
+      const setAuthButtonsDisabled = (disabled: boolean) => {
+        const loginBtn = wrapper.querySelector<HTMLButtonElement>("#bymr-login-submit");
+        const registerBtn = wrapper.querySelector<HTMLButtonElement>("#bymr-register-submit");
+        if (loginBtn) loginBtn.disabled = disabled;
+        if (registerBtn) registerBtn.disabled = disabled;
+      };
+
       wrapper.querySelector<HTMLButtonElement>("#bymr-login-submit")?.addEventListener("click", async () => {
         const email = wrapper.querySelector<HTMLInputElement>("#bymr-email-input")?.value.trim() ?? "";
         const password = wrapper.querySelector<HTMLInputElement>("#bymr-password-input")?.value ?? "";
@@ -62,11 +80,50 @@ export class LoginScene {
 
         try {
           setError("");
+          setAuthButtonsDisabled(true);
           const result = await this.deps.api.login({ email, password });
           await this.deps.tokenStore.set(result.token);
           cleanup();
         } catch (error) {
           setError(String((error as Error)?.message ?? error));
+        } finally {
+          setAuthButtonsDisabled(false);
+        }
+      });
+
+      wrapper.querySelector<HTMLButtonElement>("#bymr-register-submit")?.addEventListener("click", async () => {
+        const usernameInput = wrapper.querySelector<HTMLInputElement>("#bymr-username-input")?.value.trim() ?? "";
+        const email = wrapper.querySelector<HTMLInputElement>("#bymr-email-input")?.value.trim() ?? "";
+        const password = wrapper.querySelector<HTMLInputElement>("#bymr-password-input")?.value ?? "";
+        const usernameRaw = usernameInput || buildUsernameFromEmail(email);
+        const username = normalizeUsername(usernameRaw);
+
+        if (!email || !password || !username) {
+          setError("Informe username/email/senha para criar conta.");
+          return;
+        }
+
+        if (username.length < 2 || username.length > 12) {
+          setError("Username deve ter entre 2 e 12 caracteres.");
+          return;
+        }
+
+        if (!isPasswordPolicyValid(password)) {
+          setError("Senha deve ter 8+ caracteres, 1 maiúscula e 1 caractere especial.");
+          return;
+        }
+
+        try {
+          setError("");
+          setAuthButtonsDisabled(true);
+          await this.deps.api.register({ username, email, password });
+          const login = await this.deps.api.login({ email, password });
+          await this.deps.tokenStore.set(login.token);
+          cleanup();
+        } catch (error) {
+          setError(String((error as Error)?.message ?? error));
+        } finally {
+          setAuthButtonsDisabled(false);
         }
       });
 
@@ -90,4 +147,24 @@ export class LoginScene {
       document.body.appendChild(wrapper);
     });
   }
+}
+
+function buildUsernameFromEmail(email: string): string {
+  const local = email.split("@")[0]?.trim() ?? "";
+  const cleaned = normalizeUsername(local);
+  if (cleaned.length >= 2) return cleaned;
+
+  const suffix = Math.floor(Math.random() * 9000) + 1000;
+  return `u${suffix}`;
+}
+
+function normalizeUsername(input: string): string {
+  return input.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 12);
+}
+
+function isPasswordPolicyValid(password: string): boolean {
+  const trimmed = password.trim();
+  if (trimmed.length < 8) return false;
+  if (!/[A-Z]/.test(trimmed)) return false;
+  return /[`~<>?,./!@#$%^&*()\-_=+"'\|{}\[\];:\\]/.test(trimmed);
 }
