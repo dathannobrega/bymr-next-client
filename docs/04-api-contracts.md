@@ -16,6 +16,34 @@ Key endpoints already present include:
 
 **Compatibility note:** legacy save schema expects many fields as stringified JSON; server transforms via Zod.
 
+
+### `POST /init` (version gate + build gate)
+Request:
+```json
+{
+  "apiVersion": "v1.5.0-beta",
+  "runtime": "desktop",
+  "platform": "windows",
+  "clientBuild": "2026.02.20"
+}
+```
+
+Response when blocked:
+```json
+{
+  "versionMismatch": true,
+  "error": "Please update to the latest version. Visit our downloads page to get the latest client.",
+  "requiredClientBuild": "2026.02.20",
+  "downloadUrl": "https://downloads.example.com/bymr"
+}
+```
+
+Rules:
+- Mismatch when `apiVersion` is absent/different from server `getApiVersion()`.
+- Optional build gate via env `REQUIRED_CLIENT_BUILD`.
+- Optional update CTA via env `CLIENT_DOWNLOAD_URL`.
+- HTTP status for mismatch is `426 Upgrade Required` + `code: "VERSION_MISMATCH"`.
+
 ## `/cmd` production contract (server-authoritative)
 ### `POST /api/:apiVersion/cmd`
 Body envelope:
@@ -93,3 +121,7 @@ Returns normalized snapshot without stringified blobs (for new clients only).
 
 ### Websocket/SSE: `/api/:apiVersion/stream`
 Auth + server pushes deltas/events.
+
+
+### Runtime deprecation guard
+- `npm run guard:legacy-runtime` blocks regressions that reintroduce runtime dependency on `client(legacy)`, `.swf` payloads, or insecure token storage (`localStorage/sessionStorage`) in the new client.

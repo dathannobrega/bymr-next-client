@@ -26,7 +26,7 @@ export class BootScene {
     const init = await api.init();
     if (init.versionMismatch) {
       status.text = "Client version mismatch.";
-      this.renderUpdateRequired(init.error);
+      this.renderUpdateRequired(init.error, init.downloadUrl);
       return;
     }
 
@@ -61,7 +61,7 @@ export class BootScene {
     await yard.run();
   }
 
-  private renderUpdateRequired(reason?: string): void {
+  private renderUpdateRequired(reason?: string, downloadUrl?: string): void {
     const wrapper = document.createElement("div");
     wrapper.style.position = "fixed";
     wrapper.style.inset = "0";
@@ -76,6 +76,11 @@ export class BootScene {
         <h2 style="margin:0 0 10px 0;font-size:20px">Update required</h2>
         <p style="margin:0 0 8px 0;font-size:14px;line-height:1.5">Seu cliente está desatualizado para este ambiente. Atualize para continuar.</p>
         ${reason ? `<p style="margin:0 0 14px 0;font-size:12px;color:#b9c3dd">Detalhes: ${escapeHtml(reason)}</p>` : ""}
+        ${
+          downloadUrl
+            ? `<a id="bymr-download" href="${escapeHtml(downloadUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin:0 8px 0 0;padding:10px 14px;background:#18a058;color:#fff;border-radius:8px;text-decoration:none">Baixar cliente</a>`
+            : ""
+        }
         <button id="bymr-reload" style="padding:10px 14px;background:#4a68ff;color:#fff;border:none;border-radius:8px;cursor:pointer">Recarregar</button>
       </div>
     `;

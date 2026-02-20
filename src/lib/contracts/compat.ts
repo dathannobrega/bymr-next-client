@@ -2,10 +2,15 @@ import { z } from "zod";
 
 export const InitRequestSchema = z.object({
   apiVersion: z.string().min(1),
+  runtime: z.enum(["web", "desktop"]).optional(),
+  platform: z.enum(["windows", "macos", "linux", "unknown"]).optional(),
+  clientBuild: z.string().min(1).optional(),
 });
 
 export const InitResponseSchema = z.object({
   debugMode: z.boolean().optional(),
+  requiredClientBuild: z.string().min(1).optional(),
+  downloadUrl: z.string().url().optional(),
   versionMismatch: z.boolean().optional(),
   error: z.string().optional(),
 });

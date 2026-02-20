@@ -45,7 +45,12 @@ export class ApiClient {
   ) {}
 
   async init(): Promise<InitResponse> {
-    const body = InitRequestSchema.parse({ apiVersion: this.config.apiVersion });
+    const body = InitRequestSchema.parse({
+      apiVersion: this.config.apiVersion,
+      runtime: detectRuntime(),
+      platform: detectPlatform(),
+      clientBuild: this.config.clientBuild,
+    });
     const res = await this.requestJson("POST", "/init", body, { auth: false });
     return InitResponseSchema.parse(res);
   }
@@ -213,4 +218,24 @@ function normalizeBearerToken(token: string | null): string | null {
   const lowered = normalized.toLowerCase();
   if (lowered === "null" || lowered === "undefined") return null;
   return normalized;
+}
+
+
+function detectRuntime(): "web" | "desktop" {
+  if (typeof window === "undefined") return "web";
+  return "__TAURI_INTERNALS__" in window ? "desktop" : "web";
+}
+
+function detectPlatform(): "windows" | "macos" | "linux" | "unknown" {
+  if (typeof navigator === "undefined") return "unknown";
+
+  const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
+  const platform = nav.userAgentData?.platform ?? navigator.platform ?? "";
+  const normalized = platform.toLowerCase();
+
+  if (normalized.includes("mac")) return "macos";
+  if (normalized.includes("win")) return "windows";
+  if (normalized.includes("linux")) return "linux";
+
+  return "unknown";
 }

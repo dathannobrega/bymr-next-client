@@ -12,7 +12,8 @@
     "tauri": "tauri",
     "test": "vitest run",
     "prepare:tauri-config": "node scripts/prepare-tauri-config.mjs",
-    "assets:sync-yard": "node scripts/sync-yard-assets.mjs"
+    "assets:sync-yard": "node scripts/sync-yard-assets.mjs",
+    "guard:legacy-runtime": "node scripts/check-no-legacy-runtime.mjs"
   },
   "dependencies": {
     "pixi.js": "^8.16.0",

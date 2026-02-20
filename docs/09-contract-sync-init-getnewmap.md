@@ -8,13 +8,18 @@ Objetivo: espelhar no cliente (`bymr-client-next`) os contratos atualmente imple
 - Método: `POST /init`
 - Request schema (Zod no servidor):
   - `apiVersion?: string`
+  - `runtime?: "web" | "desktop"`
+  - `platform?: "windows" | "macos" | "linux" | "unknown"`
+  - `clientBuild?: string`
 - Regras:
   - se ausente ou diferente da versão esperada -> erro com `versionMismatch: true`
-  - se válida -> retorna `debugMode`
+  - se `REQUIRED_CLIENT_BUILD` estiver definido e `clientBuild` não casar -> erro com `versionMismatch: true`
+  - mismatch usa status `426` e `code: "VERSION_MISMATCH"`
+  - se válida -> retorna `debugMode`, `requiredClientBuild?`, `downloadUrl?`, `versionMismatch: false`
 
 ### Client mirror
-- `InitRequestSchema`: `{ apiVersion: string }` (cliente sempre envia versão)
-- `InitResponseSchema`: `{ debugMode?: boolean; versionMismatch?: boolean; error?: string }`
+- `InitRequestSchema`: `{ apiVersion: string; runtime?: ...; platform?: ...; clientBuild?: string }`
+- `InitResponseSchema`: `{ debugMode?: boolean; requiredClientBuild?: string; downloadUrl?: string; versionMismatch?: boolean; error?: string }`
 
 ## `/api/:apiVersion/bm/getnewmap`
 
