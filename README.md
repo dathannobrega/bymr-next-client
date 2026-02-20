@@ -26,6 +26,12 @@ cp config.local.json.example config.local.json
 
 3. Ajuste `baseUrl`, `apiVersion` e `cdnUrl` conforme o ambiente.
 
+4. (Opcional) Re-sincronize assets de yard para fallback local/web desktop:
+
+```bash
+npm run assets:sync-yard
+```
+
 > O cliente carrega config nesta prioridade: `window.__BYMR_CONFIG__` → `/config.local.json` → variáveis `VITE_BYMR_*`.
 
 ## Executar (Web)
@@ -54,6 +60,18 @@ cp .env.docker.example .env
 docker compose up --build
 ```
 
+Se você usa `docker compose run` em paralelo com o serviço `client`, pode ser útil reiniciar só o client após alterações de dependências:
+```bash
+docker compose restart client
+```
+
+Se o frontend falhar ao subir por `node_modules` corrompido no volume Docker, recrie apenas o volume do client:
+```bash
+docker compose stop client
+docker volume rm bymr-next_bymr_client_node_modules
+docker compose up -d client
+```
+
 3. Acessos:
 - Client (Vite): `http://localhost:5173`
 - API server: `http://localhost:3001`
@@ -80,6 +98,9 @@ npm run tauri build
 ```
 
 Guia de release Windows: [`docs/07-release-windows.md`](docs/07-release-windows.md).
+
+Observação de renderização:
+- O cliente agora empacota tiles de terreno (`public/assets/yardbg/*`) e sprite de building (`public/assets/buildings/yardplanner/top.1.png`) para funcionar sem depender do CDN no runtime desktop.
 
 ### CSP/connect-src por ambiente (Desktop)
 

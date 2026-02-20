@@ -21,11 +21,12 @@
 ### `GET/POST /api/:apiVersion/bm/getnewmap`
 - Status: **OK (compatível)**
 - Contrato principal está espelhado no cliente.
-- Cliente chama sem auth e server mantém rota pública.
+- Cliente agora exige token antes de chamar para evitar erro de bearer inválido no server.
 
 ### `POST /base/load`
 - Status: **Compatível (modo dual)**
 - Contrato novo (`{ baseId, mode }`) suportado para o cliente next.
+- Payload next-client normalizado inclui `yardTheme` para seleção de tiles no renderer.
 - Contrato legado continua suportado para compatibilidade.
 
 ### `POST /base/save`
@@ -40,6 +41,7 @@
 - Rejeição por sequência fora de ordem, anti-replay por nonce e rate-limit por operação.
 - Operações atuais: `PlaceBuilding`, `MoveBuilding`, `UpgradeBuilding`, `CancelUpgrade`, `CollectHarvester`.
 - Retorno em delta canônico (`addBuilding`, `moveBuilding`, `upgradeBuilding`, `startUpgrade`, `cancelUpgrade`, `setResources`).
+- Place/Move agora validam ocupação por `footprint` legado (não apenas 1 tile), com checagem de bounds por área.
 
 ## Segurança / robustez
 - Implementado:

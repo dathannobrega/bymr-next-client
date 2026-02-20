@@ -13,6 +13,8 @@ export type YardBuilding = {
   x: number;
   y: number;
   level?: number;
+  footprintW?: number;
+  footprintH?: number;
   countdownUpgrade?: number;
   upgradeToLevel?: number;
 };
@@ -31,6 +33,7 @@ export type BaseResourceSummary = {
 export type ParsedBaseLoad = {
   yardWidth: number;
   yardHeight: number;
+  yardTheme?: "grass" | "sand" | "lava" | "rock" | "crater";
   buildings: YardBuilding[];
   resources?: BaseResourceSummary;
 };
@@ -65,6 +68,7 @@ export function parseBaseLoadResponse(raw: unknown): ParsedBaseLoad {
   return {
     yardWidth,
     yardHeight,
+    yardTheme: parseYardTheme(obj.yardTheme ?? obj.terrainTheme ?? obj.yardType),
     buildings,
     resources: parseResourceSummary(obj.resources),
   };
@@ -89,6 +93,8 @@ function parseBuilding(value: unknown, yardWidth: number, yardHeight: number): Y
     x,
     y,
     level: optionalNumberFromUnknown(value.level ?? value.Level ?? value.l ?? value.L),
+    footprintW: optionalPositiveNumberFromUnknown(value.footprintW ?? value.fw),
+    footprintH: optionalPositiveNumberFromUnknown(value.footprintH ?? value.fh),
     countdownUpgrade: optionalNumberFromUnknown(
       value.countdownUpgrade ?? value.cU ?? value.countdownupgrade
     ),
@@ -123,6 +129,27 @@ function optionalNumberFromUnknown(value: unknown): number | undefined {
   if (value === undefined || value === null) return undefined;
   const parsed = numberFromUnknown(value, NaN);
   return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+function optionalPositiveNumberFromUnknown(value: unknown): number | undefined {
+  const parsed = optionalNumberFromUnknown(value);
+  if (parsed === undefined) return undefined;
+  return parsed > 0 ? parsed : undefined;
+}
+
+function parseYardTheme(value: unknown): ParsedBaseLoad["yardTheme"] {
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === "grass" ||
+    normalized === "sand" ||
+    normalized === "lava" ||
+    normalized === "rock" ||
+    normalized === "crater"
+  ) {
+    return normalized;
+  }
+  return undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

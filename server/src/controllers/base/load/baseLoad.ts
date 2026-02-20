@@ -25,6 +25,7 @@ import { validateAttack } from "../../../services/maproom/validateAttack.js";
 import { BaseLoadSchema } from "../../../zod/BaseLoadSchema.js";
 import { discordAgeErr } from "../../../errors/errors.js";
 import { coerceBuildingTypeFromRecord } from "../../../utils/buildingType.js";
+import { getLegacyFootprintTilesByCode } from "../../../utils/buildingFootprint.js";
 
 const YARD_WIDTH = 20;
 const YARD_HEIGHT = 14;
@@ -209,6 +210,7 @@ function toNextClientBaseLoad(save: Save) {
   return {
     yardWidth: YARD_WIDTH,
     yardHeight: YARD_HEIGHT,
+    yardTheme: deriveYardTheme(save),
     buildings,
     resources,
   };
@@ -220,6 +222,8 @@ function toNextClientBuildings(save: Save): Array<{
   x: number;
   y: number;
   level?: number;
+  footprintW?: number;
+  footprintH?: number;
   countdownUpgrade?: number;
   upgradeToLevel?: number;
 }> {
@@ -230,6 +234,8 @@ function toNextClientBuildings(save: Save): Array<{
     x: number;
     y: number;
     level?: number;
+    footprintW?: number;
+    footprintH?: number;
     countdownUpgrade?: number;
     upgradeToLevel?: number;
   }> = [];
@@ -245,6 +251,20 @@ function toNextClientBuildings(save: Save): Array<{
 
     const id = String(raw.id ?? key);
     const type = coerceBuildingTypeFromRecord(raw.type, raw.t);
+    const typeCode = parseIntSafe(raw.t, Number.NaN);
+    const defaultFootprint = getLegacyFootprintTilesByCode(
+      Number.isFinite(typeCode) ? typeCode : undefined
+    );
+    const footprintWRaw = parseIntSafe(raw.footprintW ?? raw.fw, Number.NaN);
+    const footprintHRaw = parseIntSafe(raw.footprintH ?? raw.fh, Number.NaN);
+    const footprintW =
+      Number.isFinite(footprintWRaw) && footprintWRaw > 0
+        ? footprintWRaw
+        : defaultFootprint.width;
+    const footprintH =
+      Number.isFinite(footprintHRaw) && footprintHRaw > 0
+        ? footprintHRaw
+        : defaultFootprint.height;
 
     const levelRaw = parseIntSafe(raw.level ?? raw.l, Number.NaN);
     const level = Number.isFinite(levelRaw) && levelRaw > 0 ? levelRaw : undefined;
@@ -265,6 +285,8 @@ function toNextClientBuildings(save: Save): Array<{
       x,
       y,
       ...(level !== undefined ? { level } : {}),
+      ...(footprintW > 1 ? { footprintW } : {}),
+      ...(footprintH > 1 ? { footprintH } : {}),
       ...(countdownUpgrade !== undefined ? { countdownUpgrade } : {}),
       ...(upgradeToLevel !== undefined ? { upgradeToLevel } : {}),
     });
@@ -285,6 +307,20 @@ function toResourceSummary(resources: unknown): Record<string, number> {
     r3max: parseIntSafe(value.r3max, 10000),
     r4max: parseIntSafe(value.r4max, 10000),
   };
+}
+
+function deriveYardTheme(save: Save): "grass" | "sand" | "lava" | "rock" | "crater" {
+  switch (save.type) {
+    case BaseType.INFERNO:
+    case BaseType.INFERNO_TRIBE:
+      return "lava";
+    case BaseType.OUTPOST:
+      return "sand";
+    case BaseType.TRIBE:
+      return "rock";
+    default:
+      return "grass";
+  }
 }
 
 function parseIntSafe(value: unknown, fallback: number): number {

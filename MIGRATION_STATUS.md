@@ -34,6 +34,8 @@ Checklist por épico com referência de PR(s).
 - [x] E02-S01 Grid/isometria/câmera
 - [x] E02-S02 Sprite pipeline v1 (atlas via cdnUrl com fallback seguro)
 - [x] E02-S03 Selection/hover/tooltips
+- [x] E02-S04 Terreno visível + fallback local de asset (`public/assets/yard/building-placeholder.png`) para evitar tela vazia sem CDN
+- [x] E02-S05 Render hardening: câmera responsiva por viewport + textura real de building (`yardplanner/top.1.png`) + temas de terreno (`yardbg/*`) com fallback local/CDN (web + Tauri)
 - PRs: —
 
 ## E03 — Build mode (server authoritative)
@@ -44,6 +46,7 @@ Checklist por épico com referência de PR(s).
 - [x] E03-S03 `UpgradeBuilding` (cliente: Alt+Click no building; server valida e retorna delta)
 - [x] E03-S04 `CancelUpgrade` (`/cmd`, com validação de estado pendente e delta canônico)
 - [x] E03-S05 `CollectHarvester` (`/cmd`, coleta validada server-side + atualização de recursos em delta)
+- [x] E03-S06 `Place/Move` com validação de `footprint` legado (ocupação por área + bounds) e projeção de footprint no renderer
 - PRs: —
 
 ## E04 — Maproom v2/v3
@@ -72,6 +75,9 @@ Checklist por épico com referência de PR(s).
 - [x] Gap A03 resolvido: `POST /base/save` agora aceita payload non-critical com `action/audit` + trilha de auditoria server-side
 - [x] Gap A04 resolvido: LoginScene integrado ao `/api/:apiVersion/player/getinfo` (email/senha), com fallback de token manual para debug
 - [x] Gap A05 resolvido: rotas `worldmapv3/*` saíram de placeholder para fluxo com dados reais de célula/mundo
+- [x] Gap A06 resolvido: `base/load` next-client agora inclui `yardTheme`; cliente renderiza tema do mapa e evita “tela vazia” com fallback robusto de assets
+- [x] Gap A07 resolvido: hardening de auth (`getnewmap` com token obrigatório no client + sanitização `null/undefined`; middleware server reforçado contra bearer inválido)
+- [x] Gap A08 resolvido: migração parcial de footprint legado (`assets/legacy-footprints.json`) aplicada no `/cmd` e no YardScene para reduzir divergência com client antigo
 
 ## Próximos passos sugeridos
 1. Adicionar testes de integração end-to-end (cliente + backend + Redis + Postgres) cobrindo replay/seq/rate-limit do `/cmd`.

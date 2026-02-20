@@ -5,11 +5,30 @@ describe("applyCmdDeltaToBase", () => {
   it("should append building from add delta", () => {
     const next = applyCmdDeltaToBase(
       { yardWidth: 20, yardHeight: 14, buildings: [] },
-      [{ op: "addBuilding", id: "b-1", type: "hq", x: 1, y: 2, level: 1 }]
+      [
+        {
+          op: "addBuilding",
+          id: "b-1",
+          type: "hq",
+          x: 1,
+          y: 2,
+          level: 1,
+          footprintW: 4,
+          footprintH: 4,
+        },
+      ]
     );
 
     expect(next.buildings).toHaveLength(1);
-    expect(next.buildings[0]).toMatchObject({ id: "b-1", type: "hq", x: 1, y: 2, level: 1 });
+    expect(next.buildings[0]).toMatchObject({
+      id: "b-1",
+      type: "hq",
+      x: 1,
+      y: 2,
+      level: 1,
+      footprintW: 4,
+      footprintH: 4,
+    });
   });
 
   it("should apply move and upgrade to existing building", () => {
@@ -20,12 +39,19 @@ describe("applyCmdDeltaToBase", () => {
         buildings: [{ id: "b-1", type: "hq", x: 1, y: 2, level: 1 }],
       },
       [
-        { op: "moveBuilding", id: "b-1", x: 5, y: 6 },
+        { op: "moveBuilding", id: "b-1", x: 5, y: 6, footprintW: 4, footprintH: 4 },
         { op: "upgradeBuilding", id: "b-1", level: 2 },
       ]
     );
 
-    expect(next.buildings[0]).toMatchObject({ id: "b-1", x: 5, y: 6, level: 2 });
+    expect(next.buildings[0]).toMatchObject({
+      id: "b-1",
+      x: 5,
+      y: 6,
+      level: 2,
+      footprintW: 4,
+      footprintH: 4,
+    });
   });
 
   it("should track start/cancel upgrade deltas", () => {

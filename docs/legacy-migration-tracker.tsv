@@ -114,25 +114,25 @@ images/2141.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending
 images/2146.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/2149.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/2151.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
-images/2164_isosand3_isosand3.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2165_inferno_lava4_inferno_lava4.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2166_isosand4_isosand4.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2167_isosand1_isosand1.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2168_isosand2_isosand2.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2169_inferno_lava1_inferno_lava1.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2170_inferno_lava3_inferno_lava3.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2171_inferno_lava2_inferno_lava2.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2172_isograss3_isograss3.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2173_isograss4_isograss4.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2174_isograss1_isograss1.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2175_isograss2_isograss2.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2176_isograss7_isograss7.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2177_isograss5_isograss5.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2178_isograss6_isograss6.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2179_isocrater1_isocrater1.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2180_isorock1_isorock1.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2181_isorock3_isorock3.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2182_isorock2_isorock2.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
+images/2164_isosand3_isosand3.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/sand/2164_isosand3_isosand3.png	Tile legado portado para pipeline local
+images/2165_inferno_lava4_inferno_lava4.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/lava/2165_inferno_lava4_inferno_lava4.png	Tile legado portado para pipeline local
+images/2166_isosand4_isosand4.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/sand/2166_isosand4_isosand4.png	Tile legado portado para pipeline local
+images/2167_isosand1_isosand1.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/sand/2167_isosand1_isosand1.png,src/game/scenes/YardScene.ts	Tile sand legacy integrado ao renderer Pixi com fallback local/CDN
+images/2168_isosand2_isosand2.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/sand/2168_isosand2_isosand2.png	Asset legado copiado para pipeline local (ready para variação de tile)
+images/2169_inferno_lava1_inferno_lava1.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/lava/2169_inferno_lava1_inferno_lava1.png,src/game/scenes/YardScene.ts	Tile lava legado integrado ao tema inferno
+images/2170_inferno_lava3_inferno_lava3.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/lava/2170_inferno_lava3_inferno_lava3.png	Asset legado copiado para variação de tile lava
+images/2171_inferno_lava2_inferno_lava2.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/lava/2171_inferno_lava2_inferno_lava2.png	Tile legado portado para pipeline local
+images/2172_isograss3_isograss3.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/grass/2172_isograss3_isograss3.png	Tile legado portado para pipeline local
+images/2173_isograss4_isograss4.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/grass/2173_isograss4_isograss4.png	Tile legado portado para pipeline local
+images/2174_isograss1_isograss1.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/grass/2174_isograss1_isograss1.png,src/game/scenes/YardScene.ts	Tile grass legado integrado ao renderer base
+images/2175_isograss2_isograss2.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/grass/2175_isograss2_isograss2.png	Asset legado copiado para variação de tile grass
+images/2176_isograss7_isograss7.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/grass/2176_isograss7_isograss7.png	Tile legado portado para pipeline local
+images/2177_isograss5_isograss5.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/grass/2177_isograss5_isograss5.png	Tile legado portado para pipeline local
+images/2178_isograss6_isograss6.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/grass/2178_isograss6_isograss6.png	Tile legado portado para pipeline local
+images/2179_isocrater1_isocrater1.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/crater/2179_isocrater1_isocrater1.png	Tile legado portado para pipeline local
+images/2180_isorock1_isorock1.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/rock/2180_isorock1_isorock1.png	Tile legado portado para pipeline local
+images/2181_isorock3_isorock3.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/rock/2181_isorock3_isorock3.png	Tile legado portado para pipeline local
+images/2182_isorock2_isorock2.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/yardbg/rock/2182_isorock2_isorock2.png	Tile legado portado para pipeline local
 images/2204.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/2206.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/2209.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
@@ -332,13 +332,13 @@ scripts/ACADEMYPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	pending
 scripts/ACHIEVEMENTS.as	core_gameplay_or_flow	split_port	pending		
 scripts/AIATTACKPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	pending		
 scripts/ATTACK.as	core_gameplay_or_flow	split_port	pending		
-scripts/BASE.as	core_gameplay_or_flow	split_port	in_progress	server/src/controllers/cmd/cmd.ts,src/game/scenes/YardScene.ts	Fluxo core de build/cmd migrado parcialmente
+scripts/BASE.as	core_gameplay_or_flow	split_port	in_progress	server/src/controllers/cmd/cmd.ts,server/src/utils/buildingFootprint.ts,src/game/scenes/YardScene.ts	Fluxo core expandido com validação de footprint e render de área
 scripts/BDECORATION.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BEXPIRABLE.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BFOUNDATION.as	building_gameplay_logic	port_rules_and_data	in_progress	server/src/controllers/cmd/cmd.ts,src/game/scenes/YardScene.ts	Fluxo core de build/cmd migrado parcialmente
+scripts/BFOUNDATION.as	building_gameplay_logic	port_rules_and_data	in_progress	server/src/controllers/cmd/cmd.ts,server/src/utils/buildingFootprint.ts,src/lib/base/footprint.ts	Regras de footprint/ocupação migradas parcialmente para contratos autoritativos
 scripts/BHEAVYTRAP.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BMUSHROOM.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BRESOURCE.as	building_gameplay_logic	port_rules_and_data	in_progress	server/src/controllers/cmd/cmd.ts,src/game/scenes/YardScene.ts	Fluxo core de build/cmd migrado parcialmente
+scripts/BRESOURCE.as	building_gameplay_logic	port_rules_and_data	in_progress	server/src/controllers/cmd/cmd.ts,src/lib/game/cmdDelta.ts,src/game/scenes/YardScene.ts	Produção/coleta de resource migrada via CollectHarvester + setResources
 scripts/BSTORAGE.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BTOTEM.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BTOWER.as	building_gameplay_logic	port_rules_and_data	pending		
@@ -353,7 +353,7 @@ scripts/BUILDING117.as	building_gameplay_logic	port_rules_and_data	pending
 scripts/BUILDING118.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING12.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING13.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BUILDING14.as	building_gameplay_logic	port_rules_and_data	in_progress	server/src/controllers/cmd/cmd.ts,src/game/scenes/YardScene.ts	Fluxo core de build/cmd migrado parcialmente
+scripts/BUILDING14.as	building_gameplay_logic	port_rules_and_data	in_progress	src/lib/base/footprint.ts,server/src/utils/buildingFootprint.ts,server/src/controllers/cmd/cmd.ts	TownHall/hq com footprint legado aplicado em place/move server-authoritative
 scripts/BUILDING15.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING16.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING17.as	building_gameplay_logic	port_rules_and_data	pending		

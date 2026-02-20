@@ -28,6 +28,12 @@ import {
   coerceBuildingTypeFromRecord,
   normalizeBuildingTypeInput,
 } from "../../utils/buildingType.js";
+import {
+  type BuildingFootprint,
+  footprintsOverlap,
+  getLegacyFootprintTilesByCode,
+  isFootprintWithinBounds,
+} from "../../utils/buildingFootprint.js";
 
 type BuildingDataRecord = Record<string, unknown>;
 
@@ -37,6 +43,7 @@ type ParsedBuilding = {
   x: number;
   y: number;
   level: number;
+  footprint: BuildingFootprint;
   type: string;
   raw: BuildingDataRecord;
 };
@@ -265,13 +272,14 @@ function handlePlaceBuilding(
   }
   const buildingType = normalizedType.canonicalType;
   const buildingTypeCode = normalizedType.code;
+  const placementFootprint = getLegacyFootprintTilesByCode(buildingTypeCode);
 
-  assertValidTile(args.x, args.y, "INVALID_COORDS");
+  assertValidPlacement(args.x, args.y, placementFootprint, "INVALID_COORDS");
 
   const buildingData = ensureBuildingData(save);
   const buildings = parseBuildings(buildingData);
 
-  if (isTileOccupied(buildings, args.x, args.y)) {
+  if (isPlacementOccupied(buildings, args.x, args.y, placementFootprint)) {
     throw cmdRejection("Tile already occupied", "TILE_OCCUPIED");
   }
 
@@ -289,6 +297,10 @@ function handlePlaceBuilding(
     Y: args.y,
     l: level,
     level,
+    fw: placementFootprint.width,
+    fh: placementFootprint.height,
+    footprintW: placementFootprint.width,
+    footprintH: placementFootprint.height,
     cmdManaged: 1,
   };
 
@@ -300,6 +312,8 @@ function handlePlaceBuilding(
       x: args.x,
       y: args.y,
       level,
+      footprintW: placementFootprint.width,
+      footprintH: placementFootprint.height,
     },
   ];
 }
@@ -308,8 +322,6 @@ function handleMoveBuilding(
   save: Save,
   args: MoveBuildingArgs
 ): CmdDelta[] {
-  assertValidTile(args.toX, args.toY, "INVALID_COORDS");
-
   const buildingData = ensureBuildingData(save);
   const buildings = parseBuildings(buildingData);
   const targetBuilding = findBuildingById(buildings, args.buildingId);
@@ -318,7 +330,17 @@ function handleMoveBuilding(
     throw cmdRejection("Building not found", "BUILDING_NOT_FOUND");
   }
 
-  if (isTileOccupied(buildings, args.toX, args.toY, targetBuilding.id)) {
+  assertValidPlacement(args.toX, args.toY, targetBuilding.footprint, "INVALID_COORDS");
+
+  if (
+    isPlacementOccupied(
+      buildings,
+      args.toX,
+      args.toY,
+      targetBuilding.footprint,
+      targetBuilding.id
+    )
+  ) {
     throw cmdRejection("Tile already occupied", "TILE_OCCUPIED");
   }
 
@@ -326,6 +348,10 @@ function handleMoveBuilding(
   targetBuilding.raw.y = args.toY;
   targetBuilding.raw.X = args.toX;
   targetBuilding.raw.Y = args.toY;
+  targetBuilding.raw.fw = targetBuilding.footprint.width;
+  targetBuilding.raw.fh = targetBuilding.footprint.height;
+  targetBuilding.raw.footprintW = targetBuilding.footprint.width;
+  targetBuilding.raw.footprintH = targetBuilding.footprint.height;
 
   return [
     {
@@ -333,6 +359,8 @@ function handleMoveBuilding(
       id: targetBuilding.id,
       x: args.toX,
       y: args.toY,
+      footprintW: targetBuilding.footprint.width,
+      footprintH: targetBuilding.footprint.height,
     },
   ];
 }
@@ -506,6 +534,8 @@ function parseBuildings(buildingData: Record<string, BuildingDataRecord>): Parse
     const id = String(raw.id ?? key);
     const level = parseIntSafe(raw.level ?? raw.l, 1);
     const type = coerceBuildingTypeFromRecord(raw.type, raw.t);
+    const typeCode = resolveBuildingTypeCode(raw, type);
+    const footprint = parseFootprintFromRaw(raw) ?? getLegacyFootprintTilesByCode(typeCode);
 
     result.push({
       key,
@@ -513,6 +543,7 @@ function parseBuildings(buildingData: Record<string, BuildingDataRecord>): Parse
       x,
       y,
       level: Math.max(1, level),
+      footprint,
       type,
       raw,
     });
@@ -534,15 +565,23 @@ function findBuildingById(buildings: ParsedBuilding[], buildingId: string): Pars
   return null;
 }
 
-function isTileOccupied(
+function isPlacementOccupied(
   buildings: ParsedBuilding[],
   x: number,
   y: number,
+  footprint: BuildingFootprint,
   ignoreBuildingId?: string
 ): boolean {
   return buildings.some((building) => {
     if (ignoreBuildingId && building.id === ignoreBuildingId) return false;
-    return building.x === x && building.y === y;
+    return footprintsOverlap(
+      x,
+      y,
+      footprint,
+      building.x,
+      building.y,
+      building.footprint
+    );
   });
 }
 
@@ -663,10 +702,26 @@ function normalizeResourceBag(resourceBag: Record<string, unknown>): Record<stri
   };
 }
 
-function assertValidTile(x: number, y: number, errorCode: string): void {
-  if (x < 0 || y < 0 || x >= YARD_WIDTH || y >= YARD_HEIGHT) {
+function assertValidPlacement(
+  x: number,
+  y: number,
+  footprint: BuildingFootprint,
+  errorCode: string
+): void {
+  if (!isFootprintWithinBounds(x, y, footprint, YARD_WIDTH, YARD_HEIGHT)) {
     throw cmdRejection("Coordinates are out of bounds", errorCode);
   }
+}
+
+function parseFootprintFromRaw(raw: BuildingDataRecord): BuildingFootprint | null {
+  const width = parseIntSafe(raw.footprintW ?? raw.fw, Number.NaN);
+  const height = parseIntSafe(raw.footprintH ?? raw.fh, Number.NaN);
+  if (!Number.isFinite(width) || !Number.isFinite(height)) return null;
+  if (width <= 0 || height <= 0) return null;
+  return {
+    width,
+    height,
+  };
 }
 
 function cmdRejection(message: string, code: string): Error & { code: string } {

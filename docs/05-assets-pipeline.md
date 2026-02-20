@@ -27,6 +27,20 @@ Maintain `assets/manifest.json`:
 - audio list
 - checksum
 
+Maintain legacy numeric mapping in `assets/legacy-id-map.json`:
+- `buildingTypeMap` (`legacy_id -> semantic_key`)
+- grow this file incrementally while migrating `client(legacy)/images/*` numeric assets.
+
+Maintain legacy footprint mapping in `assets/legacy-footprints.json`:
+- `footprints[buildingType] -> { widthPx, heightPx, width, height }`
+- source: legacy constructors (`BUILDING*.as`) and conversion heuristic documented in file.
+
+Current migration baseline:
+- `assets/manifest.json` now tracks yard v1 assets reused from legacy (`yardbg/*` + `yardplanner/top.1.png`).
+- Client runtime loads terrain/building textures from CDN first and local packaged assets as fallback (works in web + Tauri).
+- Re-sync helper: `npm run assets:sync-yard` (copies `server/public/assets/yardbg` + `yardplanner/top.1.png` to `public/assets/*`).
+- Footprint migration baseline: shared legacy footprint catalog consumed by renderer and `/cmd` occupancy validation.
+
 ## Risks
 - Flash timeline animations need re-authoring (sprite sheets or spine-like data).
 - Fonts may need re-creation.

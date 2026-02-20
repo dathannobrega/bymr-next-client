@@ -77,7 +77,8 @@ Structured error response:
 - Should return normalized shape:
   - `yardWidth`
   - `yardHeight`
-  - `buildings[]`
+  - `yardTheme` (`grass|sand|lava|rock|crater`)
+  - `buildings[]` (including optional `footprintW/footprintH` when available)
 
 ### `POST /base/save`
 - Transitional endpoint for **non-critical** actions only.

@@ -5,6 +5,11 @@ import {
   getPlacementTypeExamples,
   normalizePlacementBuildingTypeInput,
 } from "../../lib/base/buildingType";
+import {
+  getFootprintCells,
+  getLegacyFootprintTilesByType,
+  type BuildingFootprint,
+} from "../../lib/base/footprint";
 import { applyCmdDeltaToBase } from "../../lib/game/cmdDelta";
 import { TILE_H, TILE_W, roundDeterministic, worldToScreen } from "./iso";
 
@@ -24,14 +29,33 @@ type Camera = {
 const MIN_ZOOM = 0.45;
 const MAX_ZOOM = 2.2;
 
+const TERRAIN_ASSET_BY_THEME: Record<NonNullable<ParsedBaseLoad["yardTheme"]>, string[]> = {
+  grass: [
+    "assets/yardbg/grass/2174_isograss1_isograss1.png",
+    "assets/yardbg/grass/2173_isograss4_isograss4.png",
+  ],
+  sand: ["assets/yardbg/sand/2167_isosand1_isosand1.png"],
+  lava: ["assets/yardbg/lava/2169_inferno_lava1_inferno_lava1.png"],
+  rock: ["assets/yardbg/rock/2180_isorock1_isorock1.png"],
+  crater: ["assets/yardbg/crater/2179_isocrater1_isocrater1.png"],
+};
+
+const BUILDING_ASSET_CANDIDATES = [
+  "assets/buildings/yardplanner/top.1.png",
+  "assets/yard/building-placeholder.png",
+];
+
 export class YardScene {
   private world = new Container();
   private overlay = new Container();
   private uiLayer = new Container();
 
   private grid = new Graphics();
+  private terrainSpriteLayer = new Container();
+  private terrainFallbackLayer = new Graphics();
   private buildingLayer = new Container();
-  private buildingTexture: Texture = Texture.WHITE;
+  private buildingTexture: Texture | null = null;
+  private terrainTexture: Texture | null = null;
 
   private tooltip = new Text({ text: "", style: { fill: 0xffffff, fontSize: 13 } as any });
   private tooltipBg = new Graphics();
@@ -54,24 +78,37 @@ export class YardScene {
 
   async run(): Promise<void> {
     const { root, base } = this.deps;
+    const terrainTheme = base.yardTheme ?? "grass";
 
-    const title = new Text({ text: "Yard (isometric v1)", style: { fill: 0xffffff } as any });
+    const title = new Text({
+      text: `Yard (isometric v1) • terrain=${terrainTheme}`,
+      style: { fill: 0xffffff } as any,
+    });
     title.position.set(12, 80);
     root.addChild(title);
 
     this.world.eventMode = "static";
     this.world.hitArea = new Rectangle(-4000, -4000, 8000, 8000);
 
-    this.world.addChild(this.grid, this.buildingLayer);
+    this.world.addChild(
+      this.terrainSpriteLayer,
+      this.terrainFallbackLayer,
+      this.grid,
+      this.buildingLayer
+    );
     this.overlay.addChild(this.hoveredTile, this.selectedTile);
     root.addChild(this.world, this.overlay, this.uiLayer);
 
-    this.buildGrid(base.yardWidth, base.yardHeight);
+    this.terrainTexture = await this.loadTerrainTexture(terrainTheme);
     this.buildingTexture = await this.loadBuildingTexture();
+    this.buildGrid(base.yardWidth, base.yardHeight);
     this.renderBuildings(this.baseState.buildings);
     this.initCamera(base.yardWidth, base.yardHeight);
     this.setupInput(base.yardWidth, base.yardHeight);
     this.setupTooltip();
+
+    const terrainSource = this.terrainTexture ? "texture" : "fallback";
+    const buildingSource = this.buildingTexture ? "texture" : "fallback";
 
     const footer = new Text({
       text: `Buildings: ${base.buildings.length} • Wheel: zoom • Drag: pan • Shift+Click: Place/Move • Alt+Click/U: Upgrade • X: Cancel upgrade • C: Collect • B: type`,
@@ -80,14 +117,36 @@ export class YardScene {
     footer.position.set(12, 110);
     this.statusText.position.set(12, 132);
     this.resourcesText.position.set(12, 154);
-    this.statusText.text = `Build mode: ready • placeType=${this.placementType}`;
+    const placementFootprint = getLegacyFootprintTilesByType(this.placementType);
+    this.statusText.text =
+      `Build mode: ready • placeType=${this.placementType} (${placementFootprint.width}x${placementFootprint.height}) ` +
+      `• terrain=${terrainSource} • buildings=${buildingSource}`;
     this.updateResourcesText();
     this.uiLayer.addChild(footer, this.statusText, this.resourcesText);
   }
 
   private initCamera(cols: number, rows: number): void {
     const center = worldToScreen(cols / 2, rows / 2);
-    this.camera = { x: 640 - center.x, y: 390 - center.y, zoom: 0.9 };
+    const viewport = getViewportSize();
+
+    const mapPixelWidth = (cols + rows) * (TILE_W / 2);
+    const mapPixelHeight = (cols + rows) * (TILE_H / 2) + TILE_H * 2;
+
+    const fitZoom = clamp(
+      roundDeterministic(
+        Math.min((viewport.width * 0.72) / mapPixelWidth, (viewport.height * 0.72) / mapPixelHeight),
+        4
+      ),
+      MIN_ZOOM,
+      1.15
+    );
+
+    this.camera = {
+      x: viewport.width / 2 - center.x * fitZoom,
+      y: viewport.height / 2 - center.y * fitZoom,
+      zoom: fitZoom,
+    };
+
     this.applyCamera();
   }
 
@@ -131,14 +190,26 @@ export class YardScene {
         return;
       }
 
-      this.drawTileOutline(this.hoveredTile, tile.tx, tile.ty, 0x8ab4ff, 2);
-      this.showTooltip(`Tile (${tile.tx}, ${tile.ty})`, current.x + 14, current.y + 14);
+      const hoverFootprint = this.resolveCurrentActionFootprint();
+      this.drawFootprintOutline(this.hoveredTile, tile.tx, tile.ty, hoverFootprint, 0x8ab4ff, 2);
+      this.showTooltip(
+        `Tile (${tile.tx}, ${tile.ty}) • ${hoverFootprint.width}x${hoverFootprint.height}`,
+        current.x + 14,
+        current.y + 14
+      );
     });
 
     this.world.on("click", async (e) => {
       const tile = this.pointerToTile(e.global.x, e.global.y);
       if (!tile) return;
-      this.drawTileOutline(this.selectedTile, tile.tx, tile.ty, 0xf7d774, 3);
+      this.drawFootprintOutline(
+        this.selectedTile,
+        tile.tx,
+        tile.ty,
+        this.resolveCurrentActionFootprint(),
+        0xf7d774,
+        3
+      );
 
       const shiftClick = "shiftKey" in e.nativeEvent && Boolean((e.nativeEvent as MouseEvent).shiftKey);
       if (!shiftClick) return;
@@ -220,13 +291,52 @@ export class YardScene {
   }
 
   private buildGrid(cols: number, rows: number): void {
+    this.terrainSpriteLayer.removeChildren();
+    this.terrainFallbackLayer.clear();
     this.grid.clear();
 
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
         const p = worldToScreen(x, y);
-        this.grid.poly([p.x, p.y, p.x + TILE_W / 2, p.y + TILE_H / 2, p.x, p.y + TILE_H, p.x - TILE_W / 2, p.y + TILE_H / 2]);
-        this.grid.stroke({ width: 1, color: 0x203249, alpha: 0.9 });
+
+        if (this.terrainTexture) {
+          const tileSprite = new Sprite(this.terrainTexture);
+          tileSprite.anchor.set(0.5, 0);
+          tileSprite.position.set(p.x, p.y);
+          tileSprite.width = TILE_W;
+          tileSprite.height = TILE_H;
+          tileSprite.alpha = 0.95;
+          this.terrainSpriteLayer.addChild(tileSprite);
+        } else {
+          const fillColor = (x + y) % 2 === 0 ? 0x1f364e : 0x223d57;
+          this.terrainFallbackLayer.poly([
+            p.x,
+            p.y,
+            p.x + TILE_W / 2,
+            p.y + TILE_H / 2,
+            p.x,
+            p.y + TILE_H,
+            p.x - TILE_W / 2,
+            p.y + TILE_H / 2,
+          ]);
+          this.terrainFallbackLayer.fill({ color: fillColor, alpha: 0.92 });
+        }
+
+        this.grid.poly([
+          p.x,
+          p.y,
+          p.x + TILE_W / 2,
+          p.y + TILE_H / 2,
+          p.x,
+          p.y + TILE_H,
+          p.x - TILE_W / 2,
+          p.y + TILE_H / 2,
+        ]);
+        this.grid.stroke({
+          width: this.terrainTexture ? 0.95 : 1.25,
+          color: this.terrainTexture ? 0x20364f : 0x2a4d71,
+          alpha: this.terrainTexture ? 0.55 : 0.85,
+        });
       }
     }
   }
@@ -236,30 +346,45 @@ export class YardScene {
 
     buildings.forEach((building) => {
       const p = worldToScreen(building.x, building.y);
-      const sprite = new Sprite(this.buildingTexture);
-      sprite.anchor.set(0.5, 0.9);
+      const sprite = new Sprite(this.buildingTexture ?? Texture.WHITE);
+
+      sprite.anchor.set(0.5, this.buildingTexture ? 0.86 : 0.9);
       sprite.position.set(p.x, p.y + TILE_H * 0.58);
+      sprite.width = this.buildingTexture ? 78 : 56;
+      sprite.height = this.buildingTexture ? 74 : 48;
       sprite.eventMode = "static";
       sprite.cursor = "pointer";
-      sprite.tint = 0x8be28d;
+      sprite.tint = this.buildingTexture ? 0xffffff : 0x8be28d;
       sprite.zIndex = building.y * 100 + building.x;
 
       sprite.on("pointerenter", (e) => {
-        sprite.tint = 0xb9f5bb;
+        sprite.tint = this.buildingTexture ? 0xddf7df : 0xb9f5bb;
         const suffix = typeof building.level === "number" ? ` Lv.${building.level}` : "";
+        const footprint = this.resolveFootprintForBuilding(building);
         const pending =
           typeof building.countdownUpgrade === "number" && building.countdownUpgrade > 0
             ? ` -> Lv.${building.upgradeToLevel ?? "?"} (${building.countdownUpgrade}s)`
             : "";
-        this.showTooltip(`${building.type} #${building.id}${suffix}${pending}`, e.global.x + 14, e.global.y + 14);
+        this.showTooltip(
+          `${building.type} #${building.id}${suffix} ${footprint.width}x${footprint.height}${pending}`,
+          e.global.x + 14,
+          e.global.y + 14
+        );
       });
       sprite.on("pointerleave", () => {
-        sprite.tint = 0x8be28d;
+        sprite.tint = this.buildingTexture ? 0xffffff : 0x8be28d;
         this.hideTooltip();
       });
       sprite.on("click", async (e) => {
         this.selectedBuildingId = building.id;
-        this.drawTileOutline(this.selectedTile, building.x, building.y, 0xf7d774, 3);
+        this.drawFootprintOutline(
+          this.selectedTile,
+          building.x,
+          building.y,
+          this.resolveFootprintForBuilding(building),
+          0xf7d774,
+          3
+        );
 
         const altClick = "altKey" in e.nativeEvent && Boolean((e.nativeEvent as MouseEvent).altKey);
         if (!altClick) return;
@@ -273,21 +398,79 @@ export class YardScene {
     this.buildingLayer.sortableChildren = true;
   }
 
-  private async loadBuildingTexture(): Promise<Texture> {
-    const atlasUrl = new URL("/assets/yard/building-placeholder.png", this.deps.cdnUrl).toString();
+  private async loadTerrainTexture(theme: NonNullable<ParsedBaseLoad["yardTheme"]>): Promise<Texture | null> {
+    const candidates = [...(TERRAIN_ASSET_BY_THEME[theme] ?? []), ...TERRAIN_ASSET_BY_THEME.grass];
+    return this.loadFirstRenderableTexture(candidates);
+  }
 
-    try {
-      return await Assets.load(atlasUrl);
-    } catch {
-      return Texture.WHITE;
+  private async loadBuildingTexture(): Promise<Texture | null> {
+    return this.loadFirstRenderableTexture(BUILDING_ASSET_CANDIDATES);
+  }
+
+  private async loadFirstRenderableTexture(relativePaths: string[]): Promise<Texture | null> {
+    const seenUrls = new Set<string>();
+
+    for (const relativePath of relativePaths) {
+      for (const candidateUrl of buildAssetCandidateUrls(this.deps.cdnUrl, relativePath)) {
+        if (seenUrls.has(candidateUrl)) continue;
+        seenUrls.add(candidateUrl);
+
+        try {
+          const texture = await Assets.load(candidateUrl);
+          if (isRenderableTexture(texture)) {
+            return texture;
+          }
+        } catch {
+          // Try next candidate URL.
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private drawFootprintOutline(
+    target: Graphics,
+    tx: number,
+    ty: number,
+    footprint: BuildingFootprint,
+    color: number,
+    width: number
+  ): void {
+    target.clear();
+
+    const cells = getFootprintCells(tx, ty, footprint);
+    for (const cell of cells) {
+      const p = worldToScreen(cell.x, cell.y);
+      target.poly([
+        p.x,
+        p.y,
+        p.x + TILE_W / 2,
+        p.y + TILE_H / 2,
+        p.x,
+        p.y + TILE_H,
+        p.x - TILE_W / 2,
+        p.y + TILE_H / 2,
+      ]);
+      target.stroke({ width, color, alpha: 0.95 });
     }
   }
 
-  private drawTileOutline(target: Graphics, tx: number, ty: number, color: number, width: number): void {
-    const p = worldToScreen(tx, ty);
-    target.clear();
-    target.poly([p.x, p.y, p.x + TILE_W / 2, p.y + TILE_H / 2, p.x, p.y + TILE_H, p.x - TILE_W / 2, p.y + TILE_H / 2]);
-    target.stroke({ width, color, alpha: 0.95 });
+  private resolveCurrentActionFootprint(): BuildingFootprint {
+    const selected = this.getSelectedBuilding();
+    if (selected) {
+      return this.resolveFootprintForBuilding(selected);
+    }
+    return getLegacyFootprintTilesByType(this.placementType);
+  }
+
+  private resolveFootprintForBuilding(building: YardBuilding): BuildingFootprint {
+    const width = building.footprintW;
+    const height = building.footprintH;
+    if (typeof width === "number" && width > 0 && typeof height === "number" && height > 0) {
+      return { width, height };
+    }
+    return getLegacyFootprintTilesByType(building.type);
   }
 
   private setupTooltip(): void {
@@ -336,9 +519,13 @@ export class YardScene {
   }
 
   private getSelectedBuildingId(): string | null {
+    return this.getSelectedBuilding()?.id ?? null;
+  }
+
+  private getSelectedBuilding(): YardBuilding | null {
     if (!this.selectedBuildingId) return null;
     const found = this.baseState.buildings.find((b) => b.id === this.selectedBuildingId);
-    return found ? found.id : null;
+    return found ?? null;
   }
 
   private async executeUpgradeForSelected(): Promise<void> {
@@ -407,7 +594,8 @@ export class YardScene {
     }
 
     this.placementType = normalized.canonicalType;
-    this.statusText.text = `placeType atualizado: ${this.placementType}`;
+    const footprint = getLegacyFootprintTilesByType(this.placementType);
+    this.statusText.text = `placeType atualizado: ${this.placementType} (${footprint.width}x${footprint.height})`;
   }
 }
 
@@ -419,4 +607,50 @@ function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   const tag = target.tagName.toLowerCase();
   return target.isContentEditable || tag === "input" || tag === "textarea" || tag === "select";
+}
+
+function getViewportSize(): { width: number; height: number } {
+  const width = typeof window !== "undefined" ? Math.max(window.innerWidth, 320) : 1280;
+  const height = typeof window !== "undefined" ? Math.max(window.innerHeight, 240) : 720;
+  return { width, height };
+}
+
+function buildAssetCandidateUrls(cdnUrl: string, relativePath: string): string[] {
+  const normalizedPath = relativePath.replace(/^\/+/, "");
+  const urls: string[] = [];
+
+  try {
+    urls.push(new URL(normalizedPath, ensureTrailingSlash(cdnUrl)).toString());
+  } catch {
+    // Ignore malformed CDN URL and continue with runtime-local resolution.
+  }
+
+  const runtimeUrl = resolveRuntimeAssetUrl(normalizedPath);
+  if (runtimeUrl) {
+    urls.push(runtimeUrl);
+  }
+
+  return [...new Set(urls)];
+}
+
+function resolveRuntimeAssetUrl(relativePath: string): string | null {
+  const normalizedPath = relativePath.replace(/^\/+/, "");
+
+  if (typeof window === "undefined") {
+    return `/${normalizedPath}`;
+  }
+
+  try {
+    return new URL(normalizedPath, window.location.href).toString();
+  } catch {
+    return `/${normalizedPath}`;
+  }
+}
+
+function ensureTrailingSlash(url: string): string {
+  return url.endsWith("/") ? url : `${url}/`;
+}
+
+function isRenderableTexture(texture: Texture): boolean {
+  return texture.width > 2 && texture.height > 2;
 }

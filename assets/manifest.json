@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "generatedAt": "2026-02-20",
+  "atlases": [
+    {
+      "id": "yard-v1",
+      "description": "Base yard rendering assets reused from legacy client",
+      "entries": [
+        "assets/buildings/yardplanner/top.1.png",
+        "assets/yardbg/grass/2174_isograss1_isograss1.png",
+        "assets/yardbg/sand/2167_isosand1_isosand1.png",
+        "assets/yardbg/lava/2169_inferno_lava1_inferno_lava1.png",
+        "assets/yardbg/rock/2180_isorock1_isorock1.png",
+        "assets/yardbg/crater/2179_isocrater1_isocrater1.png"
+      ]
+    }
+  ],
+  "audio": [],
+  "legacyCatalogs": [
+    "assets/legacy-id-map.json",
+    "assets/legacy-footprints.json"
+  ],
+  "checksum": {
+    "algorithm": "sha256",
+    "value": "pending"
+  }
+}

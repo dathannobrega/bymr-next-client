@@ -121,7 +121,12 @@ services:
       - sh
       - -c
       - |
-        npm ci
+        if [ ! -x node_modules/.bin/vite ] || [ ! -x node_modules/.bin/tsc ]; then
+          echo "[client] Installing dependencies..."
+          npm ci --no-audit --no-fund
+        else
+          echo "[client] Reusing existing node_modules volume."
+        fi
         npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
 
   server-seed:

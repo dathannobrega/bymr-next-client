@@ -21,11 +21,7 @@ import { Env } from "../enums/Env.js";
  * @throws Will throw an error if the Authorization header is missing or invalid, or if the user cannot be found.
  */
 export const verifyUserAuth = async (ctx: Context, next: Next) => {
-  const authHeader = ctx.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) throw authFailureErr();
-
-  const token = authHeader.replace("Bearer ", "");
+  const token = extractBearerToken(ctx.headers.authorization, authFailureErr);
 
   const decodedToken = verifyJwtToken(token);
   const storedToken = await redis.get(
@@ -60,12 +56,7 @@ export const verifyUserAuth = async (ctx: Context, next: Next) => {
  * @throws {Error} Throws `discordAgeErr` if the user's Discord account creation date does not meet the requirement.
  */
 export const verifyAccountStatus = async (ctx: Context, next: Next) => {
-  const authHeader = ctx.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer "))
-    throw tokenAuthFailureErr();
-
-  const token = authHeader.replace("Bearer ", "");
+  const token = extractBearerToken(ctx.headers.authorization, tokenAuthFailureErr);
   const decodedToken = verifyJwtToken(token);
 
   if (!decodedToken.user.meetsDiscordAgeCheck) throw discordAgeErr();
@@ -121,3 +112,17 @@ export const verifyJwtToken = (token: string): BymJwtPayload => {
     throw tokenAuthFailureErr();
   }
 };
+
+function extractBearerToken(
+  authHeader: string | undefined,
+  errorFactory: () => Error
+): string {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    throw errorFactory();
+  }
+
+  const token = authHeader.slice("Bearer ".length).trim();
+  if (!token) throw errorFactory();
+  if (token === "null" || token === "undefined") throw errorFactory();
+  return token;
+}

@@ -55,15 +55,35 @@ describe("parseBaseLoadResponse legacy compatibility", () => {
         r4max: 1000,
       },
       buildings: [
-        { id: "b-1", type: "hq", x: 1, y: 1, level: 2, cU: 120, upgradeToLevel: 3 },
+        {
+          id: "b-1",
+          type: "hq",
+          x: 1,
+          y: 1,
+          level: 2,
+          cU: 120,
+          upgradeToLevel: 3,
+          footprintW: 4,
+          footprintH: 4,
+        },
       ],
     });
 
     expect(parsed.resources).toMatchObject({ r1: 50, r2: 60, r3: 70, r4: 80 });
     expect(parsed.buildings[0]).toMatchObject({
       id: "b-1",
+      footprintW: 4,
+      footprintH: 4,
       countdownUpgrade: 120,
       upgradeToLevel: 3,
     });
+  });
+
+  it("should parse yard theme with safe fallback", () => {
+    const parsed = parseBaseLoadResponse({ yardTheme: "lava" });
+    const fallback = parseBaseLoadResponse({ yardTheme: "unknown-theme" });
+
+    expect(parsed.yardTheme).toBe("lava");
+    expect(fallback.yardTheme).toBeUndefined();
   });
 });

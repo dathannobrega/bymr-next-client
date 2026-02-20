@@ -52,7 +52,7 @@ export class ApiClient {
 
   async getNewMap(): Promise<GetNewMapResponse> {
     const path = `/api/${encodeURIComponent(this.config.apiVersion)}/bm/getnewmap`;
-    const res = await this.requestJson("GET", path, undefined, { auth: false });
+    const res = await this.requestJson("GET", path);
     return GetNewMapResponseSchema.parse(res);
   }
 
@@ -147,8 +147,12 @@ export class ApiClient {
 
     const useAuth = opts?.auth ?? true;
     if (useAuth) {
-      const token = await this.tokenStore.get();
+      const rawToken = await this.tokenStore.get();
+      const token = normalizeBearerToken(rawToken);
       if (!token) {
+        if (rawToken !== null) {
+          await this.tokenStore.set(null);
+        }
         throw new Error(`Missing auth token (${method} ${path})`);
       }
       headers.Authorization = `Bearer ${token}`;
@@ -199,4 +203,14 @@ export class ApiClient {
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
+}
+
+function normalizeBearerToken(token: string | null): string | null {
+  if (!token) return null;
+  const normalized = token.trim();
+  if (!normalized) return null;
+
+  const lowered = normalized.toLowerCase();
+  if (lowered === "null" || lowered === "undefined") return null;
+  return normalized;
 }

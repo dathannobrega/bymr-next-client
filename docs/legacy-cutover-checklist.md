@@ -31,14 +31,16 @@ Objetivo: garantir migração completa sem perda de feature/asset antes da exclu
   - `notes`: decisão técnica, risco e justificativa
 
 Status atual desta rodada:
-- `pending`: 467
+- `pending`: 448
 - `in_progress`: 4
-- `migrated`: 0
+- `migrated`: 19
 
 ## Execução iniciada nesta rodada
 - [x] Comandos autoritativos adicionais migrados: `CancelUpgrade` e `CollectHarvester`
 - [x] Delta canônico ampliado: `startUpgrade`, `cancelUpgrade`, `setResources`
 - [x] Cliente integrado com atalhos de operação e render de recursos/upgrade pendente
+- [x] Terrain pipeline inicial migrado do legado para runtime novo (`yardbg` + fallback local/CDN)
+- [x] Footprints legados iniciais migrados para validação autoritativa de ocupação (`PlaceBuilding`/`MoveBuilding`) e preview no renderer
 - [x] Smoke test API em Docker: `PlaceBuilding` -> `UpgradeBuilding(defer)` -> `CancelUpgrade` -> `CollectHarvester`
 
 ## Validação rápida (comandos)

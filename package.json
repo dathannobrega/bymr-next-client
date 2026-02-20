@@ -11,7 +11,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "tauri": "tauri",
     "test": "vitest run",
-    "prepare:tauri-config": "node scripts/prepare-tauri-config.mjs"
+    "prepare:tauri-config": "node scripts/prepare-tauri-config.mjs",
+    "assets:sync-yard": "node scripts/sync-yard-assets.mjs"
   },
   "dependencies": {
     "pixi.js": "^8.16.0",

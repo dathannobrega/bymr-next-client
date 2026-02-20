@@ -24,11 +24,19 @@ export function applyCmdDeltaToBase(base: ParsedBaseLoad, delta: CmdDeltaItem[])
       const buildingId = typeof item.id === "string" ? item.id : null;
       const x = toNumber(item.x);
       const y = toNumber(item.y);
+      const footprintW = toNumber(item.footprintW);
+      const footprintH = toNumber(item.footprintH);
       if (!buildingId || x === null || y === null) return;
 
       const index = nextBuildings.findIndex((b) => b.id === buildingId);
       if (index < 0) return;
-      nextBuildings[index] = { ...nextBuildings[index], x, y };
+      nextBuildings[index] = {
+        ...nextBuildings[index],
+        x,
+        y,
+        ...(footprintW !== null ? { footprintW } : {}),
+        ...(footprintH !== null ? { footprintH } : {}),
+      };
       return;
     }
 
@@ -110,6 +118,8 @@ function parseBuilding(raw: CmdDeltaItem): YardBuilding | null {
   if (!id || !type || x === null || y === null) return null;
 
   const level = toNumber(raw.level);
+  const footprintW = toNumber(raw.footprintW);
+  const footprintH = toNumber(raw.footprintH);
   const countdownUpgrade = toNumber(raw.countdownUpgrade ?? raw.cU);
   const upgradeToLevel = toNumber(raw.upgradeToLevel);
   return {
@@ -118,6 +128,8 @@ function parseBuilding(raw: CmdDeltaItem): YardBuilding | null {
     x,
     y,
     ...(level !== null ? { level } : {}),
+    ...(footprintW !== null ? { footprintW } : {}),
+    ...(footprintH !== null ? { footprintH } : {}),
     ...(countdownUpgrade !== null ? { countdownUpgrade } : {}),
     ...(upgradeToLevel !== null ? { upgradeToLevel } : {}),
   };

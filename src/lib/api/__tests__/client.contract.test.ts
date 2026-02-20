@@ -34,6 +34,7 @@ describe("ApiClient contracts", () => {
 
   it("/bm/getnewmap should reject invalid schema", async () => {
     const tokenStore = new MemoryTokenStore();
+    await tokenStore.set("dev-token");
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -46,6 +47,15 @@ describe("ApiClient contracts", () => {
 
     const api = new ApiClient(config, tokenStore);
     await expect(api.getNewMap()).rejects.toThrowError();
+  });
+
+  it("should clear invalid persisted token sentinels", async () => {
+    const tokenStore = new MemoryTokenStore();
+    await tokenStore.set("null");
+
+    const api = new ApiClient(config, tokenStore);
+    await expect(api.baseLoad("home", "view")).rejects.toThrow("Missing auth token");
+    await expect(tokenStore.get()).resolves.toBeNull();
   });
 
   it("login should call /player/getinfo and persist token shape", async () => {
