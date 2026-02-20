@@ -40,6 +40,31 @@ Build de produção web:
 npm run build
 ```
 
+## Executar stack completa (Client + Server + Bancos) com Docker
+
+1. Opcional: copie variáveis de exemplo:
+
+```bash
+cp .env.docker.example .env
+```
+
+2. Suba os serviços:
+
+```bash
+docker compose up --build
+```
+
+3. Acessos:
+- Client (Vite): `http://localhost:5173`
+- API server: `http://localhost:3001`
+- Postgres: `localhost:5432`
+- Redis: `localhost:6379`
+- pgAdmin (profile `tools`): `http://localhost:8080`
+
+Perfis opcionais:
+- Seed de banco: `docker compose --profile seed up server-seed`
+- pgAdmin: `docker compose --profile tools up -d pgadmin`
+
 ## Executar (Desktop / Tauri)
 
 Modo desenvolvimento desktop:
@@ -91,6 +116,7 @@ npm run build
 - Release desktop: [`docs/07-release-windows.md`](docs/07-release-windows.md)
 - Cutover legado: [`docs/08-cutover-plan.md`](docs/08-cutover-plan.md)
 - Contratos `/init` e `/bm/getnewmap`: [`docs/09-contract-sync-init-getnewmap.md`](docs/09-contract-sync-init-getnewmap.md)
+- Auditoria de integração (cliente/server): [`docs/10-integration-audit.md`](docs/10-integration-audit.md)
 
 ## Status da migração
 

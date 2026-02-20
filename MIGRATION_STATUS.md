@@ -14,6 +14,7 @@ Checklist por épico com referência de PR(s).
 - [x] E00-S02 Quality gates (lint/typecheck + vitest)
 - [x] E00-S03 README/onboarding restaurado
 - [x] E00-S04 CI GitHub Actions com `npm ci`, `typecheck`, `lint`, `test`, `build`
+- [x] E00-S05 Docker Compose unificado na raiz (`client` + `server` + `postgres` + `redis`)
 - PRs: [PR fase 0/1](pending)
 
 ## E01 — Compatibility bootstrap
@@ -59,6 +60,13 @@ Checklist por épico com referência de PR(s).
 - [ ] Version gate final via `/init`
 - [ ] Deprecação de `baseSave` para novo cliente
 - PRs: —
+
+## Auditoria de integração cliente <-> server (2026-02-20)
+- [ ] Gap A01: `/api/:apiVersion/cmd` ainda não existe no backend (cliente já envia `PlaceBuilding/MoveBuilding/UpgradeBuilding`)
+- [ ] Gap A02: contrato de `POST /base/load` divergente (cliente envia `{ baseId, mode }`; server espera `{ baseid, type, userid }`)
+- [ ] Gap A03: contrato de `POST /base/save` divergente (cliente envia payload non-critical com `action/audit`; server espera schema legado Flash)
+- [ ] Gap A04: LoginScene ainda usa input manual de token; fluxo login por `/api/:apiVersion/player/getinfo` não está integrado no cliente
+- [ ] Gap A05: respostas de MR3 no server ainda estão em modo placeholder (`/worldmapv3/*`)
 
 ## Próximos passos sugeridos
 1. Publicar no backend `/api/:apiVersion/cmd` as validações autoritativas e idempotência Redis por `userId + idempotencyKey`.

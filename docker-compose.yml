@@ -1,0 +1,181 @@
+name: bymr-next
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${BYMR_DB_NAME:-bym}
+      POSTGRES_USER: ${BYMR_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${BYMR_DB_PASSWORD:-dev12345}
+    ports:
+      - "${BYMR_DB_PORT:-5432}:5432"
+    volumes:
+      - bymr_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${BYMR_DB_USER:-postgres} -d ${BYMR_DB_NAME:-bym}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "${BYMR_REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  server-init:
+    image: oven/bun:1
+    working_dir: /workspace/server
+    environment:
+      ENV: ${BYMR_ENV:-local}
+      BASE_URL: ${BYMR_SERVER_BASE_URL:-http://localhost}
+      PORT: 3001
+      SECRET_KEY: ${BYMR_SECRET_KEY:-local-dev-secret-change-me}
+      SESSION_LIFETIME: ${BYMR_SESSION_LIFETIME:-30d}
+      DB_NAME: ${BYMR_DB_NAME:-bym}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${BYMR_DB_USER:-postgres}
+      DB_PASSWORD: ${BYMR_DB_PASSWORD:-dev12345}
+      REDIS_URL: redis://redis:6379
+      USE_VERSION_MANAGEMENT: ${BYMR_USE_VERSION_MANAGEMENT:-enabled}
+      AVATAR_URL: ${BYMR_AVATAR_URL:-https://api.dicebear.com/9.x/bottts-neutral/jpg}
+    volumes:
+      - ./server:/workspace/server
+      - bymr_server_node_modules:/workspace/server/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - |
+        bun install --frozen-lockfile
+        (bun --bun x mikro-orm schema:create -r || true)
+        bun --bun x mikro-orm migration:up
+    restart: "no"
+
+  server:
+    image: oven/bun:1
+    working_dir: /workspace/server
+    restart: unless-stopped
+    environment:
+      ENV: ${BYMR_ENV:-local}
+      BASE_URL: ${BYMR_SERVER_BASE_URL:-http://localhost}
+      PORT: 3001
+      SECRET_KEY: ${BYMR_SECRET_KEY:-local-dev-secret-change-me}
+      SESSION_LIFETIME: ${BYMR_SESSION_LIFETIME:-30d}
+      DB_NAME: ${BYMR_DB_NAME:-bym}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${BYMR_DB_USER:-postgres}
+      DB_PASSWORD: ${BYMR_DB_PASSWORD:-dev12345}
+      REDIS_URL: redis://redis:6379
+      USE_VERSION_MANAGEMENT: ${BYMR_USE_VERSION_MANAGEMENT:-enabled}
+      AVATAR_URL: ${BYMR_AVATAR_URL:-https://api.dicebear.com/9.x/bottts-neutral/jpg}
+    volumes:
+      - ./server:/workspace/server
+      - bymr_server_node_modules:/workspace/server/node_modules
+    ports:
+      - "${BYMR_SERVER_PORT:-3001}:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      server-init:
+        condition: service_completed_successfully
+    command:
+      - sh
+      - -c
+      - |
+        bun install --frozen-lockfile
+        bun src/server.ts
+
+  client:
+    image: node:20-alpine
+    working_dir: /workspace
+    restart: unless-stopped
+    environment:
+      VITE_BYMR_BASE_URL: ${BYMR_CLIENT_BASE_URL:-http://localhost:3001}
+      VITE_BYMR_API_VERSION: ${BYMR_API_VERSION:-v1.5.0-beta}
+      VITE_BYMR_CDN_URL: ${BYMR_CLIENT_CDN_URL:-http://localhost:3001}
+      VITE_BYMR_DEBUG: ${BYMR_CLIENT_DEBUG:-true}
+      VITE_BYMR_ALLOWED_CONNECT_ORIGINS: ${BYMR_ALLOWED_ORIGINS:-http://localhost:3001}
+    volumes:
+      - ./:/workspace
+      - bymr_client_node_modules:/workspace/node_modules
+    ports:
+      - "${BYMR_CLIENT_PORT:-5173}:5173"
+    depends_on:
+      server:
+        condition: service_started
+    command:
+      - sh
+      - -c
+      - |
+        npm ci
+        npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
+
+  server-seed:
+    image: oven/bun:1
+    profiles: ["seed"]
+    working_dir: /workspace/server
+    environment:
+      ENV: ${BYMR_ENV:-local}
+      BASE_URL: ${BYMR_SERVER_BASE_URL:-http://localhost}
+      PORT: 3001
+      SECRET_KEY: ${BYMR_SECRET_KEY:-local-dev-secret-change-me}
+      SESSION_LIFETIME: ${BYMR_SESSION_LIFETIME:-30d}
+      DB_NAME: ${BYMR_DB_NAME:-bym}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${BYMR_DB_USER:-postgres}
+      DB_PASSWORD: ${BYMR_DB_PASSWORD:-dev12345}
+      REDIS_URL: redis://redis:6379
+      USE_VERSION_MANAGEMENT: ${BYMR_USE_VERSION_MANAGEMENT:-enabled}
+      AVATAR_URL: ${BYMR_AVATAR_URL:-https://api.dicebear.com/9.x/bottts-neutral/jpg}
+    volumes:
+      - ./server:/workspace/server
+      - bymr_server_node_modules:/workspace/server/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      server-init:
+        condition: service_completed_successfully
+    command:
+      - sh
+      - -c
+      - |
+        bun install --frozen-lockfile
+        bun run db:seed
+    restart: "no"
+
+  pgadmin:
+    image: dpage/pgadmin4:9.4
+    profiles: ["tools"]
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${BYMR_PGADMIN_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${BYMR_PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "${BYMR_PGADMIN_PORT:-8080}:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - bymr_pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  bymr_postgres_data:
+  bymr_server_node_modules:
+  bymr_client_node_modules:
+  bymr_pgadmin_data:
