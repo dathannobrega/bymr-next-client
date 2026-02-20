@@ -5,6 +5,8 @@ export type ClientConfig = {
   apiVersion: string;
   /** Example: http://localhost:3001 (or CDN host) */
   cdnUrl: string;
+  /** Optional build identifier used in version gate and telemetry. */
+  clientBuild?: string;
   /** Enable verbose logs in client */
   debug: boolean;
   /** Extra strict allowlist for XHR/fetch destinations. */
@@ -24,6 +26,7 @@ export async function loadClientConfig(): Promise<ClientConfig> {
     baseUrl: import.meta.env.VITE_BYMR_BASE_URL,
     apiVersion: import.meta.env.VITE_BYMR_API_VERSION,
     cdnUrl: import.meta.env.VITE_BYMR_CDN_URL,
+    clientBuild: import.meta.env.VITE_BYMR_CLIENT_BUILD,
     debug: import.meta.env.VITE_BYMR_DEBUG === "true",
     allowedConnectOrigins: parseCsv(import.meta.env.VITE_BYMR_ALLOWED_CONNECT_ORIGINS),
   };
@@ -32,6 +35,7 @@ export async function loadClientConfig(): Promise<ClientConfig> {
     baseUrl: "http://localhost:3001",
     apiVersion: "v1.5.0-beta",
     cdnUrl: "http://localhost:3001",
+    clientBuild: "dev",
     debug: true,
     ...fromEnv,
     ...fromFile,

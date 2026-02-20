@@ -65,7 +65,8 @@ Checklist por épico com referência de PR(s).
 - [x] E10-S00 DesktopSecureTokenStore com keyring/keychain (Tauri command)
 - [x] E10-S01 Baseline de connect-src mais restrito e parametrizado por ambiente (CSP Tauri + allowlist runtime)
 - [x] `/cmd` completo e auditoria
-- [ ] Version gate final via `/init`
+- [x] Version gate final via `/init` (apiVersion + build gate opcional + CTA de download)
+- [x] E10-S02 Guardrail automatizado contra regressão legado em runtime (`npm run guard:legacy-runtime`)
 - [ ] Deprecação de `baseSave` para novo cliente
 - PRs: —
 
@@ -78,9 +79,10 @@ Checklist por épico com referência de PR(s).
 - [x] Gap A06 resolvido: `base/load` next-client agora inclui `yardTheme`; cliente renderiza tema do mapa e evita “tela vazia” com fallback robusto de assets
 - [x] Gap A07 resolvido: hardening de auth (`getnewmap` com token obrigatório no client + sanitização `null/undefined`; middleware server reforçado contra bearer inválido)
 - [x] Gap A08 resolvido: migração parcial de footprint legado (`assets/legacy-footprints.json`) aplicada no `/cmd` e no YardScene para reduzir divergência com client antigo
+- [x] Gap A09 resolvido: `/init` expandido com metadados de runtime/plataforma/build + gate opcional de build e `downloadUrl` para update UX
 
 ## Próximos passos sugeridos
 1. Adicionar testes de integração end-to-end (cliente + backend + Redis + Postgres) cobrindo replay/seq/rate-limit do `/cmd`.
 2. Assinar envelopes `/cmd` (nonce + assinatura) para hardening anti-replay em release futura.
-3. Fechar `version gate` final via `/init` no cutover.
+3. Integrar `guard:legacy-runtime` no CI para bloquear regressão de dependências Flash/SWF.
 4. Planejar deprecação das rotas legado de save para o cliente novo após telemetria de adoção.

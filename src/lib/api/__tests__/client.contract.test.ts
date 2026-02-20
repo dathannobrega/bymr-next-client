@@ -6,6 +6,7 @@ const config = {
   baseUrl: "https://bymr.local",
   apiVersion: "v-test",
   cdnUrl: "https://cdn.local",
+  clientBuild: "test-build",
   debug: false,
   allowedConnectOrigins: ["https://bymr.local", "https://cdn.local"],
 };
@@ -15,21 +16,35 @@ afterEach(() => {
 });
 
 describe("ApiClient contracts", () => {
-  it("/init should validate a valid payload with Zod", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        text: async () => JSON.stringify({ versionMismatch: false, debugMode: true }),
-      })
-    );
+  it("/init should validate payload and include runtime metadata", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      text: async () =>
+        JSON.stringify({
+          versionMismatch: false,
+          debugMode: true,
+          requiredClientBuild: "2026.02.20",
+          downloadUrl: "https://downloads.example.com/client",
+        }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
 
     const api = new ApiClient(config, new MemoryTokenStore());
     const result = await api.init();
 
     expect(result.versionMismatch).toBe(false);
+    expect(result.requiredClientBuild).toBe("2026.02.20");
+
+    const call = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(call[0]).toBe("https://bymr.local/init");
+
+    const body = JSON.parse(String(call[1].body)) as Record<string, unknown>;
+    expect(body.apiVersion).toBe("v-test");
+    expect(body.clientBuild).toBe("test-build");
+    expect(body.runtime === "web" || body.runtime === "desktop").toBe(true);
+    expect(["windows", "macos", "linux", "unknown"]).toContain(body.platform);
   });
 
   it("/bm/getnewmap should reject invalid schema", async () => {

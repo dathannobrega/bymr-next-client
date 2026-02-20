@@ -15,8 +15,11 @@
 ## Matriz por contrato crítico
 
 ### `POST /init`
-- Status: **OK (compatível)**
-- Cliente envia `apiVersion`; servidor valida versão e retorna `versionMismatch` quando necessário.
+- Status: **OK (compatível + hardening)**
+- Cliente envia `apiVersion` + metadados (`runtime`, `platform`, `clientBuild`).
+- Servidor valida versão e agora suporta gate opcional por build (`REQUIRED_CLIENT_BUILD`).
+- Quando há bloqueio, resposta inclui `requiredClientBuild` e `downloadUrl` para UX de atualização (`426 Upgrade Required`, `code=VERSION_MISMATCH`).
+- BootScene exibe CTA de download quando `downloadUrl` é fornecido.
 
 ### `GET/POST /api/:apiVersion/bm/getnewmap`
 - Status: **OK (compatível)**
@@ -45,6 +48,7 @@
 
 ## Segurança / robustez
 - Implementado:
+  - Guardrail de regressão `npm run guard:legacy-runtime` contra reintrodução de runtime legado (client(legacy)/SWF/storage inseguro).
   - Token store sem `localStorage/sessionStorage`.
   - Desktop secure token store com keyring (Tauri command).
   - Middleware auth server com validação JWT + token em Redis + usuário em Postgres.
