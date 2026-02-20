@@ -7,6 +7,8 @@ Checklist por épico com referência de PR(s).
 - [x] 0.2 Checklist por épicos em `MIGRATION_STATUS.md`
 - [x] 0.3 Inventário inicial de rotas do servidor em `server/docs/api-inventory.md`
 - [x] 0.4 Contrato inicial `/init` + `/bm/getnewmap`
+- [x] 0.5 Auditoria `client(legacy)` arquivo-a-arquivo em `docs/legacy-client-file-audit.md`
+- [x] 0.6 Gate de exclusão do legado com tracker arquivo-a-arquivo em `docs/legacy-cutover-checklist.md` + `docs/legacy-migration-tracker.tsv`
 - PRs: [PR fase 0/1](pending)
 
 ## E00 — Repo, tooling, standards
@@ -15,6 +17,7 @@ Checklist por épico com referência de PR(s).
 - [x] E00-S03 README/onboarding restaurado
 - [x] E00-S04 CI GitHub Actions com `npm ci`, `typecheck`, `lint`, `test`, `build`
 - [x] E00-S05 Docker Compose unificado na raiz (`client` + `server` + `postgres` + `redis`)
+- [x] E00-S06 Workflow de build dos clientes (`.github/workflows/build-clients.yml`) com artefatos Web + Desktop (Windows/macOS)
 - PRs: [PR fase 0/1](pending)
 
 ## E01 — Compatibility bootstrap
@@ -37,8 +40,10 @@ Checklist por épico com referência de PR(s).
 - [x] E03-S00 Cliente preparado para `/cmd` (`op/args/seq/idempotencyKey` + `ApiClient.cmd()`)
 - [x] E03-S01 cliente integrado para ops reais (`PlaceBuilding`, `MoveBuilding`, `UpgradeBuilding`)
 - [x] E03-S01 `PlaceBuilding` via `/cmd` (cliente: Shift+Click no YardScene, aplica delta canônico)
-- [ ] E03-S02 `MoveBuilding`
-- [ ] E03-S03 `UpgradeBuilding`
+- [x] E03-S02 `MoveBuilding` (cliente: Shift+Click com building selecionado; server valida e retorna delta)
+- [x] E03-S03 `UpgradeBuilding` (cliente: Alt+Click no building; server valida e retorna delta)
+- [x] E03-S04 `CancelUpgrade` (`/cmd`, com validação de estado pendente e delta canônico)
+- [x] E03-S05 `CollectHarvester` (`/cmd`, coleta validada server-side + atualização de recursos em delta)
 - PRs: —
 
 ## E04 — Maproom v2/v3
@@ -56,20 +61,20 @@ Checklist por épico com referência de PR(s).
 ## E10 — Security hardening / cutover
 - [x] E10-S00 DesktopSecureTokenStore com keyring/keychain (Tauri command)
 - [x] E10-S01 Baseline de connect-src mais restrito e parametrizado por ambiente (CSP Tauri + allowlist runtime)
-- [ ] `/cmd` completo e auditoria
+- [x] `/cmd` completo e auditoria
 - [ ] Version gate final via `/init`
 - [ ] Deprecação de `baseSave` para novo cliente
 - PRs: —
 
 ## Auditoria de integração cliente <-> server (2026-02-20)
-- [ ] Gap A01: `/api/:apiVersion/cmd` ainda não existe no backend (cliente já envia `PlaceBuilding/MoveBuilding/UpgradeBuilding`)
-- [ ] Gap A02: contrato de `POST /base/load` divergente (cliente envia `{ baseId, mode }`; server espera `{ baseid, type, userid }`)
-- [ ] Gap A03: contrato de `POST /base/save` divergente (cliente envia payload non-critical com `action/audit`; server espera schema legado Flash)
-- [ ] Gap A04: LoginScene ainda usa input manual de token; fluxo login por `/api/:apiVersion/player/getinfo` não está integrado no cliente
-- [ ] Gap A05: respostas de MR3 no server ainda estão em modo placeholder (`/worldmapv3/*`)
+- [x] Gap A01 resolvido: `/api/:apiVersion/cmd` implementado com validação, idempotência Redis, seq e rate-limit por operação
+- [x] Gap A02 resolvido: `POST /base/load` agora aceita contrato novo `{ baseId, mode }` e mantém compat legado
+- [x] Gap A03 resolvido: `POST /base/save` agora aceita payload non-critical com `action/audit` + trilha de auditoria server-side
+- [x] Gap A04 resolvido: LoginScene integrado ao `/api/:apiVersion/player/getinfo` (email/senha), com fallback de token manual para debug
+- [x] Gap A05 resolvido: rotas `worldmapv3/*` saíram de placeholder para fluxo com dados reais de célula/mundo
 
 ## Próximos passos sugeridos
-1. Publicar no backend `/api/:apiVersion/cmd` as validações autoritativas e idempotência Redis por `userId + idempotencyKey`.
-2. Adicionar testes de integração end-to-end (cliente + backend) cobrindo replay/seq e rate-limit por operação.
-3. Assinar envelopes `/cmd` (nonce + assinatura) para hardening anti-replay em release futura.
-4. Evoluir auditoria de `baseSave` para logs server-side com correlação por `traceId`.
+1. Adicionar testes de integração end-to-end (cliente + backend + Redis + Postgres) cobrindo replay/seq/rate-limit do `/cmd`.
+2. Assinar envelopes `/cmd` (nonce + assinatura) para hardening anti-replay em release futura.
+3. Fechar `version gate` final via `/init` no cutover.
+4. Planejar deprecação das rotas legado de save para o cliente novo após telemetria de adoção.

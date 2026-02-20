@@ -104,6 +104,11 @@ npm test
 npm run build
 ```
 
+## Build artifacts via GitHub Actions
+
+- CI de qualidade: `.github/workflows/ci.yml`
+- Build de clientes (web + desktop Windows/macOS): `.github/workflows/build-clients.yml`
+
 ## Documentação de migração
 
 - Visão geral: [`docs/00-overview.md`](docs/00-overview.md)
@@ -117,6 +122,7 @@ npm run build
 - Cutover legado: [`docs/08-cutover-plan.md`](docs/08-cutover-plan.md)
 - Contratos `/init` e `/bm/getnewmap`: [`docs/09-contract-sync-init-getnewmap.md`](docs/09-contract-sync-init-getnewmap.md)
 - Auditoria de integração (cliente/server): [`docs/10-integration-audit.md`](docs/10-integration-audit.md)
+- Gate de corte do legado: [`docs/legacy-cutover-checklist.md`](docs/legacy-cutover-checklist.md)
 
 ## Status da migração
 

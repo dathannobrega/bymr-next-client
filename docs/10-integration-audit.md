@@ -6,10 +6,11 @@
 - Documentação de migração (`docs/*`, `MIGRATION_STATUS.md`)
 
 ## Resumo executivo
-- A base de migração existe e está estruturada, mas a integração fim a fim ainda está **parcial**.
-- O cliente já foi preparado para o protocolo por comandos (`/cmd`), porém o backend ainda não implementa o endpoint.
-- Há divergência de contrato em `base/load` e `base/save` entre cliente novo e schema legado do servidor.
-- Segurança base de autenticação (Bearer + Redis + Postgres) está presente, mas o modelo server-authoritative completo ainda não.
+- A integração cliente/server evoluiu para um estado funcional mais robusto.
+- O backend agora implementa `/api/:apiVersion/cmd` com envelope validado, idempotência Redis e controle de sequência.
+- `base/load` e `base/save` aceitam o contrato novo sem quebrar o fluxo legado.
+- Login do cliente foi integrado ao endpoint real `/api/:apiVersion/player/getinfo`.
+- Endpoints `worldmapv3/*` deixaram de ser placeholder e passaram a usar dados reais de célula/mundo.
 
 ## Matriz por contrato crítico
 
@@ -18,35 +19,37 @@
 - Cliente envia `apiVersion`; servidor valida versão e retorna `versionMismatch` quando necessário.
 
 ### `GET/POST /api/:apiVersion/bm/getnewmap`
-- Status: **Parcial**
+- Status: **OK (compatível)**
 - Contrato principal está espelhado no cliente.
-- Cliente hoje exige token para essa chamada; no server a rota não exige auth.
+- Cliente chama sem auth e server mantém rota pública.
 
 ### `POST /base/load`
-- Status: **Não compatível**
-- Cliente: `{ baseId, mode }`
-- Servidor: `{ baseid, type, userid, attackData? }`
+- Status: **Compatível (modo dual)**
+- Contrato novo (`{ baseId, mode }`) suportado para o cliente next.
+- Contrato legado continua suportado para compatibilidade.
 
 ### `POST /base/save`
-- Status: **Não compatível**
-- Cliente novo envia formato non-critical com `action`, `payload`, `audit`.
-- Server atual espera payload legado Flash (`basesaveid`, `buildingdata`, campos stringificados, etc.).
+- Status: **Compatível (modo dual)**
+- Payload non-critical (`action`, `payload`, `audit`) suportado e auditado server-side.
+- Schema legado Flash permanece suportado para clientes antigos.
 
 ### `POST /api/:apiVersion/cmd`
-- Status: **Não implementado no backend**
-- Cliente já envia envelope (`op`, `args`, `seq`, `idempotencyKey`) e tenta usar o endpoint.
+- Status: **Implementado**
+- Envelope validado (`op`, `args`, `seq`, `idempotencyKey`).
+- Idempotência Redis por `cmd:<userId>:<idempotencyKey>`.
+- Rejeição por sequência fora de ordem, anti-replay por nonce e rate-limit por operação.
+- Operações atuais: `PlaceBuilding`, `MoveBuilding`, `UpgradeBuilding`, `CancelUpgrade`, `CollectHarvester`.
+- Retorno em delta canônico (`addBuilding`, `moveBuilding`, `upgradeBuilding`, `startUpgrade`, `cancelUpgrade`, `setResources`).
 
 ## Segurança / robustez
 - Implementado:
   - Token store sem `localStorage/sessionStorage`.
   - Desktop secure token store com keyring (Tauri command).
   - Middleware auth server com validação JWT + token em Redis + usuário em Postgres.
-- Pendente para aderência ao doc de hardening:
-  - Endpoint `/cmd` com validação autoritativa por operação.
-  - Idempotência Redis por `userId + idempotencyKey`.
-  - Anti-replay/rate limit por operação e trilha de auditoria por comando.
-  - Deprecação segura de `/base/save` para o cliente novo.
+  - Tratamento seguro para token inválido em ambiente local (sem crash no `JWT.decode`).
+  - `/cmd` com validação de args/op, idempotência, seq e rate-limit.
+  - Auditoria server-side para ações non-critical de `base/save`.
 
 ## Conclusão
-- **Não**: ainda não está “tudo funcionando corretamente” na integração completa client/server de acordo com a documentação alvo.
-- **Sim**: a fundação está pronta para convergir rápido (contratos no cliente, scenes iniciais, auth baseline, docs e backlog organizados).
+- A integração central cliente/server ficou substancialmente mais próxima do objetivo de produção descrito na documentação.
+- Ainda é recomendado evoluir a cobertura de testes e o hardening de anti-replay com nonce/signature para releases futuras.

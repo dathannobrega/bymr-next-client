@@ -1,6 +1,10 @@
 import { Assets, Container, Graphics, Rectangle, Sprite, Text, Texture } from "pixi.js";
 import type { ApiClient } from "../../lib/api/client";
 import type { ParsedBaseLoad, YardBuilding } from "../../lib/base/baseLoad";
+import {
+  getPlacementTypeExamples,
+  normalizePlacementBuildingTypeInput,
+} from "../../lib/base/buildingType";
 import { applyCmdDeltaToBase } from "../../lib/game/cmdDelta";
 import { TILE_H, TILE_W, roundDeterministic, worldToScreen } from "./iso";
 
@@ -35,11 +39,14 @@ export class YardScene {
   private selectedTile = new Graphics();
   private hoveredTile = new Graphics();
   private statusText = new Text({ text: "", style: { fill: 0xa9bdff, fontSize: 12 } as any });
+  private resourcesText = new Text({ text: "", style: { fill: 0x7ed39e, fontSize: 12 } as any });
+  private placementType = "hq";
 
   private camera: Camera = { x: 0, y: 0, zoom: 1 };
   private dragging = false;
   private lastPointer = { x: 0, y: 0 };
   private baseState: ParsedBaseLoad;
+  private selectedBuildingId: string | null = null;
 
   constructor(private readonly deps: YardSceneDeps) {
     this.baseState = deps.base;
@@ -67,13 +74,15 @@ export class YardScene {
     this.setupTooltip();
 
     const footer = new Text({
-      text: `Buildings: ${base.buildings.length} • Wheel: zoom • Drag: pan • Shift+Click: PlaceBuilding`,
+      text: `Buildings: ${base.buildings.length} • Wheel: zoom • Drag: pan • Shift+Click: Place/Move • Alt+Click/U: Upgrade • X: Cancel upgrade • C: Collect • B: type`,
       style: { fill: 0x8fa5d6, fontSize: 12 } as any,
     });
     footer.position.set(12, 110);
     this.statusText.position.set(12, 132);
-    this.statusText.text = "Build mode: ready";
-    this.uiLayer.addChild(footer, this.statusText);
+    this.resourcesText.position.set(12, 154);
+    this.statusText.text = `Build mode: ready • placeType=${this.placementType}`;
+    this.updateResourcesText();
+    this.uiLayer.addChild(footer, this.statusText, this.resourcesText);
   }
 
   private initCamera(cols: number, rows: number): void {
@@ -135,14 +144,52 @@ export class YardScene {
       if (!shiftClick) return;
 
       try {
+        if (this.selectedBuildingId) {
+          this.statusText.text = `MoveBuilding #${this.selectedBuildingId} -> (${tile.tx}, ${tile.ty})...`;
+          const response = await this.deps.api.moveBuilding({
+            buildingId: this.selectedBuildingId,
+            toX: tile.tx,
+            toY: tile.ty,
+          });
+          this.applyDelta(response.delta);
+          this.statusText.text = `MoveBuilding ok (seq=${response.seq ?? "?"})`;
+          return;
+        }
+
         this.statusText.text = `PlaceBuilding -> (${tile.tx}, ${tile.ty})...`;
-        const response = await this.deps.api.placeBuilding({ buildingType: "hq", x: tile.tx, y: tile.ty });
-        const delta = Array.isArray(response.delta) ? response.delta : [];
-        this.baseState = applyCmdDeltaToBase(this.baseState, delta as Record<string, unknown>[]);
-        this.renderBuildings(this.baseState.buildings);
-        this.statusText.text = `PlaceBuilding ok (seq=${response.seq ?? "?"})`;
+        const response = await this.deps.api.placeBuilding({
+          buildingType: this.placementType,
+          x: tile.tx,
+          y: tile.ty,
+        });
+        this.applyDelta(response.delta);
+        this.statusText.text = `PlaceBuilding ${this.placementType} ok (seq=${response.seq ?? "?"})`;
       } catch (err) {
-        this.statusText.text = `PlaceBuilding falhou: ${String((err as Error)?.message ?? err)}`;
+        this.statusText.text = `Cmd falhou: ${String((err as Error)?.message ?? err)}`;
+      }
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (isTypingTarget(e.target)) return;
+
+      const key = e.key.toLowerCase();
+      if (key === "b") {
+        this.promptPlacementType();
+        return;
+      }
+
+      if (key === "u") {
+        void this.executeUpgradeForSelected();
+        return;
+      }
+
+      if (key === "x") {
+        void this.executeCancelUpgradeForSelected();
+        return;
+      }
+
+      if (key === "c") {
+        void this.executeCollectForSelected();
       }
     });
 
@@ -200,14 +247,24 @@ export class YardScene {
       sprite.on("pointerenter", (e) => {
         sprite.tint = 0xb9f5bb;
         const suffix = typeof building.level === "number" ? ` Lv.${building.level}` : "";
-        this.showTooltip(`${building.type} #${building.id}${suffix}`, e.global.x + 14, e.global.y + 14);
+        const pending =
+          typeof building.countdownUpgrade === "number" && building.countdownUpgrade > 0
+            ? ` -> Lv.${building.upgradeToLevel ?? "?"} (${building.countdownUpgrade}s)`
+            : "";
+        this.showTooltip(`${building.type} #${building.id}${suffix}${pending}`, e.global.x + 14, e.global.y + 14);
       });
       sprite.on("pointerleave", () => {
         sprite.tint = 0x8be28d;
         this.hideTooltip();
       });
-      sprite.on("click", () => {
+      sprite.on("click", async (e) => {
+        this.selectedBuildingId = building.id;
         this.drawTileOutline(this.selectedTile, building.x, building.y, 0xf7d774, 3);
+
+        const altClick = "altKey" in e.nativeEvent && Boolean((e.nativeEvent as MouseEvent).altKey);
+        if (!altClick) return;
+
+        await this.executeUpgradeForSelected();
       });
 
       this.buildingLayer.addChild(sprite);
@@ -256,8 +313,110 @@ export class YardScene {
     this.tooltip.visible = false;
     this.tooltipBg.visible = false;
   }
+
+  private applyDelta(delta: unknown): void {
+    const items = Array.isArray(delta) ? (delta as Record<string, unknown>[]) : [];
+    this.baseState = applyCmdDeltaToBase(this.baseState, items);
+    this.renderBuildings(this.baseState.buildings);
+    this.updateResourcesText();
+  }
+
+  private updateResourcesText(): void {
+    const resources = this.baseState.resources;
+    if (!resources) {
+      this.resourcesText.text = "Resources: n/a";
+      return;
+    }
+
+    this.resourcesText.text =
+      `Resources r1=${resources.r1}/${resources.r1max} ` +
+      `r2=${resources.r2}/${resources.r2max} ` +
+      `r3=${resources.r3}/${resources.r3max} ` +
+      `r4=${resources.r4}/${resources.r4max}`;
+  }
+
+  private getSelectedBuildingId(): string | null {
+    if (!this.selectedBuildingId) return null;
+    const found = this.baseState.buildings.find((b) => b.id === this.selectedBuildingId);
+    return found ? found.id : null;
+  }
+
+  private async executeUpgradeForSelected(): Promise<void> {
+    const buildingId = this.getSelectedBuildingId();
+    if (!buildingId) {
+      this.statusText.text = "Nenhum building selecionado para upgrade.";
+      return;
+    }
+
+    try {
+      this.statusText.text = `UpgradeBuilding #${buildingId}...`;
+      const response = await this.deps.api.upgradeBuilding({ buildingId });
+      this.applyDelta(response.delta);
+      this.statusText.text = `UpgradeBuilding ok (seq=${response.seq ?? "?"})`;
+    } catch (err) {
+      this.statusText.text = `Upgrade falhou: ${String((err as Error)?.message ?? err)}`;
+    }
+  }
+
+  private async executeCancelUpgradeForSelected(): Promise<void> {
+    const buildingId = this.getSelectedBuildingId();
+    if (!buildingId) {
+      this.statusText.text = "Nenhum building selecionado para cancelar upgrade.";
+      return;
+    }
+
+    try {
+      this.statusText.text = `CancelUpgrade #${buildingId}...`;
+      const response = await this.deps.api.cancelUpgrade({ buildingId });
+      this.applyDelta(response.delta);
+      this.statusText.text = `CancelUpgrade ok (seq=${response.seq ?? "?"})`;
+    } catch (err) {
+      this.statusText.text = `CancelUpgrade falhou: ${String((err as Error)?.message ?? err)}`;
+    }
+  }
+
+  private async executeCollectForSelected(): Promise<void> {
+    const buildingId = this.getSelectedBuildingId();
+    if (!buildingId) {
+      this.statusText.text = "Nenhum building selecionado para coletar.";
+      return;
+    }
+
+    try {
+      this.statusText.text = `CollectHarvester #${buildingId}...`;
+      const response = await this.deps.api.collectHarvester({ buildingId });
+      this.applyDelta(response.delta);
+      this.statusText.text = `CollectHarvester ok (seq=${response.seq ?? "?"})`;
+    } catch (err) {
+      this.statusText.text = `Collect falhou: ${String((err as Error)?.message ?? err)}`;
+    }
+  }
+
+  private promptPlacementType(): void {
+    const examples = getPlacementTypeExamples().join(", ");
+    const nextType = window.prompt(
+      `Tipo para PlaceBuilding (${examples})`,
+      this.placementType
+    );
+    if (!nextType) return;
+
+    const normalized = normalizePlacementBuildingTypeInput(nextType);
+    if (!normalized) {
+      this.statusText.text = `Tipo inválido: ${nextType}`;
+      return;
+    }
+
+    this.placementType = normalized.canonicalType;
+    this.statusText.text = `placeType atualizado: ${this.placementType}`;
+  }
 }
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName.toLowerCase();
+  return target.isContentEditable || tag === "input" || tag === "textarea" || tag === "select";
 }

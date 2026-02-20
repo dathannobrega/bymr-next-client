@@ -41,6 +41,7 @@ import { getAttackLogs } from "./controllers/attacklogs/getAttackLogs.js";
 import { wildMonsterInvasion } from "./controllers/events/wildMonsterInvasion.js";
 import { init } from "./controllers/init.js";
 import { RateLimit } from "koa2-ratelimit";
+import { cmd } from "./controllers/cmd/cmd.js";
 
 /**
  * Rate limit for user registration
@@ -166,6 +167,18 @@ router.post(
   verifyUserAuth,
   logRequest("Base save data"),
   baseSave
+);
+
+/**
+ * Authoritative command endpoint
+ * @name POST /api/:apiVersion/cmd
+ */
+router.post(
+  "/api/:apiVersion/cmd",
+  apiVersion,
+  verifyUserAuth,
+  logRequest("Authoritative command"),
+  cmd
 );
 
 /**

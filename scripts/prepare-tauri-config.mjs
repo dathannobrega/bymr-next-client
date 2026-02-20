@@ -24,5 +24,27 @@ config.app ??= {};
 config.app.security ??= {};
 config.app.security.csp = `${baseCsp} ${connectSrcDirective}`;
 
+const targetPresets = {
+  win32: ["msi", "nsis"],
+  darwin: ["app", "dmg"],
+  linux: ["appimage", "deb"],
+};
+
+const fromTargetsEnv = process.env.BYMR_TAURI_TARGETS
+  ? process.env.BYMR_TAURI_TARGETS.split(",")
+      .map((v) => v.trim())
+      .filter(Boolean)
+  : undefined;
+
+const platformTargets = fromTargetsEnv?.length
+  ? fromTargetsEnv
+  : (targetPresets[process.platform] ?? ["all"]);
+
+config.bundle ??= {};
+config.bundle.active = true;
+config.bundle.targets = platformTargets;
+
 fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
-console.log(`[prepare-tauri-config] env=${env} connect-src=${connectSrc.join(" ")}`);
+console.log(
+  `[prepare-tauri-config] env=${env} connect-src=${connectSrc.join(" ")} targets=${platformTargets.join(",")}`
+);

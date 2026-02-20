@@ -1,0 +1,99 @@
+name: Build Clients
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/build-clients.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/prepare-tauri-config.mjs"
+      - "src/**"
+      - "src-tauri/**"
+  pull_request:
+    paths:
+      - ".github/workflows/build-clients.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/prepare-tauri-config.mjs"
+      - "src/**"
+      - "src-tauri/**"
+
+jobs:
+  web:
+    name: Build Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web client
+        run: npm run build
+
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bymr-web-dist
+          path: dist
+          if-no-files-found: error
+
+  desktop:
+    name: Build Desktop (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+            tauri_targets: msi,nsis
+          - name: macos
+            os: macos-latest
+            tauri_targets: app,dmg
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build desktop client
+        env:
+          BYMR_ENV: production
+          BYMR_TAURI_TARGETS: ${{ matrix.tauri_targets }}
+        run: npm run tauri build
+
+      - name: Upload desktop artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bymr-desktop-${{ matrix.name }}
+          path: src-tauri/target/release/bundle
+          if-no-files-found: error

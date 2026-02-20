@@ -10,12 +10,27 @@ export const BaseBuildingSchema = z.object({
   type: z.string().min(1),
   x: z.number().int().nonnegative(),
   y: z.number().int().nonnegative(),
+  level: z.number().int().positive().optional(),
+  countdownUpgrade: z.number().int().nonnegative().optional(),
+  upgradeToLevel: z.number().int().positive().optional(),
+});
+
+export const BaseResourcesSchema = z.object({
+  r1: z.number().int().nonnegative().default(0),
+  r2: z.number().int().nonnegative().default(0),
+  r3: z.number().int().nonnegative().default(0),
+  r4: z.number().int().nonnegative().default(0),
+  r1max: z.number().int().nonnegative().default(0),
+  r2max: z.number().int().nonnegative().default(0),
+  r3max: z.number().int().nonnegative().default(0),
+  r4max: z.number().int().nonnegative().default(0),
 });
 
 export const BaseLoadResponseSchema = z.object({
   yardWidth: z.number().int().positive().default(20),
   yardHeight: z.number().int().positive().default(14),
   buildings: z.array(BaseBuildingSchema).default([]),
+  resources: BaseResourcesSchema.optional(),
 });
 
 export const NonCriticalBaseSaveActionSchema = z.enum([

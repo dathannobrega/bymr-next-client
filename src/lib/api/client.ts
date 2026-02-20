@@ -5,8 +5,12 @@ import {
   GetNewMapResponseSchema,
   InitRequestSchema,
   InitResponseSchema,
+  LoginRequestSchema,
+  LoginResponseSchema,
   type GetNewMapResponse,
   type InitResponse,
+  type LoginRequest,
+  type LoginResponse,
 } from "../contracts/compat";
 import {
   CmdArgsByOperationSchema,
@@ -14,6 +18,8 @@ import {
   CmdResponseSchema,
   type CmdOperation,
   type CmdResponse,
+  type CancelUpgradeArgs,
+  type CollectHarvesterArgs,
   type MoveBuildingArgs,
   type PlaceBuildingArgs,
   type UpgradeBuildingArgs,
@@ -28,6 +34,7 @@ import {
   type NonCriticalBaseSaveAction,
 } from "../contracts/base";
 import { StructuredHttpErrorSchema } from "../contracts/http";
+import { parseBaseLoadResponse } from "../base/baseLoad";
 
 export class ApiClient {
   private seq = 0;
@@ -45,8 +52,15 @@ export class ApiClient {
 
   async getNewMap(): Promise<GetNewMapResponse> {
     const path = `/api/${encodeURIComponent(this.config.apiVersion)}/bm/getnewmap`;
-    const res = await this.requestJson("GET", path, undefined, { auth: true });
+    const res = await this.requestJson("GET", path, undefined, { auth: false });
     return GetNewMapResponseSchema.parse(res);
+  }
+
+  async login(payload: LoginRequest): Promise<LoginResponse> {
+    const body = LoginRequestSchema.parse(payload);
+    const path = `/api/${encodeURIComponent(this.config.apiVersion)}/player/getinfo`;
+    const res = await this.requestJson("POST", path, body, { auth: false });
+    return LoginResponseSchema.parse(res);
   }
 
   async placeBuilding(args: PlaceBuildingArgs): Promise<CmdResponse> {
@@ -59,6 +73,14 @@ export class ApiClient {
 
   async upgradeBuilding(args: UpgradeBuildingArgs): Promise<CmdResponse> {
     return this.cmd("UpgradeBuilding", args);
+  }
+
+  async cancelUpgrade(args: CancelUpgradeArgs): Promise<CmdResponse> {
+    return this.cmd("CancelUpgrade", args);
+  }
+
+  async collectHarvester(args: CollectHarvesterArgs): Promise<CmdResponse> {
+    return this.cmd("CollectHarvester", args);
   }
 
   async cmd(op: CmdOperation, args: Record<string, unknown>): Promise<CmdResponse> {
@@ -80,7 +102,8 @@ export class ApiClient {
   async baseLoad(baseId: string, mode: "view" | "build"): Promise<BaseLoadResponse> {
     const payload = BaseLoadRequestSchema.parse({ baseId, mode });
     const res = await this.requestJson("POST", "/base/load", payload, { auth: true });
-    return BaseLoadResponseSchema.parse(res);
+    const normalized = parseBaseLoadResponse(res);
+    return BaseLoadResponseSchema.parse(normalized);
   }
 
   async baseSaveNonCritical(

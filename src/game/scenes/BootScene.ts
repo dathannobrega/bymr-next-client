@@ -30,7 +30,11 @@ export class BootScene {
       return;
     }
 
-    const login = new LoginScene({ tokenStore });
+    const login = new LoginScene({
+      tokenStore,
+      api,
+      allowSkip: config.debug,
+    });
     await login.run();
 
     status.text = "Fetching maproom metadata...";

@@ -1,0 +1,472 @@
+path	ext	size_bytes	lines	class	extends	kind	priority	reuse_action	target	notes
+buttons/DefineButton2_1290/1.png	png	93	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+buttons/DefineButton2_2187/1.png	png	419	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+buttons/DefineButton2_2189/1.png	png	393	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+buttons/DefineButton2_2723/1.png	png	160	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+buttons/DefineButton2_2864/1.png	png	318	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+fonts/1764_GROBOLD.ttf	ttf	8624	0			font_asset	medium	reuse_after_license_check	client_assets/fonts	Validar licenca e fallback cross-platform
+fonts/2465_Verdana.ttf	ttf	4340	0			font_asset	medium	reuse_after_license_check	client_assets/fonts	Validar licenca e fallback cross-platform
+fonts/2488_Verdana.ttf	ttf	67400	0			font_asset	medium	reuse_after_license_check	client_assets/fonts	Validar licenca e fallback cross-platform
+fonts/2491_GROBOLDpro.ttf	ttf	2632	0			font_asset	medium	reuse_after_license_check	client_assets/fonts	Validar licenca e fallback cross-platform
+fonts/2960_Verdana Bold.ttf	ttf	24720	0			font_asset	medium	reuse_after_license_check	client_assets/fonts	Validar licenca e fallback cross-platform
+fonts/3014_Verdana.ttf	ttf	24496	0			font_asset	medium	reuse_after_license_check	client_assets/fonts	Validar licenca e fallback cross-platform
+fonts/3057_Groboldov Bold.ttf	ttf	72208	0			font_asset	medium	reuse_after_license_check	client_assets/fonts	Validar licenca e fallback cross-platform
+fonts/31_Groboldov.ttf	ttf	72440	0			font_asset	medium	reuse_after_license_check	client_assets/fonts	Validar licenca e fallback cross-platform
+fonts/36_Verdana.ttf	ttf	87868	0			font_asset	medium	reuse_after_license_check	client_assets/fonts	Validar licenca e fallback cross-platform
+fonts/4_Verdana.ttf	ttf	87060	0			font_asset	medium	reuse_after_license_check	client_assets/fonts	Validar licenca e fallback cross-platform
+frames/1.png	png	3517	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1136.png	png	1846	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1139.png	png	1983	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1141.png	png	1752	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1143.png	png	1856	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1146.png	png	1715	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1149.png	png	1293	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1151.png	png	1430	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1153.png	png	1648	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1168.png	png	11209	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1237.png	png	2822	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1266.jpg	jpg	153396	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1282.png	png	39976	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/129.png	png	1140	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/131.png	png	1277	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/136.png	png	1613	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/144.png	png	10651	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/146.png	png	7715	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1464.jpg	jpg	767	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1466.png	png	1327	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/148.png	png	6775	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1485.png	png	38430	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/152.png	png	6860	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1522.png	png	5486	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1524.jpg	jpg	2392	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1527.png	png	10617	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1530.png	png	9344	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/154.png	png	6978	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/156.png	png	5437	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1562.png	png	250	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1565_smoke1_smoke1.png	png	11762	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/158.png	png	4527	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/160.jpg	jpg	711	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/163.jpg	jpg	745	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/165.jpg	jpg	701	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1667_bmp_healthbarsmall_bmp_healthbarsmall.png	png	551	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/167.jpg	jpg	736	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1670.jpg	jpg	470	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1672.jpg	jpg	486	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1674.jpg	jpg	424	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1676.jpg	jpg	445	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1678.jpg	jpg	455	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1680.jpg	jpg	466	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1683.png	png	4770	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1685.png	png	3402	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1687.png	png	4249	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1689.png	png	3869	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1691.png	png	5635	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1693.png	png	7609	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1699_frame_button_help_frame_button_help.png	png	2391	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/1704_bmp_healthbarlarge_bmp_healthbarlarge.png	png	2660	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/1705_bmp_overlaytext_bmp_overlaytext.png	png	2060	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/1706_bmp_progressbarlarge_bmp_progressbarlarge.png	png	1104	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/173.png	png	37634	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1732.png	png	4691	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/177.png	png	41220	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/179.png	png	43856	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/181.png	png	34767	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1816_bmd_burns_bmd_burns.png	png	4403	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/1820_ParticleScorch1_ParticleScorch1.png	png	12421	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/183.png	png	35844	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1849.png	png	21605	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/185.png	png	42674	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/187.png	png	40561	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/189.png	png	41740	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/191.png	png	38390	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1918.png	png	9287	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1920.png	png	7173	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1925.jpg	jpg	1392	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1927.jpg	jpg	1170	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/193.png	png	36867	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/1944.jpg	jpg	1736	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2045_frame2_bottom_right_frame2_bottom_right.png	png	9450	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2046_frame3_filler_right_frame3_filler_right.png	png	1181	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2047_frame2_filler_top_frame2_filler_top.png	png	474	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2048_frame3_top_right_frame3_top_right.png	png	14133	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2049_frame3_background_frame3_background.jpg	jpg	324	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2050_frame_button_close_frame_button_close.png	png	2378	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2051_frame2_top_right_frame2_top_right.png	png	9302	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2052_frame2_background_frame2_background.png	png	260	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2053_frame2_top_left_frame2_top_left.png	png	9065	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2054_frame2_filler_bottom_frame2_filler_bottom.png	png	430	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2055_frame3_top_left_frame3_top_left.png	png	15843	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2056_frame3_filler_left_frame3_filler_left.png	png	1163	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2057_frame3_filler_bottom_frame3_filler_bottom.png	png	3401	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2058_frame2_filler_right_frame2_filler_right.png	png	430	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2059_frame2_filler_left_frame2_filler_left.png	png	524	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2060_frame3_bottom_left_frame3_bottom_left.png	png	16150	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2061_frame2_bottom_left_frame2_bottom_left.png	png	9150	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2062_frame3_bottom_right_frame3_bottom_right.png	png	16009	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2063_frame3_filler_top_frame3_filler_top.png	png	3116	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2065.png	png	102005	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2070.png	png	1478	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2132.jpg	jpg	647	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2135.jpg	jpg	668	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2137.jpg	jpg	712	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2141.png	png	7096	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2146.png	png	8633	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2149.png	png	2430	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2151.png	png	574	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2164_isosand3_isosand3.jpg	jpg	1561	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2165_inferno_lava4_inferno_lava4.jpg	jpg	15208	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2166_isosand4_isosand4.jpg	jpg	1320	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2167_isosand1_isosand1.jpg	jpg	574	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2168_isosand2_isosand2.jpg	jpg	647	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2169_inferno_lava1_inferno_lava1.jpg	jpg	14484	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2170_inferno_lava3_inferno_lava3.jpg	jpg	12746	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2171_inferno_lava2_inferno_lava2.jpg	jpg	12188	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2172_isograss3_isograss3.png	png	51195	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2173_isograss4_isograss4.png	png	57825	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2174_isograss1_isograss1.jpg	jpg	2953	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2175_isograss2_isograss2.png	png	45039	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2176_isograss7_isograss7.png	png	47889	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2177_isograss5_isograss5.png	png	54293	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2178_isograss6_isograss6.png	png	40465	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2179_isocrater1_isocrater1.jpg	jpg	3127	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2180_isorock1_isorock1.jpg	jpg	4000	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2181_isorock3_isorock3.jpg	jpg	3592	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2182_isorock2_isorock2.jpg	jpg	3620	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2204.png	png	6746	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2206.png	png	4218	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2209.jpg	jpg	829	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2211.jpg	jpg	870	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2214.jpg	jpg	1033	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2216.jpg	jpg	911	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2330.png	png	1206	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2339.jpg	jpg	14484	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2341.jpg	jpg	12188	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2343.jpg	jpg	12746	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2345.jpg	jpg	15208	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2347.jpg	jpg	3220	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2350.png	png	1813	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2360.png	png	116898	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2363.png	png	6836	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2365.png	png	6854	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2367.png	png	6882	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2370.png	png	9999	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2372.png	png	11144	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2376.png	png	14411	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2378.png	png	14368	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2417.jpg	jpg	2963	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2442.jpg	jpg	8869	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2460.png	png	42447	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2462.png	png	23443	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2469.jpg	jpg	2499	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2471.jpg	jpg	1973	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2494.jpg	jpg	3252	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2496.jpg	jpg	4382	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2515.png	png	107130	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2518.png	png	34876	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2546.png	png	140	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2548.png	png	246	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/255.png	png	21386	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/259.png	png	1772	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/264.png	png	1748	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2654_screenshot_border3_screenshot_border3.png	png	132450	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2655_screenshot_border2_screenshot_border2.png	png	79816	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2656_screenshot_border1_screenshot_border1.png	png	2789	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2671_frame1_bottom_left_frame1_bottom_left.png	png	10295	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2672_frame1_bottom_middle_frame1_bottom_middle.png	png	29714	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2673_frame1_top_right_frame1_top_right.png	png	12864	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2674_frame1_button_fullscreen_frame1_button_fullscreen.png	png	2390	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2675_frame1_filler_left_frame1_filler_left.png	png	5892	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2676_frame1_bottom_right_frame1_bottom_right.png	png	18690	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2677_frame1_filler_right_frame1_filler_right.png	png	7162	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2678_frame1_filler_bottom_frame1_filler_bottom.png	png	10507	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2679_frame1_button_help_frame1_button_help.png	png	2391	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2680_frame1_top_middle_frame1_top_middle.png	png	22354	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2681_frame1_filler_top_frame1_filler_top.png	png	14795	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2682_frame1_top_middle_2_frame1_top_middle_2.png	png	34704	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2683_frame1_top_left_frame1_top_left.png	png	16437	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2684_frame1_button_close_frame1_button_close.png	png	2378	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2724.png	png	1618	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2728.jpg	jpg	2641	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2736.png	png	10693	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2740.png	png	12298	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2744.png	png	15913	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2748.png	png	20412	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/275.jpg	jpg	4153	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2752.png	png	22673	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2756.png	png	32656	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2760.png	png	66257	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2767.png	png	2803	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2772.jpg	jpg	4624	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2777_pushpins_pushpins.png	png	23049	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2778_pin_shadow_pin_shadow.png	png	1177	0			image_asset_semantic_name	medium	reuse_via_atlas_pipeline	client_assets/atlases	Nome semantico sugere utilidade direta
+images/2787.png	png	1191	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2820.jpg	jpg	2593	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2823.png	png	98	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2826.png	png	4595	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2830.png	png	707	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2835.png	png	602	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2854.png	png	1004	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2856.png	png	1079	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2862.png	png	317	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2982.png	png	516	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2983.png	png	290	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2986.png	png	619	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2989.png	png	731	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2992.png	png	726	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/2996.png	png	4833	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/3002.png	png	342	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/3004.png	png	359	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/306.png	png	16883	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/3069.jpg	jpg	1198	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/3071.png	png	26183	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/308.jpg	jpg	5053	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/3080.png	png	9063	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/310.jpg	jpg	4723	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/312.jpg	jpg	3861	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/3122.png	png	219	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/3125.jpg	jpg	351	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/3128.jpg	jpg	346	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/3131.png	png	1291	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/3134.png	png	1510	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/3137.png	png	797	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/314.jpg	jpg	4199	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/347.png	png	4839	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/363.jpg	jpg	3295	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/365.jpg	jpg	2351	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/368.jpg	jpg	13664	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/370.jpg	jpg	13796	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/372.jpg	jpg	13892	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/374.jpg	jpg	13930	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/376.jpg	jpg	4706	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/378.jpg	jpg	1245	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/380.jpg	jpg	12010	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/382.jpg	jpg	12964	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/384.jpg	jpg	13786	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/386.jpg	jpg	11862	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/388.jpg	jpg	12202	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/39.png	png	2178	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/390.jpg	jpg	12700	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/392.jpg	jpg	11632	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/394.jpg	jpg	11956	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/396.jpg	jpg	12128	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/398.jpg	jpg	11870	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/400.jpg	jpg	12176	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/402.jpg	jpg	12488	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/404.jpg	jpg	1222	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/406.jpg	jpg	1254	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/408.jpg	jpg	1270	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/410.jpg	jpg	1153	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/412.jpg	jpg	1219	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/414.jpg	jpg	1370	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/416.jpg	jpg	964	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/418.jpg	jpg	1925	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/420.jpg	jpg	2188	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/422.jpg	jpg	2209	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/424.jpg	jpg	1742	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/426.jpg	jpg	1896	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/428.jpg	jpg	4671	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/430.jpg	jpg	2252	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/432.jpg	jpg	5469	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/434.jpg	jpg	5369	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/436.jpg	jpg	10211	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/438.jpg	jpg	10900	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/440.jpg	jpg	11725	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/442.jpg	jpg	9810	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/444.jpg	jpg	10736	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/446.jpg	jpg	11274	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/448.jpg	jpg	10246	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/450.jpg	jpg	11327	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/452.jpg	jpg	11785	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/454.jpg	jpg	10673	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/456.jpg	jpg	12301	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/458.jpg	jpg	13789	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/46.png	png	269188	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/460.jpg	jpg	13330	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/462.jpg	jpg	13496	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/464.jpg	jpg	13827	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/466.jpg	jpg	10583	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/468.jpg	jpg	11323	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/470.jpg	jpg	15301	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/472.jpg	jpg	16580	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/474.jpg	jpg	13333	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/477.jpg	jpg	800	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/482.png	png	1687	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/49.png	png	259588	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/508.jpg	jpg	2393	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/516.png	png	4201	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/536.png	png	1678	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/537.jpg	jpg	677	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/55.png	png	345418	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/551.png	png	7571	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/557.png	png	3747	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/564.png	png	4067	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/567.png	png	3430	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/571.png	png	5410	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/574.png	png	8638	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/581.png	png	12710	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/593.png	png	870	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/598.png	png	4635	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/606.png	png	9234	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/609.png	png	4917	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/612.png	png	6137	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/618.png	png	344	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/622.png	png	460	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/625.png	png	723	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/646.png	png	887	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/650.png	png	1665	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/659.png	png	9792	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/66.png	png	42598	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/674.png	png	3666	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/679.jpg	jpg	862	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/681.png	png	2442	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/684.png	png	2416	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/687.png	png	3619	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/690.png	png	3326	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/696.jpg	jpg	1904	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+images/87.png	png	10360	0			image_asset_numeric_id	medium	reuse_with_symbol_mapping	client_assets/atlases	ID numerico; mapear para simbolo funcional
+morphshapes/1817.swf	swf	1291	0			flash_binary_morphshape	high	extract_and_convert	client_assets/spritesheets	Nao usar SWF em runtime; extrair para PNG/atlas
+scripts/ACADEMY.as	as	10096	269	ACADEMY		core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global save domain
+scripts/ACADEMYPOPUP.as	as	24373	620	ACADEMYPOPUP	ACADEMYPOPUP_CLIP	ui_behavior_flash	medium	rewrite_ui	pixi_scene_or_html_overlay	Manter copy/fluxo; reimplementar componentes | signals:flash global domain
+scripts/ACADEMYPOPUP_CLIP.as	as	2164	99	ACADEMYPOPUP_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/ACHIEVEMENTS.as	as	6375	203	ACHIEVEMENTS		core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:global maproom domain
+scripts/AIATTACKPOPUP_CLIP.as	as	741	34	AIATTACKPOPUP_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/ATTACK.as	as	47205	1336	ATTACK		core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global save maproom domain
+scripts/BASE.as	as	255276	6682	BASE		core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global save maproom domain
+scripts/BDECORATION.as	as	1232	50	BDECORATION	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BEXPIRABLE.as	as	1147	52	BEXPIRABLE	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BFOUNDATION.as	as	153206	4414	BFOUNDATION	GameObject	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global save maproom domain
+scripts/BHEAVYTRAP.as	as	4466	135	BHEAVYTRAP	BTRAP	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global domain
+scripts/BMUSHROOM.as	as	3584	129	BMUSHROOM	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BRESOURCE.as	as	21655	655	BRESOURCE	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global maproom domain
+scripts/BSTORAGE.as	as	6279	192	BSTORAGE	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:global maproom domain
+scripts/BTOTEM.as	as	9054	339	BTOTEM	BDECORATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:global domain
+scripts/BTOWER.as	as	20614	630	BTOWER	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global maproom
+scripts/BTRAP.as	as	5155	180	BTRAP	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global domain
+scripts/BUILDING1.as	as	1772	64	BUILDING1	BRESOURCE	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BUILDING10.as	as	2730	94	BUILDING10	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BUILDING11.as	as	10573	315	BUILDING11	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global maproom
+scripts/BUILDING112.as	as	2461	93	BUILDING112	BSTORAGE	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global maproom
+scripts/BUILDING113.as	as	1459	62	BUILDING113	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BUILDING115.as	as	7956	243	BUILDING115	BTOWER	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global domain
+scripts/BUILDING117.as	as	508	24	BUILDING117	BHEAVYTRAP	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash
+scripts/BUILDING118.as	as	11193	314	BUILDING118	BTOWER	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global domain
+scripts/BUILDING12.as	as	2055	86	BUILDING12	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BUILDING13.as	as	21127	624	BUILDING13	HatcheryBase	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global domain
+scripts/BUILDING14.as	as	7432	222	BUILDING14	BSTORAGE	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global maproom
+scripts/BUILDING15.as	as	4556	143	BUILDING15	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global maproom
+scripts/BUILDING16.as	as	12531	378	BUILDING16	HatcheryBase	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BUILDING17.as	as	1410	47	BUILDING17	BWALL	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BUILDING18.as	as	1075	38	BUILDING18	BWALL	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash
+scripts/BUILDING19.as	as	4975	171	BUILDING19	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BUILDING2.as	as	1820	66	BUILDING2	BRESOURCE	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BUILDING20.as	as	1755	57	BUILDING20	BTOWER	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global domain
+scripts/BUILDING21.as	as	2336	88	BUILDING21	BTOWER	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global domain
+scripts/BUILDING22.as	as	29325	858	BUILDING22	Bunker	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global save maproom domain
+scripts/BUILDING23.as	as	3793	122	BUILDING23	BTOWER	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global domain
+scripts/BUILDING24.as	as	275	17	BUILDING24	BTRAP	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash
+scripts/BUILDING25.as	as	9077	268	BUILDING25	BTOWER	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global domain
+scripts/BUILDING26.as	as	4763	153	BUILDING26	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global domain
+scripts/BUILDING27.as	as	4925	170	BUILDING27	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global maproom domain
+scripts/BUILDING3.as	as	1696	61	BUILDING3	BRESOURCE	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BUILDING4.as	as	1801	65	BUILDING4	BRESOURCE	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BUILDING5.as	as	3949	136	BUILDING5	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BUILDING51.as	as	4620	146	BUILDING51	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BUILDING52.as	as	1541	61	BUILDING52	BEXPIRABLE	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BUILDING6.as	as	3844	121	BUILDING6	BSTORAGE	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BUILDING7.as	as	330	18	BUILDING7	BMUSHROOM	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash
+scripts/BUILDING8.as	as	5390	161	BUILDING8	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global domain
+scripts/BUILDING9.as	as	7588	257	BUILDING9	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global save domain
+scripts/BUILDINGBUTTON.as	as	6356	176	BUILDINGBUTTON	BUILDINGBUTTON_CLIP	core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global
+scripts/BUILDINGBUTTONSOON.as	as	353	18	BUILDINGBUTTONSOON	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BUILDINGBUTTON_CLIP.as	as	615	30	BUILDINGBUTTON_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BUILDINGINFO.as	as	28331	769	BUILDINGINFO		core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global maproom domain
+scripts/BUILDINGOPTIONS.as	as	1206	50	BUILDINGOPTIONS		core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global
+scripts/BUILDINGOPTIONSPOPUP.as	as	43423	1152	BUILDINGOPTIONSPOPUP	BUILDINGOPTIONSPOPUP_CLIP	ui_behavior_flash	medium	rewrite_ui	pixi_scene_or_html_overlay	Manter copy/fluxo; reimplementar componentes | signals:flash global domain
+scripts/BUILDINGOPTIONSPOPUP_CLIP.as	as	655	30	BUILDINGOPTIONSPOPUP_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BUILDINGS.as	as	2006	82	BUILDINGS		core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global maproom domain
+scripts/BUILDINGSARROW.as	as	1232	58	BUILDINGSARROW	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BUILDINGSPOPUP.as	as	11438	353	BUILDINGSPOPUP	BUILDINGSPOPUP_CLIP	core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global domain
+scripts/BUILDINGSPOPUPINFO_CLIP.as	as	605	28	BUILDINGSPOPUPINFO_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BUILDINGSPOPUP_CLIP.as	as	650	32	BUILDINGSPOPUP_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BUY.as	as	16400	510	BUY		core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global save domain
+scripts/BWALL.as	as	1195	44	BWALL	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global
+scripts/BasePlannerPopup_BottomLayout.as	as	875	40	BasePlannerPopup_BottomLayout	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerPopup_CLIP.as	as	521	23	BasePlannerPopup_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerPopup_DisplayItem_Building.as	as	681	31	BasePlannerPopup_DisplayItem_Building	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerPopup_DisplayViewContainer.as	as	531	23	BasePlannerPopup_DisplayViewContainer	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerPopup_ExplorerCanvas.as	as	409	19	BasePlannerPopup_ExplorerCanvas	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerPopup_ExplorerContainer.as	as	612	25	BasePlannerPopup_ExplorerContainer	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerPopup_ExplorerFrame.as	as	320	15	BasePlannerPopup_ExplorerFrame	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerPopup_ExplorerHeader.as	as	397	18	BasePlannerPopup_ExplorerHeader	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerPopup_ExplorerItem_Category.as	as	545	24	BasePlannerPopup_ExplorerItem_Category	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerPopup_ExplorerItem_Type.as	as	492	22	BasePlannerPopup_ExplorerItem_Type	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerPopup_ToolTip.as	as	416	20	BasePlannerPopup_ToolTip	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerPopup_ToolsButton_Move.as	as	329	15	BasePlannerPopup_ToolsButton_Move	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerPopup_ToolsButton_Store.as	as	332	15	BasePlannerPopup_ToolsButton_Store	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerPopup_ToolsLayout.as	as	538	23	BasePlannerPopup_ToolsLayout	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerPopup_ZoomLayout.as	as	480	23	BasePlannerPopup_ZoomLayout	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerPopup_xSpot.as	as	296	15	BasePlannerPopup_xSpot	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerTransferConfirmation_CLIP.as	as	588	26	BasePlannerTransferConfirmation_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerTransferRow_CLIP.as	as	657	29	BasePlannerTransferRow_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlannerTransfer_CLIP.as	as	470	22	BasePlannerTransfer_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlanner_FrameMask.as	as	293	15	BasePlanner_FrameMask	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BasePlanner_fla/CheckBox_3.as	as	309	16	CheckBox_3	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/BlackSpurtzCannon.as	as	222	14	BlackSpurtzCannon	SpurtzCannon	misc_actionscript	medium	analyze_case_by_case	depends	Arquivo AS sem padrao dominante
+scripts/Bunker.as	as	294	18	Bunker	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi
+scripts/Button.as	as	4850	207	Button	MovieClip	ui_behavior_flash	medium	rewrite_ui	pixi_scene_or_html_overlay	Manter copy/fluxo; reimplementar componentes | signals:flash
+scripts/ButtonBrown.as	as	5719	222	ButtonBrown	MovieClip	ui_behavior_flash	medium	rewrite_ui	pixi_scene_or_html_overlay	Manter copy/fluxo; reimplementar componentes | signals:flash
+scripts/ButtonBrown_CLIP.as	as	241	13	ButtonBrown_CLIP	ButtonBrown	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo
+scripts/Button_CLIP.as	as	221	13	Button_CLIP	Button	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo
+scripts/CATAPULTITEM.as	as	4429	144	CATAPULTITEM	CATAPULTITEM_view	core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global
+scripts/CATAPULTITEM_view.as	as	323	17	CATAPULTITEM_view	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/CATAPULTPOPUP.as	as	8661	286	CATAPULTPOPUP	CATAPULTPOPUP_view	core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global domain
+scripts/CATAPULTPOPUP_view.as	as	411	20	CATAPULTPOPUP_view	Sprite	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/CHAMPIONBUTTON.as	as	4024	129	CHAMPIONBUTTON	GUARDIANBUTTON_CLIP	ui_behavior_flash	medium	rewrite_ui	pixi_scene_or_html_overlay	Manter copy/fluxo; reimplementar componentes | signals:flash global domain
+scripts/CHAMPIONCAGE.as	as	41432	1087	CHAMPIONCAGE	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global save maproom domain
+scripts/CHAMPIONCAGEPOPUP.as	as	63957	1469	CHAMPIONCAGEPOPUP	GUARDIANCAGEPOPUP_CLIP	core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global save domain
+scripts/CHAMPIONCHAMBER.as	as	15929	475	CHAMPIONCHAMBER	BFOUNDATION	building_gameplay_logic	high	port_rules_and_data	server_authoritative_cmd+building_defs	Reaproveitar regras (custos, timers, requisitos), reescrever runtime Pixi | signals:flash global save domain
+scripts/CHAMPIONCHAMBERPOPUP.as	as	8951	253	CHAMPIONCHAMBERPOPUP	GUARDIANCHAMBERPOPUP_CLIP	core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global
+scripts/CHAMPIONNAMEPOPUP.as	as	1865	58	CHAMPIONNAMEPOPUP	GUARDIANNAMEPOPUP_CLIP	core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global save domain
+scripts/CHAMPIONSELECTPOPUP.as	as	4170	121	CHAMPIONSELECTPOPUP	GUARDIANSELECTPOPUP_CLIP	core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global save domain
+scripts/CHECKER.as	as	542	27	CHECKER		misc_actionscript	medium	analyze_case_by_case	depends	Arquivo AS sem padrao dominante
+scripts/CREATUREBUTTON.as	as	6057	190	CREATUREBUTTON	CREATUREBUTTON_CLIP	ui_behavior_flash	medium	rewrite_ui	pixi_scene_or_html_overlay	Manter copy/fluxo; reimplementar componentes | signals:flash global domain
+scripts/CREATUREBUTTON_CLIP.as	as	625	30	CREATUREBUTTON_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/CREATURELOCKER.as	as	51904	1371	CREATURELOCKER		core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global save maproom domain
+scripts/CREATURELOCKERPOPUP.as	as	19864	560	CREATURELOCKERPOPUP	CREATURELOCKERPOPUP_CLIP	core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global domain
+scripts/CREATURELOCKERPOPUP_CLIP.as	as	1803	80	CREATURELOCKERPOPUP_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/CREATURES.as	as	10949	370	CREATURES		core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global maproom domain
+scripts/CREEPS.as	as	15784	500	CREEPS		core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global maproom domain
+scripts/CUSTOMATTACKS.as	as	3955	120	CUSTOMATTACKS		core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global save maproom domain
+scripts/CarouselCategoryButton2.as	as	497	24	CarouselCategoryButton2	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/ChampionChamberFrozen.as	as	454	22	ChampionChamberFrozen	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/ChatBox_CLIP.as	as	348	19	ChatBox_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/ChatBox_msg_CLIP.as	as	432	22	ChatBox_msg_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/ChatBox_msg_name_CLIP.as	as	404	20	ChatBox_msg_name_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/ChatUI_fla/ChatBox_ignoreBtn_17.as	as	329	16	ChatBox_ignoreBtn_17	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/ChatUI_fla/ChatBox_msg_bg_16.as	as	320	16	ChatBox_msg_bg_16	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/ChatUI_fla/chat_window_box_10.as	as	323	16	chat_window_box_10	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/CheckBox_CLIP.as	as	286	16	CheckBox_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/CheckBox_disabledIcon.as	as	293	15	CheckBox_disabledIcon	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/CheckBox_downIcon.as	as	281	15	CheckBox_downIcon	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/CheckBox_overIcon.as	as	281	15	CheckBox_overIcon	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/CheckBox_selectedDisabledIcon.as	as	317	15	CheckBox_selectedDisabledIcon	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/CheckBox_selectedDownIcon.as	as	305	15	CheckBox_selectedDownIcon	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/CheckBox_selectedOverIcon.as	as	305	15	CheckBox_selectedOverIcon	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/CheckBox_selectedUpIcon.as	as	299	15	CheckBox_selectedUpIcon	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/CheckBox_upIcon.as	as	275	15	CheckBox_upIcon	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/Checkbox.as	as	4627	192	Checkbox	CheckBox_CLIP	ui_behavior_flash	medium	rewrite_ui	pixi_scene_or_html_overlay	Manter copy/fluxo; reimplementar componentes | signals:flash
+scripts/CreatureLockerItem.as	as	441	22	CreatureLockerItem	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/DEFENSEEVENTPOPUP.as	as	2302	76	DEFENSEEVENTPOPUP	DEFENSEEVENTPOPUP_CLIP	ui_behavior_flash	medium	rewrite_ui	pixi_scene_or_html_overlay	Manter copy/fluxo; reimplementar componentes | signals:flash global
+scripts/DEFENSEEVENTPOPUP_CLIP.as	as	563	27	DEFENSEEVENTPOPUP_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/DEFENSEEVENTPOPUP_WM1.as	as	3723	115	DEFENSEEVENTPOPUP_WM1	DEFENSEEVENTPOPUP_CLIP	ui_behavior_flash	medium	rewrite_ui	pixi_scene_or_html_overlay	Manter copy/fluxo; reimplementar componentes | signals:flash global
+scripts/DROPZONE.as	as	7634	245	DROPZONE	DROPZONE_CLIP	core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash domain
+scripts/DROPZONE_CLIP.as	as	310	17	DROPZONE_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/Dynamic.as	as	109	11	Dynamic		misc_actionscript	medium	analyze_case_by_case	depends	Arquivo AS sem padrao dominante
+scripts/EFFECTS.as	as	10601	323	EFFECTS		core_gameplay_or_flow	high	split_port	server_rules+client_ui_flow	Extrair regras de dominio e contratos; remover acoplamento Flash | signals:flash global
+scripts/ERRORMESSAGE.as	as	3103	99	ERRORMESSAGE	ERRORMESSAGE_CLIP	ui_behavior_flash	medium	rewrite_ui	pixi_scene_or_html_overlay	Manter copy/fluxo; reimplementar componentes | signals:flash global
+scripts/ERRORMESSAGE_CLIP.as	as	395	20	ERRORMESSAGE_CLIP	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/EventRewardRibbon.as	as	439	21	EventRewardRibbon	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/EventStoreDisplayItem.as	as	768	36	EventStoreDisplayItem	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/EventStoreItemSelectedPopupMC.as	as	759	32	EventStoreItemSelectedPopupMC	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash
+scripts/EventStorePopupMC.as	as	544	25	EventStorePopupMC	MovieClip	flash_symbol_wrapper	low	reference_only	design_specs_only	Embed/MovieClip wrapper; nao portar codigo | signals:flash

@@ -101,9 +101,15 @@ export interface BymJwtPayload extends DisgustingJwtPayloadHack {
  */
 export const verifyJwtToken = (token: string): BymJwtPayload => {
   if (process.env.ENV === Env.LOCAL) {
+    const decoded = JWT.decode(token) as BymJwtPayload | null;
+    const email = decoded?.user?.email;
+    if (!email || typeof email !== "string") {
+      throw tokenAuthFailureErr();
+    }
+
     return {
       user: {
-        email: (JWT.decode(token) as BymJwtPayload).user?.email,
+        email,
         meetsDiscordAgeCheck: true,
       },
     };

@@ -34,8 +34,6 @@ describe("ApiClient contracts", () => {
 
   it("/bm/getnewmap should reject invalid schema", async () => {
     const tokenStore = new MemoryTokenStore();
-    await tokenStore.set("dev-token");
-
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -48,6 +46,27 @@ describe("ApiClient contracts", () => {
 
     const api = new ApiClient(config, tokenStore);
     await expect(api.getNewMap()).rejects.toThrowError();
+  });
+
+  it("login should call /player/getinfo and persist token shape", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      text: async () => JSON.stringify({ error: 0, token: "jwt-token", userId: 123 }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const api = new ApiClient(config, new MemoryTokenStore());
+    const result = await api.login({ email: "dev@example.com", password: "Secret123!" });
+
+    expect(result.token).toBe("jwt-token");
+    expect(result.userId).toBe(123);
+
+    const call = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(call[0]).toBe("https://bymr.local/api/v-test/player/getinfo");
+    const headers = call[1].headers as Record<string, string>;
+    expect(headers.Authorization).toBeUndefined();
   });
 
   it("/base/load should validate payload and response", async () => {
@@ -122,6 +141,39 @@ describe("ApiClient contracts", () => {
     expect(body.args).toEqual({ buildingId: "b-1", toX: 4, toY: 2 });
     expect(body.seq).toBe(1);
     expect(typeof body.idempotencyKey).toBe("string");
+  });
+
+  it("cmd should support CancelUpgrade and CollectHarvester ops", async () => {
+    const tokenStore = new MemoryTokenStore();
+    await tokenStore.set("dev-token");
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify({ ok: true, seq: 1, serverTime: 1730000012, delta: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify({ ok: true, seq: 2, serverTime: 1730000013, delta: [] }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const api = new ApiClient(config, tokenStore);
+    await api.cancelUpgrade({ buildingId: "b-1" });
+    await api.collectHarvester({ buildingId: "b-2", amount: 50 });
+
+    const firstBody = JSON.parse(String((fetchMock.mock.calls[0] as [string, RequestInit])[1].body));
+    expect(firstBody.op).toBe("CancelUpgrade");
+    expect(firstBody.args).toEqual({ buildingId: "b-1" });
+
+    const secondBody = JSON.parse(String((fetchMock.mock.calls[1] as [string, RequestInit])[1].body));
+    expect(secondBody.op).toBe("CollectHarvester");
+    expect(secondBody.args).toEqual({ buildingId: "b-2", amount: 50 });
   });
 
   it("/base/save should enforce non-critical action and include audit", async () => {

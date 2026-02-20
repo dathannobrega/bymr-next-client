@@ -12,6 +12,7 @@ Fonte do inventário: `../backyard-monsters-refitted/server/src/app.routes.ts`.
 | POST | `/api/:apiVersion/player/register` | Não (rate-limit) | `register` | Compat legado |
 | POST | `/base/load` | Sim (`verifyUserAuth`) | `baseLoad` | Compat fase 1 |
 | POST | `/base/save` | Sim (`verifyUserAuth`) | `baseSave` | Restringir para cliente novo (E01-S05) |
+| POST | `/api/:apiVersion/cmd` | Sim (`verifyUserAuth`) | `cmd` | Server-authoritative com seq/idempotência/rate-limit |
 | POST | `/base/updatesaved` | Sim (`verifyUserAuth`) | `updateSaved` | Compat legado |
 | POST | `/api/:apiVersion/bm/base/load` | Sim (`verifyUserAuth`) | `baseLoad` | Variante inferno |
 | POST | `/api/:apiVersion/bm/base/save` | Sim (`verifyUserAuth`) | `infernoSave` | Variante inferno |
@@ -24,9 +25,9 @@ Fonte do inventário: `../backyard-monsters-refitted/server/src/app.routes.ts`.
 - Mensagens: `/api/:apiVersion/player/getmessagetargets`, `getmessagethreads`, `getmessagethread`, `sendmessage`, `reportmessagethread`.
 - Outras: `/api/:apiVersion/worlds`, `/api/:apiVersion/leaderboards`, `/api/:apiVersion/attacklogs`.
 
-## Gaps e próximos passos para server-authoritative
+## Próximos passos para server-authoritative
 
-1. Criar `POST /api/:apiVersion/cmd` com envelope (`op`, `args`, `seq`, `idempotencyKey`, `clientTime`).
-2. Implementar idempotência em Redis + rate-limit por operação.
-3. Migrar primeira ação crítica: `PlaceBuilding` (E03-S01), com retorno de delta canônico.
+1. Expandir o `/cmd` para operações adicionais (`CancelUpgrade`, `CollectHarvester`, etc.).
+2. Adicionar nonce + assinatura no envelope para anti-replay avançado.
+3. Cobrir com testes de integração end-to-end (cliente + backend + Redis + Postgres).
 4. Manter rotas legado para clientes antigos até cutover por version gate (`/init`).

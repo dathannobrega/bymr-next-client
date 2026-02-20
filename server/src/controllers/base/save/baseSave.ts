@@ -1,3 +1,6 @@
+import { randomUUID } from "node:crypto";
+import z from "zod";
+
 import { type FieldData, Save } from "../../../models/save.model.js";
 import { User } from "../../../models/user.model.js";
 import { postgres } from "../../../server.js";
@@ -20,6 +23,32 @@ import { validateSave } from "../../../scripts/anticheat/anticheat.js";
 import { updateResources } from "../../../services/base/updateResources.js";
 import { buildingDataHandler } from "./handlers/buildingDataHandler.js";
 
+const NonCriticalActionSchema = z.enum([
+  "SetDecorationVisibility",
+  "SetCosmeticLoadout",
+  "SetUiPreference",
+]);
+
+const NextClientBaseSaveSchema = z
+  .object({
+    baseId: z.string().min(1),
+    action: NonCriticalActionSchema,
+    payload: z.record(z.string(), z.unknown()),
+    audit: z.object({
+      action: NonCriticalActionSchema,
+      at: z.string().min(1),
+      clientVersion: z.string().min(1),
+    }),
+  })
+  .superRefine((value, ctx) => {
+    if (value.action !== value.audit.action) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "action and audit.action must match",
+      });
+    }
+  });
+
 /**
  * Controller responsible for saving the user's base data.
  *
@@ -29,8 +58,26 @@ import { buildingDataHandler } from "./handlers/buildingDataHandler.js";
  */
 export const baseSave: KoaController = async (ctx) => {
   const user: User = ctx.authUser;
-  const userSave = user.save;
   await postgres.em.populate(user, ["save"]);
+  const userSave = user.save ?? (await Save.createMainSave(postgres.em, user));
+
+  const nextClientPayload = NextClientBaseSaveSchema.safeParse(ctx.request.body);
+  if (nextClientPayload.success) {
+    try {
+      await handleNextClientNonCriticalSave(ctx, user, userSave, nextClientPayload.data);
+    } catch (err) {
+      if (err instanceof Error && "isClientFriendly" in err) {
+        throw err;
+      }
+
+      logger.error(
+        `Failed non-critical save for user: ${user.username} | userId=${user.userid} | error=${formatError(err)}`
+      );
+      ctx.status = Status.INTERNAL_SERVER_ERROR;
+      ctx.body = { error: `Failed non-critical save for user: ${user.username}` };
+    }
+    return;
+  }
 
   try {
     const saveData = BaseSaveSchema.parse(ctx.request.body);
@@ -160,16 +207,119 @@ export const baseSave: KoaController = async (ctx) => {
     ctx.status = Status.OK;
     ctx.body = responseBody;
   } catch (err) {
+    if (err instanceof z.ZodError) {
+      ctx.status = Status.BAD_REQUEST;
+      ctx.body = {
+        error: "Invalid base save payload.",
+        details: err.issues.map((issue) => issue.message),
+      };
+      return;
+    }
+
     if (err instanceof Error && 'isClientFriendly' in err) {
       throw err;
     }
 
-    logger.error(`Failed to save base for user: ${user.username}`, err);
+    logger.error(
+      `Failed to save base for user: ${user.username} | userId=${user.userid} | error=${formatError(err)}`
+    );
 
     ctx.status = Status.INTERNAL_SERVER_ERROR;
     ctx.body = { error: `Failed to save for user: ${user.username}` };
   }
 };
+
+async function handleNextClientNonCriticalSave(
+  ctx: Parameters<KoaController>[0],
+  user: User,
+  userSave: Save,
+  payload: z.infer<typeof NextClientBaseSaveSchema>
+): Promise<void> {
+  const targetSave = await resolveTargetSave(user, userSave, payload.baseId);
+  if (!targetSave || targetSave.saveuserid !== user.userid) {
+    throw permissionErr();
+  }
+
+  const playerData = asRecord(targetSave.player) ?? {};
+
+  switch (payload.action) {
+    case "SetUiPreference": {
+      const uiPreferences = asRecord(playerData.uiPreferences) ?? {};
+      const key = typeof payload.payload.key === "string" ? payload.payload.key : "unknown";
+      uiPreferences[key] = payload.payload.value;
+      playerData.uiPreferences = uiPreferences;
+      break;
+    }
+
+    case "SetDecorationVisibility":
+      playerData.decorationVisibility = payload.payload;
+      break;
+
+    case "SetCosmeticLoadout":
+      playerData.cosmeticLoadout = payload.payload;
+      break;
+  }
+
+  targetSave.player = playerData;
+  appendNonCriticalAudit(targetSave, user, ctx.ip, payload);
+
+  targetSave.id = targetSave.savetime;
+  targetSave.savetime = getCurrentDateTime();
+  await postgres.em.persistAndFlush(targetSave);
+
+  logger.info(
+    `Non-critical save action '${payload.action}' persisted | userId=${user.userid} | baseId=${targetSave.baseid} | traceId=${randomUUID()}`
+  );
+
+  ctx.status = Status.OK;
+  ctx.body = {
+    ok: true,
+    savedAt: new Date(targetSave.savetime * 1000).toISOString(),
+  };
+}
+
+async function resolveTargetSave(user: User, userSave: Save, baseId: string): Promise<Save | null> {
+  const normalized = baseId.trim().toLowerCase();
+  if (
+    normalized === "home" ||
+    normalized === "self" ||
+    normalized === "main" ||
+    normalized === "default" ||
+    normalized === "0"
+  ) {
+    return userSave;
+  }
+
+  return postgres.em.findOne(Save, {
+    baseid: baseId,
+    saveuserid: user.userid,
+  });
+}
+
+function appendNonCriticalAudit(
+  save: Save,
+  user: User,
+  ip: string,
+  payload: z.infer<typeof NextClientBaseSaveSchema>
+): void {
+  const updates = Array.isArray(save.updates) ? [...save.updates] : [];
+  updates.push({
+    k: "nonCriticalAction",
+    action: payload.action,
+    at: payload.audit.at,
+    clientVersion: payload.audit.clientVersion,
+    userId: user.userid,
+    ip,
+    traceId: randomUUID(),
+  });
+
+  const MAX_AUDIT_ITEMS = 200;
+  while (updates.length > MAX_AUDIT_ITEMS) {
+    updates.shift();
+  }
+
+  save.updates = updates;
+}
 
 const updateOutposts = (
   userSave: Save,
@@ -186,3 +336,18 @@ const updateOutposts = (
     userSave.quests = baseSave.quests;
   }
 };
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function formatError(err: unknown): string {
+  if (err instanceof Error) return err.stack ?? err.message;
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
+}

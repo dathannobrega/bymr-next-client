@@ -2,7 +2,7 @@
 
 This document lists:
 1) **Current server routes** (compatibility phase)
-2) **Proposed new routes** (command-based hardening)
+2) **Routes for command-based hardening** (implemented + planned)
 
 ## Current routes (from server router)
 Key endpoints already present include:
@@ -28,10 +28,17 @@ Body envelope:
 }
 ```
 
+`buildingType` aceita formatos compatíveis com legado:
+- alias: `hq`
+- numérico: `14`
+- prefixado: `building-14`
+
 Supported ops in client:
 - `PlaceBuilding`
 - `MoveBuilding`
 - `UpgradeBuilding`
+- `CancelUpgrade`
+- `CollectHarvester`
 
 Success response:
 ```json
@@ -60,10 +67,13 @@ Structured error response:
 - Enforce idempotency in Redis with key format: `cmd:<userId>:<idempotencyKey>`.
 - Return same deterministic outcome for repeated idempotency key.
 - Apply rate limit per `op` and log rejects with `traceId`.
+- Optional anti-replay nonce can be validated in Redis (`cmd-nonce:<userId>:<nonce>`).
 
 ## Base endpoints hardening
 ### `POST /base/load`
-- Must accept `{ baseId, mode }`.
+- Must accept `{ baseId, mode }` for the next client.
+- Must continue to accept legacy payload (`baseid`, `type`, etc.) during transition.
+- Invalid payloads should return `400` with schema details (not `500`).
 - Should return normalized shape:
   - `yardWidth`
   - `yardHeight`
@@ -73,6 +83,8 @@ Structured error response:
 - Transitional endpoint for **non-critical** actions only.
 - Must require `action` in allowlist (`SetDecorationVisibility`, `SetCosmeticLoadout`, `SetUiPreference`).
 - Must persist audit payload (`audit.action`, `audit.at`, `audit.clientVersion`).
+- Invalid payloads should return `400` with schema details (not `500`).
+- Legacy Flash payload remains supported during cutover window.
 
 ## Future additions
 ### `GET /api/:apiVersion/state`

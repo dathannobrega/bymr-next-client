@@ -1,8 +1,12 @@
 export {
   InitResponseSchema,
   GetNewMapResponseSchema,
+  LoginRequestSchema,
+  LoginResponseSchema,
   type InitResponse,
   type GetNewMapResponse,
+  type LoginRequest,
+  type LoginResponse,
 } from "../contracts/compat";
 
 export {
@@ -15,6 +19,8 @@ export {
   type PlaceBuildingArgs,
   type MoveBuildingArgs,
   type UpgradeBuildingArgs,
+  type CancelUpgradeArgs,
+  type CollectHarvesterArgs,
 } from "../contracts/cmd";
 
 export {
