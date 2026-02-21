@@ -177,4 +177,82 @@ describe("applyCmdDeltaToBase", () => {
       repairing: true,
     });
   });
+
+  it("should apply fortification completion delta", () => {
+    const next = applyCmdDeltaToBase(
+      {
+        yardWidth: 20,
+        yardHeight: 14,
+        buildings: [
+          {
+            id: "b-1",
+            type: "hq",
+            x: 1,
+            y: 2,
+            fortification: 1,
+            countdownFortify: 120,
+          },
+        ],
+      },
+      [
+        {
+          op: "setBuildingFortification",
+          id: "b-1",
+          fortification: 2,
+          countdownFortify: 0,
+        },
+      ]
+    );
+
+    expect(next.buildings[0]).toMatchObject({
+      id: "b-1",
+      fortification: 2,
+      countdownFortify: 0,
+    });
+  });
+
+  it("should apply progression and repair summary deltas", () => {
+    const next = applyCmdDeltaToBase(
+      {
+        yardWidth: 20,
+        yardHeight: 14,
+        buildings: [],
+      },
+      [
+        {
+          op: "setProgression",
+          progression: {
+            level: 6,
+            tutorialStage: 2,
+            points: 9000,
+            baseValue: 12000,
+            empireValue: 20000,
+            protected: 0,
+            damage: 100,
+            destroyed: 10,
+          },
+        },
+        {
+          op: "setRepairSummary",
+          repair: {
+            estimatedDurationSec: 1800,
+            repairingCount: 3,
+            damagedCount: 6,
+          },
+        },
+      ]
+    );
+
+    expect(next.progression).toMatchObject({
+      level: 6,
+      points: 9000,
+      baseValue: 12000,
+      empireValue: 20000,
+    });
+    expect(next.repair).toEqual({
+      estimatedDurationSec: 1800,
+      repairingCount: 3,
+      damagedCount: 6,
+    });
+  });
 });

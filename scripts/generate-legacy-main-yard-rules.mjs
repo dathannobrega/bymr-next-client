@@ -114,6 +114,16 @@ for (const raw of yardProps) {
     category: typeof raw?.type === "string" ? raw.type : "unknown",
     quantityByTownHall: quantityByTownHall.length > 0 ? quantityByTownHall : [0],
     costs,
+    ...(typeof toBoolean(raw?.can_fortify) === "boolean"
+      ? { canFortify: toBoolean(raw?.can_fortify) }
+      : {}),
+    ...(Array.isArray(raw?.fortify_costs)
+      ? {
+          fortifyCosts: raw.fortify_costs
+            .map((entry) => parseCost(entry))
+            .filter((entry) => entry !== null),
+        }
+      : {}),
     ...(toIntArray(raw?.hp).length > 0 ? { hpByLevel: toIntArray(raw?.hp) } : {}),
     ...(toIntArray(raw?.capacity).length > 0 ? { capacityByLevel: toIntArray(raw?.capacity) } : {}),
     ...(toIntArray(raw?.produce).length > 0 ? { produceByLevel: toIntArray(raw?.produce) } : {}),
@@ -161,6 +171,8 @@ export type LegacyMainYardRule = {
   category: string;
   quantityByTownHall: number[];
   costs: LegacyBuildCost[];
+  canFortify?: boolean;
+  fortifyCosts?: LegacyBuildCost[];
   hpByLevel?: number[];
   capacityByLevel?: number[];
   produceByLevel?: number[];
@@ -245,4 +257,19 @@ function toInt(value, fallback) {
     }
   }
   return fallback;
+}
+
+function toBoolean(value) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return undefined;
+    return Math.trunc(value) !== 0;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return undefined;
+    if (normalized === "true" || normalized === "1" || normalized === "yes") return true;
+    if (normalized === "false" || normalized === "0" || normalized === "no") return false;
+  }
+  return undefined;
 }

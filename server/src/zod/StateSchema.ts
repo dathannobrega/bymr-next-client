@@ -55,9 +55,12 @@ export const StateBuildingSchema = z.object({
   x: z.number().int().nonnegative(),
   y: z.number().int().nonnegative(),
   level: z.number().int().positive().optional(),
+  fortification: z.number().int().nonnegative().optional(),
   footprintW: z.number().int().positive().optional(),
   footprintH: z.number().int().positive().optional(),
+  countdownBuild: z.number().int().nonnegative().optional(),
   countdownUpgrade: z.number().int().nonnegative().optional(),
+  countdownFortify: z.number().int().nonnegative().optional(),
   upgradeToLevel: z.number().int().positive().optional(),
   hp: z.number().int().nonnegative().optional(),
   maxHp: z.number().int().positive().optional(),
@@ -102,6 +105,13 @@ export const StateSnapshotResponseSchema = z.object({
   }),
   storeData: z.record(z.string(), StateStoreItemSchema).optional(),
   academy: StateAcademySchema.optional(),
+  repair: z
+    .object({
+      estimatedDurationSec: z.number().int().nonnegative(),
+      repairingCount: z.number().int().nonnegative(),
+      damagedCount: z.number().int().nonnegative(),
+    })
+    .optional(),
   buildings: z.array(StateBuildingSchema),
   maproom: z.object({
     worldId: z.string().nullable(),

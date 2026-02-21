@@ -180,6 +180,7 @@ if [ "${CMD_OK}" != "1" ]; then
 fi
 
 assert_json "Baseline success" "${SUCCESS_RESP}" '.ok == true and (.seq | type=="number") and (.delta | type=="array" and length >= 1)'
+assert_json "Baseline progression delta" "${SUCCESS_RESP}" '.delta | any(.op == "setProgression")'
 SUCCESS_SEQ="$(echo "${SUCCESS_RESP}" | jq -r '.seq')"
 SUCCESS_DELTA="$(echo "${SUCCESS_RESP}" | jq -c '.delta')"
 TH_BUILDING_ID="$(echo "${SUCCESS_RESP}" | jq -r '.delta[]? | select(.op=="addBuilding") | .id // empty' | head -n 1)"
@@ -343,6 +344,73 @@ if [ -z "${B3_ID}" ]; then
   echo "[smoke-cmd] Could not resolve building-3 id"
   print_response "${PLACE_B3_RESP}"
   exit 1
+fi
+
+echo "[smoke-cmd] Validating fortify flow (start/cancel/finish)"
+SEQ=$((SEQ + 1))
+START_FORTIFY_PAYLOAD="$(
+  jq -nc \
+    --arg idempotencyKey "smoke-cmd-start-fortify-${USERNAME}-${SEQ}" \
+    --arg buildingId "${B1_ID}" \
+    --argjson seq "${SEQ}" \
+    '{op:"StartFortifyBuilding",args:{buildingId:$buildingId},seq:$seq,idempotencyKey:$idempotencyKey}'
+)"
+START_FORTIFY_RESP="$(post_cmd "${START_FORTIFY_PAYLOAD}")"
+assert_json "StartFortifyBuilding" "${START_FORTIFY_RESP}" \
+  '.ok == true and (.delta | any(.op == "setBuildingFortification" and (.countdownFortify // 0) > 0))'
+
+SEQ=$((SEQ + 1))
+CANCEL_FORTIFY_PAYLOAD="$(
+  jq -nc \
+    --arg idempotencyKey "smoke-cmd-cancel-fortify-${USERNAME}-${SEQ}" \
+    --arg buildingId "${B1_ID}" \
+    --argjson seq "${SEQ}" \
+    '{op:"CancelFortifyBuilding",args:{buildingId:$buildingId},seq:$seq,idempotencyKey:$idempotencyKey}'
+)"
+CANCEL_FORTIFY_RESP="$(post_cmd "${CANCEL_FORTIFY_PAYLOAD}")"
+assert_json "CancelFortifyBuilding" "${CANCEL_FORTIFY_RESP}" \
+  '.ok == true and (.delta | any(.op == "setBuildingFortification" and (.countdownFortify // 0) == 0))'
+
+SEQ=$((SEQ + 1))
+START_FORTIFY_PAYLOAD_2="$(
+  jq -nc \
+    --arg idempotencyKey "smoke-cmd-start-fortify-2-${USERNAME}-${SEQ}" \
+    --arg buildingId "${B1_ID}" \
+    --argjson seq "${SEQ}" \
+    '{op:"StartFortifyBuilding",args:{buildingId:$buildingId},seq:$seq,idempotencyKey:$idempotencyKey}'
+)"
+START_FORTIFY_RESP_2="$(post_cmd "${START_FORTIFY_PAYLOAD_2}")"
+assert_json "StartFortifyBuilding (2)" "${START_FORTIFY_RESP_2}" \
+  '.ok == true and (.delta | any(.op == "setBuildingFortification" and (.countdownFortify // 0) > 0))'
+
+SEQ=$((SEQ + 1))
+FINISH_FORTIFY_PAYLOAD="$(
+  jq -nc \
+    --arg idempotencyKey "smoke-cmd-finish-fortify-${USERNAME}-${SEQ}" \
+    --arg buildingId "${B1_ID}" \
+    --argjson seq "${SEQ}" \
+    '{op:"FinishFortifyNow",args:{buildingId:$buildingId},seq:$seq,idempotencyKey:$idempotencyKey}'
+)"
+FINISH_FORTIFY_RESP="$(post_cmd "${FINISH_FORTIFY_PAYLOAD}")"
+FINISH_FORTIFY_CODE="$(echo "${FINISH_FORTIFY_RESP}" | jq -r '.code // ""')"
+if [ "${FINISH_FORTIFY_CODE}" = "INSUFFICIENT_CREDITS" ]; then
+  assert_json "FinishFortifyNow (insufficient credits)" "${FINISH_FORTIFY_RESP}" \
+    '.code == "INSUFFICIENT_CREDITS"'
+
+  SEQ=$((SEQ + 1))
+  CANCEL_FORTIFY_AFTER_FINISH_FAIL_PAYLOAD="$(
+    jq -nc \
+      --arg idempotencyKey "smoke-cmd-cancel-fortify-after-finish-fail-${USERNAME}-${SEQ}" \
+      --arg buildingId "${B1_ID}" \
+      --argjson seq "${SEQ}" \
+      '{op:"CancelFortifyBuilding",args:{buildingId:$buildingId},seq:$seq,idempotencyKey:$idempotencyKey}'
+  )"
+  CANCEL_FORTIFY_AFTER_FINISH_FAIL_RESP="$(post_cmd "${CANCEL_FORTIFY_AFTER_FINISH_FAIL_PAYLOAD}")"
+  assert_json "CancelFortifyBuilding (cleanup)" "${CANCEL_FORTIFY_AFTER_FINISH_FAIL_RESP}" \
+    '.ok == true and (.delta | any(.op == "setBuildingFortification" and (.countdownFortify // 0) == 0))'
+else
+  assert_json "FinishFortifyNow" "${FINISH_FORTIFY_RESP}" \
+    '.ok == true and (.delta | any(.op == "fortifyFinishNow")) and (.delta | any(.op == "setBuildingFortification" and (.countdownFortify // 0) == 0))'
 fi
 
 SEQ=$((SEQ + 1))

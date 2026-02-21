@@ -255,6 +255,10 @@ assert_json "SSE frame damage totals" "${FRAMES_JSON}" \
   '([.[].attackerDamage] | add) > 0 and ([.[].defenderDamage] | add) >= 0'
 assert_json "SSE result payload" "${RESULT_JSON}" \
   '(.winner == "attacker" or .winner == "defender" or .winner == "draw")'
+assert_json "SSE result loot shape" "${RESULT_JSON}" \
+  '(.loot.r1 | type=="number" and . >= 0) and (.loot.r2 | type=="number" and . >= 0) and (.loot.r3 | type=="number" and . >= 0) and (.loot.r4 | type=="number" and . >= 0)'
+assert_json "SSE result loot caps" "${RESULT_JSON}" \
+  '(.loot.r1 <= 10000000) and (.loot.r2 <= 10000000) and (.loot.r3 <= 10000000) and (.loot.r4 <= 10000000)'
 
 FRAME_COUNT="$(echo "${FRAMES_JSON}" | jq -r 'length')"
 RESULT_TICKS="$(echo "${RESULT_JSON}" | jq -r '.durationTicks')"

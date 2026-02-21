@@ -86,6 +86,7 @@ body {
     url("/assets/ui/legacy/frame1_filler_bottom.png") repeat-x bottom center,
     linear-gradient(180deg, rgba(38, 61, 92, 0.76), rgba(9, 18, 34, 0.96));
   box-shadow: 0 8px 24px var(--legacy-shadow);
+  image-rendering: pixelated;
 }
 
 .legacy-hud-top::before {
@@ -98,7 +99,8 @@ body {
     url("/assets/ui/legacy/frame1_top_right.png") no-repeat right top,
     url("/assets/ui/legacy/frame1_bottom_left.png") no-repeat left bottom,
     url("/assets/ui/legacy/frame1_bottom_right.png") no-repeat right bottom;
-  opacity: 0.75;
+  opacity: 1;
+  image-rendering: pixelated;
 }
 
 .legacy-hud-brand {
@@ -259,6 +261,7 @@ body {
     url("/assets/ui/legacy/frame1_bottom_middle.png") repeat-x center,
     linear-gradient(180deg, rgba(58, 83, 116, 0.9), rgba(22, 35, 56, 0.95));
   box-shadow: 0 10px 30px var(--legacy-shadow);
+  image-rendering: pixelated;
 }
 
 .legacy-window {
@@ -270,6 +273,7 @@ body {
   --legacy-frame-filler-bottom: url("/assets/ui/legacy/frame1_filler_bottom.png");
   --legacy-frame-filler-left: url("/assets/ui/legacy/frame1_filler_left.png");
   --legacy-frame-filler-right: url("/assets/ui/legacy/frame1_filler_right.png");
+  --legacy-frame-border-overlay: url("/assets/ui/legacy/screenshot_border1.png");
   --legacy-frame-surface:
     linear-gradient(180deg, rgba(38, 60, 92, 0.76), var(--legacy-panel));
   position: fixed !important;
@@ -285,7 +289,7 @@ body {
     var(--legacy-frame-filler-bottom) repeat-x bottom center,
     var(--legacy-frame-surface);
   box-shadow: 0 18px 42px var(--legacy-shadow);
-  backdrop-filter: blur(1.5px);
+  image-rendering: pixelated;
 }
 
 .legacy-window[data-legacy-frame="frame2"] {
@@ -297,6 +301,7 @@ body {
   --legacy-frame-filler-bottom: url("/assets/ui/legacy/frame2_filler_bottom.png");
   --legacy-frame-filler-left: url("/assets/ui/legacy/frame2_filler_left.png");
   --legacy-frame-filler-right: url("/assets/ui/legacy/frame2_filler_right.png");
+  --legacy-frame-border-overlay: url("/assets/ui/legacy/screenshot_border2.png");
   --legacy-frame-surface:
     url("/assets/ui/legacy/frame2_background.png") repeat,
     linear-gradient(180deg, rgba(49, 73, 107, 0.92), rgba(17, 28, 47, 0.97));
@@ -312,6 +317,7 @@ body {
   --legacy-frame-filler-bottom: url("/assets/ui/legacy/frame3_filler_bottom.png");
   --legacy-frame-filler-left: url("/assets/ui/legacy/frame3_filler_left.png");
   --legacy-frame-filler-right: url("/assets/ui/legacy/frame3_filler_right.png");
+  --legacy-frame-border-overlay: url("/assets/ui/legacy/screenshot_border3.png");
   --legacy-frame-surface:
     url("/assets/ui/legacy/frame3_background.jpg") repeat,
     linear-gradient(180deg, rgba(51, 75, 105, 0.88), rgba(16, 24, 40, 0.97));
@@ -324,11 +330,13 @@ body {
   inset: 0;
   pointer-events: none;
   background:
+    var(--legacy-frame-border-overlay) no-repeat center / 100% 100%,
     var(--legacy-frame-top-left) no-repeat left top,
     var(--legacy-frame-top-right) no-repeat right top,
     var(--legacy-frame-bottom-left) no-repeat left bottom,
     var(--legacy-frame-bottom-right) no-repeat right bottom;
-  opacity: 0.7;
+  opacity: 1;
+  image-rendering: pixelated;
 }
 
 .legacy-window::after {
@@ -339,7 +347,8 @@ body {
   background:
     var(--legacy-frame-filler-left) repeat-y left center,
     var(--legacy-frame-filler-right) repeat-y right center;
-  opacity: 0.5;
+  opacity: 0.85;
+  image-rendering: pixelated;
 }
 
 .legacy-window > * {

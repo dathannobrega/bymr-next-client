@@ -29,6 +29,7 @@ import {
   YARD_HEIGHT,
   YARD_WIDTH,
   deriveYardTheme,
+  parseIntSafe,
   toNormalizedBuildings,
   toResourceSummary,
 } from "../../../services/state/normalizeState.js";
@@ -37,6 +38,10 @@ import {
   applyLegacyAcademyProgress,
   buildAcademyStateSummary,
 } from "../../../services/state/academyState.js";
+import {
+  applyLegacyBaseProgression,
+  buildLegacyRepairSummary,
+} from "../../../services/state/legacyBaseCoreParity.js";
 
 const NextClientBaseLoadSchema = z.object({
   baseId: z.string().min(1),
@@ -121,6 +126,7 @@ export const baseLoad: KoaController = async (ctx) => {
 
     applyLegacyBuildingProgress(baseSave);
     applyLegacyAcademyProgress(baseSave);
+    applyLegacyBaseProgression(baseSave);
 
     if (parsedRequest.nextClient) {
       ctx.status = Status.OK;
@@ -257,12 +263,29 @@ function toNextClientBaseLoad(save: Save) {
     yardHeight: YARD_HEIGHT,
   });
   const resources = toResourceSummary(save.resources);
+  const progression = applyLegacyBaseProgression(save).progression;
+  const repair = buildLegacyRepairSummary(save);
   return {
     yardWidth: YARD_WIDTH,
     yardHeight: YARD_HEIGHT,
     yardTheme: deriveYardTheme(save),
     buildings,
     resources,
+    progression: {
+      level: progression.level,
+      tutorialStage: Math.max(0, parseIntSafe(save.tutorialstage, 0)),
+      points: progression.points,
+      baseValue: progression.baseValue,
+      empireValue: progression.empireValue,
+      protected: Math.max(0, parseIntSafe(save.protected, 0)),
+      damage: Math.max(0, parseIntSafe(save.damage, 0)),
+      destroyed: Math.max(0, parseIntSafe(save.destroyed, 0)),
+    },
+    repair: {
+      estimatedDurationSec: repair.estimatedDurationSec,
+      repairingCount: repair.repairingCount,
+      damagedCount: repair.damagedCount,
+    },
     academy: buildAcademyStateSummary(save),
   };
 }

@@ -61,7 +61,12 @@ describe("stateSnapshotToParsedBaseLoad", () => {
           },
         },
       },
-      buildings: [{ id: "b-1", type: "hq", x: 2, y: 3 }],
+      repair: {
+        estimatedDurationSec: 900,
+        repairingCount: 2,
+        damagedCount: 4,
+      },
+      buildings: [{ id: "b-1", type: "hq", x: 2, y: 3, fortification: 2 }],
       maproom: {
         worldId: "w-1",
         mapVersion: 3,
@@ -76,5 +81,8 @@ describe("stateSnapshotToParsedBaseLoad", () => {
     expect(parsed.storeData?.BUILDING22?.e).toBe(1730000999);
     expect(parsed.academy?.buildingId).toBe("26");
     expect(parsed.academy?.activeMonsterId).toBe("C1");
+    expect(parsed.progression?.level).toBe(4);
+    expect(parsed.repair?.estimatedDurationSec).toBe(900);
+    expect(parsed.buildings[0]?.fortification).toBe(2);
   });
 });

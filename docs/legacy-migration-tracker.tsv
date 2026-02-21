@@ -140,11 +140,11 @@ images/2211.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	pending
 images/2214.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/2216.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/2330.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
-images/2339.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
-images/2341.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
-images/2343.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
-images/2345.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
-images/2347.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
+images/2339.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	migrated	assets/legacy-image-semantic-map.json,scripts/sync-yard-assets.mjs,server/public/assets/yardbg/lava/2169_inferno_lava1_inferno_lava1.png	Mapeado por hash SHA1 para o asset semântico `2169_inferno_lava1_inferno_lava1.jpg` no pipeline
+images/2341.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	migrated	assets/legacy-image-semantic-map.json,scripts/sync-yard-assets.mjs,server/public/assets/yardbg/lava/2171_inferno_lava2_inferno_lava2.png	Mapeado por hash SHA1 para o asset semântico `2171_inferno_lava2_inferno_lava2.jpg` no pipeline
+images/2343.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	migrated	assets/legacy-image-semantic-map.json,scripts/sync-yard-assets.mjs,server/public/assets/yardbg/lava/2170_inferno_lava3_inferno_lava3.png	Mapeado por hash SHA1 para o asset semântico `2170_inferno_lava3_inferno_lava3.jpg` no pipeline
+images/2345.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	migrated	assets/legacy-image-semantic-map.json,scripts/sync-yard-assets.mjs,server/public/assets/yardbg/lava/2165_inferno_lava4_inferno_lava4.png	Mapeado por hash SHA1 para o asset semântico `2165_inferno_lava4_inferno_lava4.jpg` no pipeline
+images/2347.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	migrated	assets/legacy-image-semantic-map.json,scripts/sync-yard-assets.mjs,server/public/assets/yardbg/grass/2347_grass_rock_path_tile_01.jpg	Mapeado para alias semântico de tile (`grass_rock_path`) com validação `expectedSha1` e materialização no pipeline de yardbg
 images/2350.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/2360.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/2363.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
@@ -169,9 +169,9 @@ images/2548.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending
 images/255.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/259.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/264.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
-images/2654_screenshot_border3_screenshot_border3.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2655_screenshot_border2_screenshot_border2.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2656_screenshot_border1_screenshot_border1.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
+images/2654_screenshot_border3_screenshot_border3.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	assets/legacy-ui-map.json,public/assets/ui/legacy/screenshot_border3.png,src/style.css	Overlay legado integrado ao frame3 das janelas (Maproom/Social) com composição pixel-friendly
+images/2655_screenshot_border2_screenshot_border2.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	assets/legacy-ui-map.json,public/assets/ui/legacy/screenshot_border2.png,src/style.css	Overlay legado integrado ao frame2 das janelas (Building/Flow) com composição pixel-friendly
+images/2656_screenshot_border1_screenshot_border1.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	assets/legacy-ui-map.json,public/assets/ui/legacy/screenshot_border1.png,src/style.css	Overlay legado integrado ao frame base das janelas para aproximar skin original
 images/2671_frame1_bottom_left_frame1_bottom_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
 images/2672_frame1_bottom_middle_frame1_bottom_middle.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
 images/2673_frame1_top_right_frame1_top_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
@@ -332,26 +332,26 @@ scripts/ACADEMYPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/ga
 scripts/ACHIEVEMENTS.as	core_gameplay_or_flow	split_port	pending		
 scripts/AIATTACKPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	pending		
 scripts/ATTACK.as	core_gameplay_or_flow	split_port	migrated	server/src/controllers/combat/startReplay.ts,server/src/controllers/combat/streamReplay.ts,server/src/services/combat/replayEngine.ts,src/lib/contracts/combat.ts,scripts/smoke-combat-replay.sh	Paridade autoritativa fechada para núcleo de combate legado: composição real por grupos, pathfinding por perfil (`direct/ground`), projéteis com tempo de voo, skills (`explode/splits/zombie/support`), torres com range/cooldown e vitória por HQ; validado em Docker com `smoke-combat-replay`
-scripts/BASE.as	core_gameplay_or_flow	split_port	in_progress	server/src/controllers/cmd/cmd.ts,server/src/services/state/normalizeState.ts,server/src/controllers/state/getState.ts,server/src/controllers/state/streamState.ts,src/lib/base/stateSnapshot.ts,src/game/scenes/YardScene.ts,server/src/controllers/base/save/baseSave.ts,server/src/services/state/applyLegacyBuildingProgress.ts	Fluxo core expandido com footprint/render de área, snapshot canônico `/state`, stream autoritativo com `snapshot resync`, aplicação server-authoritative de templates (`ApplyYardPlannerTemplate`) e repair autoritativo (`StartRepairBuilding/StartRepairAllBuildings`) com estado explícito `hp/maxHp/repairing` e delta `setBuildingRepairState`
+scripts/BASE.as	core_gameplay_or_flow	split_port	in_progress	server/src/controllers/cmd/cmd.ts,server/src/services/state/normalizeState.ts,server/src/controllers/state/getState.ts,server/src/controllers/state/streamState.ts,src/lib/base/stateSnapshot.ts,src/game/scenes/YardScene.ts,server/src/controllers/base/save/baseSave.ts,server/src/services/state/applyLegacyBuildingProgress.ts,server/src/services/state/legacyBaseCoreParity.ts	Fluxo core expandido com footprint/render de área, snapshot canônico `/state`, stream autoritativo com `snapshot resync`, templates autoritativos (`ApplyYardPlannerTemplate`), repair autoritativo (`StartRepairBuilding/StartRepairAllBuildings`) com `hp/maxHp/repairing` + deltas (`setBuildingRepairState`), clamp legado de outpost (25%) no repair-all, progresso de fortificação (`countdownFortify -> fort+1`) com delta `setBuildingFortification` e paridade de progressão (`CalcBaseValue/BaseLevel`) via `setProgression` + resumo de reparo (`getEstimatedRepairDuration`)
 scripts/BDECORATION.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BEXPIRABLE.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BFOUNDATION.as	building_gameplay_logic	port_rules_and_data	migrated	server/src/controllers/cmd/cmd.ts,server/src/services/state/applyLegacyBuildingProgress.ts,server/src/services/state/legacyBuildingRuleEffects.ts,server/src/data/buildings/legacyMainYardRules.ts,scripts/smoke-cmd-hardening.sh	Fechamento server-authoritative das regras legadas: limites/requirements/custos reais + efeitos derivados por regra (`maxHp`, reparo, ciclos/capacidade) aplicados em `/cmd` e na progressão temporal (upgrade/build/fortify)
 scripts/BHEAVYTRAP.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BMUSHROOM.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BRESOURCE.as	building_gameplay_logic	port_rules_and_data	migrated	server/src/controllers/cmd/cmd.ts,server/src/services/state/applyLegacyBuildingProgress.ts,server/src/services/state/legacyBuildingRuleEffects.ts,src/lib/game/cmdDelta.ts,src/game/scenes/YardScene.ts,scripts/smoke-cmd-hardening.sh	Paridade de recurso concluída: coletores `1..4` com produção/capacidade/ciclo derivados de `YARD_PROPS`, clamp autoritativo de `st/stored`, coleta bloqueada em estados inválidos e sincronização por delta/snapshot
-scripts/BSTORAGE.as	building_gameplay_logic	port_rules_and_data	pending		
+scripts/BSTORAGE.as	building_gameplay_logic	port_rules_and_data	in_progress	server/src/services/combat/replayEngine.ts,scripts/smoke-combat-replay.sh	Loot de storage alinhado ao fluxo legado `Destroyed`: saque percentual/caps apenas quando storage cai (`TH/silo/outpost`) + chip-loot calibrado por dano acumulado nas estruturas de storage
 scripts/BTOTEM.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BTOWER.as	building_gameplay_logic	port_rules_and_data	pending		
+scripts/BTOWER.as	building_gameplay_logic	port_rules_and_data	in_progress	server/src/services/combat/replayEngine.ts,scripts/smoke-combat-replay.sh	Paridade avançada de targeting/ataque: `canAttack` por busy-state + modo de alvo por tipo (`ground/air/mixed`, legado `_targetFlyerMode`) + padrões de impacto (`multi-target` AA, `pierce` railgun, `burst/splash` por arquétipo)
 scripts/BTRAP.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BUILDING1.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BUILDING10.as	building_gameplay_logic	port_rules_and_data	pending		
+scripts/BUILDING1.as	building_gameplay_logic	port_rules_and_data	migrated	server/src/controllers/cmd/cmd.ts,server/src/services/state/legacyBuildingRuleEffects.ts,server/src/services/state/applyLegacyBuildingProgress.ts,src/lib/base/buildingType.ts,scripts/smoke-cmd-hardening.sh	Wrapper legada de `BRESOURCE` migrada no fluxo autoritativo unificado (produção/coleta/capacidade/reparo) para coletores `1..4`, sem dependência de lógica Flash por classe derivada
+scripts/BUILDING10.as	building_gameplay_logic	port_rules_and_data	migrated	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts,src/lib/contracts/yardPlanner.ts,scripts/smoke-cmd-hardening.sh	Yard Planner (building 10) fechado no client/server autoritativo com leitura/salvamento/aplicação de templates e validações de colisão/bounds/busy
 scripts/BUILDING11.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING112.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING113.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING115.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING117.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING118.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BUILDING12.as	building_gameplay_logic	port_rules_and_data	pending		
+scripts/BUILDING12.as	building_gameplay_logic	port_rules_and_data	migrated	src/lib/base/buildingInfoContext.ts,src/game/scenes/YardScene.ts,src/lib/base/baseLoad.ts,server/src/services/state/normalizeState.ts	General Store (building 12) consolidado no fluxo novo com abertura contextual e gate funcional legado (`countdownBuild`/HP<50%) no client
 scripts/BUILDING13.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING14.as	building_gameplay_logic	port_rules_and_data	migrated	server/src/controllers/cmd/cmd.ts,server/src/services/state/applyLegacyBuildingProgress.ts,server/src/services/state/legacyBuildingRuleEffects.ts,server/src/data/buildings/legacyMainYardRules.ts,scripts/generate-legacy-main-yard-rules.mjs,scripts/smoke-cmd-hardening.sh	TownHall/HQ fechado no servidor: matriz legada de unlock/quantidade/custos, gates de upgrade/recursos, aplicação de `maxHp/repair` derivada por regra e progressão temporal consistente em `/cmd` + `/state`
 scripts/BUILDING15.as	building_gameplay_logic	port_rules_and_data	pending		
@@ -359,7 +359,7 @@ scripts/BUILDING16.as	building_gameplay_logic	port_rules_and_data	pending
 scripts/BUILDING17.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING18.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING19.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BUILDING2.as	building_gameplay_logic	port_rules_and_data	pending		
+scripts/BUILDING2.as	building_gameplay_logic	port_rules_and_data	migrated	server/src/controllers/cmd/cmd.ts,server/src/services/state/legacyBuildingRuleEffects.ts,server/src/services/state/applyLegacyBuildingProgress.ts,src/lib/base/buildingType.ts,scripts/smoke-cmd-hardening.sh	Wrapper legada de `BRESOURCE` migrada no fluxo autoritativo unificado (produção/coleta/capacidade/reparo) para coletores `1..4`, sem dependência de lógica Flash por classe derivada
 scripts/BUILDING20.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING21.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING22.as	building_gameplay_logic	port_rules_and_data	pending		
@@ -368,8 +368,8 @@ scripts/BUILDING24.as	building_gameplay_logic	port_rules_and_data	pending
 scripts/BUILDING25.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING26.as	building_gameplay_logic	port_rules_and_data	migrated	server/src/controllers/cmd/cmd.ts,server/src/services/state/academyState.ts,server/src/controllers/state/getState.ts	Building 26 (Academy) fechado no autoritativo: `_upgrading`, gates de nível/locker, custo `r3`, cancelamento/refund e finalização instantânea com débito de créditos
 scripts/BUILDING27.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BUILDING3.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BUILDING4.as	building_gameplay_logic	port_rules_and_data	pending		
+scripts/BUILDING3.as	building_gameplay_logic	port_rules_and_data	migrated	server/src/controllers/cmd/cmd.ts,server/src/services/state/legacyBuildingRuleEffects.ts,server/src/services/state/applyLegacyBuildingProgress.ts,src/lib/base/buildingType.ts,scripts/smoke-cmd-hardening.sh	Wrapper legada de `BRESOURCE` migrada no fluxo autoritativo unificado (produção/coleta/capacidade/reparo) para coletores `1..4`, sem dependência de lógica Flash por classe derivada
+scripts/BUILDING4.as	building_gameplay_logic	port_rules_and_data	migrated	server/src/controllers/cmd/cmd.ts,server/src/services/state/legacyBuildingRuleEffects.ts,server/src/services/state/applyLegacyBuildingProgress.ts,src/lib/base/buildingType.ts,scripts/smoke-cmd-hardening.sh	Wrapper legada de `BRESOURCE` migrada no fluxo autoritativo unificado (produção/coleta/capacidade/reparo) para coletores `1..4`, sem dependência de lógica Flash por classe derivada
 scripts/BUILDING5.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING51.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING52.as	building_gameplay_logic	port_rules_and_data	pending		
@@ -390,7 +390,7 @@ scripts/BUILDINGSPOPUP.as	core_gameplay_or_flow	split_port	migrated	src/game/sce
 scripts/BUILDINGSPOPUPINFO_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts	Símbolo Flash substituído por painel de detalhes em overlay HTML no Building Ops
 scripts/BUILDINGSPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts	Shell visual Flash descontinuado; layout equivalente entregue no overlay HTML
 scripts/BUY.as	core_gameplay_or_flow	split_port	pending		
-scripts/BWALL.as	building_gameplay_logic	port_rules_and_data	pending		
+scripts/BWALL.as	building_gameplay_logic	port_rules_and_data	in_progress	server/src/services/combat/replayEngine.ts,scripts/smoke-combat-replay.sh	Pathing de parede evoluído para penalidade geométrica por interseção de segmento com blocos vivos (HP+fortificação), além da pressão agregada; aproximação direta do bloqueio legado registrado em `PATHING`
 scripts/BasePlannerPopup_BottomLayout.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
 scripts/BasePlannerPopup_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
 scripts/BasePlannerPopup_DisplayItem_Building.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
@@ -416,8 +416,8 @@ scripts/BlackSpurtzCannon.as	misc_actionscript	analyze_case_by_case	pending
 scripts/Bunker.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/Button.as	ui_behavior_flash	rewrite_ui	pending		
 scripts/ButtonBrown.as	ui_behavior_flash	rewrite_ui	pending		
-scripts/ButtonBrown_CLIP.as	flash_symbol_wrapper	reference_only	pending		
-scripts/Button_CLIP.as	flash_symbol_wrapper	reference_only	pending		
+scripts/ButtonBrown_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/style.css,src/game/scenes/YardScene.ts	Wrapper Flash de botao legado substituido por componentes runtime (`legacy-btn`) no HUD/overlays
+scripts/Button_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/style.css,src/game/scenes/YardScene.ts	Wrapper Flash de botao legado substituido por componentes runtime (`legacy-btn`) no HUD/overlays
 scripts/CATAPULTITEM.as	core_gameplay_or_flow	split_port	pending		
 scripts/CATAPULTITEM_view.as	flash_symbol_wrapper	reference_only	pending		
 scripts/CATAPULTPOPUP.as	core_gameplay_or_flow	split_port	pending		
@@ -431,7 +431,7 @@ scripts/CHAMPIONNAMEPOPUP.as	core_gameplay_or_flow	split_port	pending
 scripts/CHAMPIONSELECTPOPUP.as	core_gameplay_or_flow	split_port	pending		
 scripts/CHECKER.as	misc_actionscript	analyze_case_by_case	pending		
 scripts/CREATUREBUTTON.as	ui_behavior_flash	rewrite_ui	pending		
-scripts/CREATUREBUTTON_CLIP.as	flash_symbol_wrapper	reference_only	pending		
+scripts/CREATUREBUTTON_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/style.css,src/game/scenes/YardScene.ts	Wrapper Flash de botao de criatura substituido por cards/acoes runtime do Building Ops
 scripts/CREATURELOCKER.as	core_gameplay_or_flow	split_port	pending		
 scripts/CREATURELOCKERPOPUP.as	core_gameplay_or_flow	split_port	pending		
 scripts/CREATURELOCKERPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	pending		
@@ -446,15 +446,15 @@ scripts/ChatBox_msg_name_CLIP.as	flash_symbol_wrapper	reference_only	pending
 scripts/ChatUI_fla/ChatBox_ignoreBtn_17.as	flash_symbol_wrapper	reference_only	pending		
 scripts/ChatUI_fla/ChatBox_msg_bg_16.as	flash_symbol_wrapper	reference_only	pending		
 scripts/ChatUI_fla/chat_window_box_10.as	flash_symbol_wrapper	reference_only	pending		
-scripts/CheckBox_CLIP.as	flash_symbol_wrapper	reference_only	pending		
-scripts/CheckBox_disabledIcon.as	flash_symbol_wrapper	reference_only	pending		
-scripts/CheckBox_downIcon.as	flash_symbol_wrapper	reference_only	pending		
-scripts/CheckBox_overIcon.as	flash_symbol_wrapper	reference_only	pending		
-scripts/CheckBox_selectedDisabledIcon.as	flash_symbol_wrapper	reference_only	pending		
-scripts/CheckBox_selectedDownIcon.as	flash_symbol_wrapper	reference_only	pending		
-scripts/CheckBox_selectedOverIcon.as	flash_symbol_wrapper	reference_only	pending		
-scripts/CheckBox_selectedUpIcon.as	flash_symbol_wrapper	reference_only	pending		
-scripts/CheckBox_upIcon.as	flash_symbol_wrapper	reference_only	pending		
+scripts/CheckBox_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/style.css,src/game/scenes/MaproomOverlay.ts,src/game/scenes/SocialOverlay.ts	Skin/check wrapper Flash substituido por filtros/toggles runtime no estilo legacy
+scripts/CheckBox_disabledIcon.as	flash_symbol_wrapper	reference_only	archived	src/style.css,src/game/scenes/MaproomOverlay.ts,src/game/scenes/SocialOverlay.ts	Icone Flash de estado checkbox substituido por estados CSS (`disabled/active`) nos filtros runtime
+scripts/CheckBox_downIcon.as	flash_symbol_wrapper	reference_only	archived	src/style.css,src/game/scenes/MaproomOverlay.ts,src/game/scenes/SocialOverlay.ts	Icone Flash de estado checkbox substituido por estados CSS (`pressed/active`) nos filtros runtime
+scripts/CheckBox_overIcon.as	flash_symbol_wrapper	reference_only	archived	src/style.css,src/game/scenes/MaproomOverlay.ts,src/game/scenes/SocialOverlay.ts	Icone Flash de estado checkbox substituido por hover runtime no estilo legacy
+scripts/CheckBox_selectedDisabledIcon.as	flash_symbol_wrapper	reference_only	archived	src/style.css,src/game/scenes/MaproomOverlay.ts,src/game/scenes/SocialOverlay.ts	Icone Flash de checkbox selecionado/desabilitado substituido por estado CSS runtime
+scripts/CheckBox_selectedDownIcon.as	flash_symbol_wrapper	reference_only	archived	src/style.css,src/game/scenes/MaproomOverlay.ts,src/game/scenes/SocialOverlay.ts	Icone Flash de checkbox selecionado/pressed substituido por estado CSS runtime
+scripts/CheckBox_selectedOverIcon.as	flash_symbol_wrapper	reference_only	archived	src/style.css,src/game/scenes/MaproomOverlay.ts,src/game/scenes/SocialOverlay.ts	Icone Flash de checkbox selecionado/hover substituido por estado CSS runtime
+scripts/CheckBox_selectedUpIcon.as	flash_symbol_wrapper	reference_only	archived	src/style.css,src/game/scenes/MaproomOverlay.ts,src/game/scenes/SocialOverlay.ts	Icone Flash de checkbox selecionado/up substituido por estado CSS runtime
+scripts/CheckBox_upIcon.as	flash_symbol_wrapper	reference_only	archived	src/style.css,src/game/scenes/MaproomOverlay.ts,src/game/scenes/SocialOverlay.ts	Icone Flash de checkbox up substituido por estado CSS runtime
 scripts/Checkbox.as	ui_behavior_flash	rewrite_ui	pending		
 scripts/CreatureLockerItem.as	flash_symbol_wrapper	reference_only	pending		
 scripts/DEFENSEEVENTPOPUP.as	ui_behavior_flash	rewrite_ui	pending		

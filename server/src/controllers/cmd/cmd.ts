@@ -5,20 +5,24 @@ import { User } from "../../models/user.model.js";
 import { Save } from "../../models/save.model.js";
 import { postgres, redis } from "../../server.js";
 import { Status } from "../../enums/StatusCodes.js";
+import { BaseType } from "../../enums/Base.js";
 import { logger } from "../../utils/logger.js";
 import { getCurrentDateTime } from "../../utils/getCurrentDateTime.js";
 import {
   CancelAcademyUpgradeArgsSchema,
   CancelUpgradeArgsSchema,
+  CancelFortifyBuildingArgsSchema,
   CmdEnvelopeSchema,
   CmdOperationSchema,
   CmdSuccessResponseSchema,
   CollectHarvesterArgsSchema,
+  FinishFortifyNowArgsSchema,
   FinishAcademyUpgradeNowArgsSchema,
   ApplyYardPlannerTemplateArgsSchema,
   MoveBuildingArgsSchema,
   PlaceBuildingArgsSchema,
   PurchaseStoreItemArgsSchema,
+  StartFortifyBuildingArgsSchema,
   StartRepairAllBuildingsArgsSchema,
   StartRepairBuildingArgsSchema,
   StartAcademyUpgradeArgsSchema,
@@ -26,12 +30,15 @@ import {
   type ApplyYardPlannerTemplateArgs,
   type CancelAcademyUpgradeArgs,
   type CancelUpgradeArgs,
+  type CancelFortifyBuildingArgs,
   type CmdOperation,
   type CollectHarvesterArgs,
+  type FinishFortifyNowArgs,
   type FinishAcademyUpgradeNowArgs,
   type MoveBuildingArgs,
   type PlaceBuildingArgs,
   type PurchaseStoreItemArgs,
+  type StartFortifyBuildingArgs,
   type StartRepairAllBuildingsArgs,
   type StartRepairBuildingArgs,
   type StartAcademyUpgradeArgs,
@@ -57,7 +64,10 @@ import {
   type LegacyBuildRequirement,
   type LegacyMainYardRule,
 } from "../../data/buildings/legacyMainYardRules.js";
-import { applyLegacyBuildingProgress } from "../../services/state/applyLegacyBuildingProgress.js";
+import {
+  applyLegacyBuildingProgress,
+  type LegacyBuildingProgressResult,
+} from "../../services/state/applyLegacyBuildingProgress.js";
 import { applyLegacyRuleDerivedStats } from "../../services/state/legacyBuildingRuleEffects.js";
 import { monsterStats } from "../../data/monsterStats.js";
 import {
@@ -66,6 +76,13 @@ import {
   ensureAcademyData,
   normalizeAcademyMonsterId,
 } from "../../services/state/academyState.js";
+import {
+  applyLegacyBaseProgression,
+  buildLegacyProgressionSummary,
+  buildLegacyRepairSummary,
+  isLegacyProgressionEqual,
+  isLegacyRepairSummaryEqual,
+} from "../../services/state/legacyBaseCoreParity.js";
 
 type BuildingDataRecord = Record<string, unknown>;
 
@@ -93,6 +110,8 @@ const ACADEMY_CODE = 26;
 const BASE_WORKER_COUNT = 1;
 const EXTRA_WORKER_STORE_ITEM = "BEW";
 const ACADEMY_RESOURCE_KEY: ResourceKey = "r3";
+const OUTPOST_REPAIR_MIN_PERCENT = 0.25;
+const MAX_FORTIFICATION_LEVEL = 4;
 
 type MissingLegacyRequirement = {
   typeCode: number;
@@ -106,6 +125,9 @@ const RATE_LIMITS: Record<CmdOperation, { max: number; windowSec: number }> = {
   MoveBuilding: { max: 40, windowSec: 10 },
   UpgradeBuilding: { max: 20, windowSec: 30 },
   CancelUpgrade: { max: 20, windowSec: 30 },
+  StartFortifyBuilding: { max: 20, windowSec: 30 },
+  CancelFortifyBuilding: { max: 20, windowSec: 30 },
+  FinishFortifyNow: { max: 20, windowSec: 30 },
   CollectHarvester: { max: 60, windowSec: 10 },
   PurchaseStoreItem: { max: 40, windowSec: 10 },
   ApplyYardPlannerTemplate: { max: 20, windowSec: 30 },
@@ -243,60 +265,81 @@ export const cmd: KoaController = async (ctx) => {
   }
 
   try {
-    applyLegacyBuildingProgress(save);
-    const academyProgress = applyLegacyAcademyProgress(save);
+    const progressionBefore = buildLegacyProgressionSummary(save);
+    const repairBefore = buildLegacyRepairSummary(save);
 
-    let delta: CmdDelta[] = [];
+    const legacyBuildingProgress = applyLegacyBuildingProgress(save);
+    const academyProgress = applyLegacyAcademyProgress(save);
+    applyLegacyBaseProgression(save);
+
+    let operationDelta: CmdDelta[] = [];
 
     switch (argsResult.data.op) {
       case "PlaceBuilding":
-        delta = handlePlaceBuilding(save, argsResult.data.args);
+        operationDelta = handlePlaceBuilding(save, argsResult.data.args);
         break;
 
       case "MoveBuilding":
-        delta = handleMoveBuilding(save, argsResult.data.args);
+        operationDelta = handleMoveBuilding(save, argsResult.data.args);
         break;
 
       case "UpgradeBuilding":
-        delta = handleUpgradeBuilding(save, argsResult.data.args);
+        operationDelta = handleUpgradeBuilding(save, argsResult.data.args);
         break;
 
       case "CancelUpgrade":
-        delta = handleCancelUpgrade(save, argsResult.data.args);
+        operationDelta = handleCancelUpgrade(save, argsResult.data.args);
+        break;
+
+      case "StartFortifyBuilding":
+        operationDelta = handleStartFortifyBuilding(save, argsResult.data.args);
+        break;
+
+      case "CancelFortifyBuilding":
+        operationDelta = handleCancelFortifyBuilding(save, argsResult.data.args);
+        break;
+
+      case "FinishFortifyNow":
+        operationDelta = handleFinishFortifyNow(user, save, argsResult.data.args);
         break;
 
       case "CollectHarvester":
-        delta = handleCollectHarvester(save, argsResult.data.args);
+        operationDelta = handleCollectHarvester(save, argsResult.data.args);
         break;
 
       case "PurchaseStoreItem":
-        delta = handlePurchaseStoreItem(user, save, argsResult.data.args);
+        operationDelta = handlePurchaseStoreItem(user, save, argsResult.data.args);
         break;
 
       case "ApplyYardPlannerTemplate":
-        delta = handleApplyYardPlannerTemplate(save, argsResult.data.args);
+        operationDelta = handleApplyYardPlannerTemplate(save, argsResult.data.args);
         break;
 
       case "StartRepairBuilding":
-        delta = handleStartRepairBuilding(save, argsResult.data.args);
+        operationDelta = handleStartRepairBuilding(save, argsResult.data.args);
         break;
 
       case "StartRepairAllBuildings":
-        delta = handleStartRepairAllBuildings(save, argsResult.data.args);
+        operationDelta = handleStartRepairAllBuildings(save, argsResult.data.args);
         break;
 
       case "StartAcademyUpgrade":
-        delta = handleStartAcademyUpgrade(save, argsResult.data.args);
+        operationDelta = handleStartAcademyUpgrade(save, argsResult.data.args);
         break;
 
       case "CancelAcademyUpgrade":
-        delta = handleCancelAcademyUpgrade(save, argsResult.data.args);
+        operationDelta = handleCancelAcademyUpgrade(save, argsResult.data.args);
         break;
 
       case "FinishAcademyUpgradeNow":
-        delta = handleFinishAcademyUpgradeNow(user, save, argsResult.data.args);
+        operationDelta = handleFinishAcademyUpgradeNow(user, save, argsResult.data.args);
         break;
     }
+
+    let delta: CmdDelta[] = [
+      ...buildLegacyBuildingProgressDeltas(legacyBuildingProgress),
+      ...operationDelta,
+    ];
 
     if (
       academyProgress.changed &&
@@ -307,6 +350,34 @@ export const cmd: KoaController = async (ctx) => {
         {
           op: "setAcademyState",
           academy: buildAcademyStateSummary(save),
+        },
+      ];
+    }
+
+    const progressionAfter = applyLegacyBaseProgression(save).progression;
+    if (
+      !isLegacyProgressionEqual(progressionBefore, progressionAfter) &&
+      !delta.some((item) => item.op === "setProgression")
+    ) {
+      delta = [
+        ...delta,
+        {
+          op: "setProgression",
+          progression: progressionAfter,
+        },
+      ];
+    }
+
+    const repairAfter = buildLegacyRepairSummary(save);
+    if (
+      !isLegacyRepairSummaryEqual(repairBefore, repairAfter) &&
+      !delta.some((item) => item.op === "setRepairSummary")
+    ) {
+      delta = [
+        ...delta,
+        {
+          op: "setRepairSummary",
+          repair: repairAfter,
         },
       ];
     }
@@ -656,6 +727,173 @@ function handleCancelUpgrade(
   ];
 }
 
+function handleStartFortifyBuilding(
+  save: Save,
+  args: StartFortifyBuildingArgs
+): CmdDelta[] {
+  const buildingData = ensureBuildingData(save);
+  const buildings = parseBuildings(buildingData);
+  const targetBuilding = findBuildingById(buildings, args.buildingId);
+  if (!targetBuilding) {
+    throw cmdRejection("Building not found", "BUILDING_NOT_FOUND");
+  }
+
+  const resolved = resolveFortifyCostForBuilding(save, buildings, targetBuilding, {
+    allowMissingResources: false,
+    allowRunningFortify: false,
+  });
+  assertWorkerAvailable(save, buildings);
+
+  const resourceDelta = applyLegacyBuildCost(save, resolved.cost);
+  const remainingSec = Math.max(1, parseIntSafe(resolved.cost.time, 0));
+  targetBuilding.raw.cF = remainingSec;
+  targetBuilding.raw.countdownFortify = remainingSec;
+  targetBuilding.raw.fortifyStartedAt = getCurrentDateTime();
+  targetBuilding.raw.fort = resolved.currentFortification;
+  targetBuilding.raw.fortification = resolved.currentFortification;
+
+  return [
+    ...resourceDelta,
+    {
+      op: "setBuildingFortification",
+      id: targetBuilding.id,
+      fortification: resolved.currentFortification,
+      countdownFortify: remainingSec,
+    },
+  ];
+}
+
+function handleCancelFortifyBuilding(
+  save: Save,
+  args: CancelFortifyBuildingArgs
+): CmdDelta[] {
+  const buildingData = ensureBuildingData(save);
+  const buildings = parseBuildings(buildingData);
+  const targetBuilding = findBuildingById(buildings, args.buildingId);
+  if (!targetBuilding) {
+    throw cmdRejection("Building not found", "BUILDING_NOT_FOUND");
+  }
+
+  const pending = parseIntSafe(targetBuilding.raw.cF ?? targetBuilding.raw.countdownFortify, 0);
+  if (pending <= 0) {
+    throw cmdRejection("Building is not fortifying", "FORTIFY_NOT_RUNNING");
+  }
+
+  const resolved = resolveFortifyCostForBuilding(save, buildings, targetBuilding, {
+    allowMissingResources: true,
+    allowRunningFortify: true,
+  });
+  targetBuilding.raw.cF = 0;
+  targetBuilding.raw.countdownFortify = 0;
+  delete targetBuilding.raw.fortifyStartedAt;
+
+  return [
+    ...refundLegacyBuildCost(save, resolved.cost),
+    {
+      op: "setBuildingFortification",
+      id: targetBuilding.id,
+      fortification: resolved.currentFortification,
+      countdownFortify: 0,
+    },
+  ];
+}
+
+function handleFinishFortifyNow(
+  user: User,
+  save: Save,
+  args: FinishFortifyNowArgs
+): CmdDelta[] {
+  const buildingData = ensureBuildingData(save);
+  const buildings = parseBuildings(buildingData);
+  const targetBuilding = findBuildingById(buildings, args.buildingId);
+  if (!targetBuilding) {
+    throw cmdRejection("Building not found", "BUILDING_NOT_FOUND");
+  }
+
+  const userSave = user.save ?? save;
+  const currentCredits = parseIntSafe(userSave.credits, 0);
+  const pending = parseIntSafe(targetBuilding.raw.cF ?? targetBuilding.raw.countdownFortify, 0);
+
+  if (pending > 0) {
+    const fromFortification = clampFortificationLevel(
+      parseIntSafe(targetBuilding.raw.fort ?? targetBuilding.raw.fortification, 0)
+    );
+    if (fromFortification >= MAX_FORTIFICATION_LEVEL) {
+      throw cmdRejection("Building is already fully fortified", "FORTIFICATION_MAX_LEVEL");
+    }
+
+    const spentCredits = calculateAcademyTimeSpeedupCost(pending);
+    if (spentCredits > currentCredits) {
+      throw cmdRejection("Insufficient credits for fortify finish", "INSUFFICIENT_CREDITS");
+    }
+
+    const toFortification = clampFortificationLevel(fromFortification + 1);
+    userSave.credits = currentCredits - spentCredits;
+    targetBuilding.raw.cF = 0;
+    targetBuilding.raw.countdownFortify = 0;
+    delete targetBuilding.raw.fortifyStartedAt;
+    targetBuilding.raw.fort = toFortification;
+    targetBuilding.raw.fortification = toFortification;
+
+    return [
+      {
+        op: "fortifyFinishNow",
+        id: targetBuilding.id,
+        fromFortification,
+        toFortification,
+        spentCredits,
+      },
+      {
+        op: "setBuildingFortification",
+        id: targetBuilding.id,
+        fortification: toFortification,
+        countdownFortify: 0,
+      },
+      {
+        op: "setCredits",
+        credits: userSave.credits,
+      },
+    ];
+  }
+
+  const resolved = resolveFortifyCostForBuilding(save, buildings, targetBuilding, {
+    allowMissingResources: true,
+    allowRunningFortify: false,
+  });
+  const spentCredits = calculateLegacyInstantFortifyCredits(resolved.cost);
+  if (spentCredits > currentCredits) {
+    throw cmdRejection("Insufficient credits for fortify finish", "INSUFFICIENT_CREDITS");
+  }
+
+  const toFortification = clampFortificationLevel(resolved.currentFortification + 1);
+  userSave.credits = currentCredits - spentCredits;
+  targetBuilding.raw.cF = 0;
+  targetBuilding.raw.countdownFortify = 0;
+  delete targetBuilding.raw.fortifyStartedAt;
+  targetBuilding.raw.fort = toFortification;
+  targetBuilding.raw.fortification = toFortification;
+
+  return [
+    {
+      op: "fortifyFinishNow",
+      id: targetBuilding.id,
+      fromFortification: resolved.currentFortification,
+      toFortification,
+      spentCredits,
+    },
+    {
+      op: "setBuildingFortification",
+      id: targetBuilding.id,
+      fortification: toFortification,
+      countdownFortify: 0,
+    },
+    {
+      op: "setCredits",
+      credits: userSave.credits,
+    },
+  ];
+}
+
 function handleCollectHarvester(
   save: Save,
   args: CollectHarvesterArgs
@@ -890,6 +1128,10 @@ function handleStartRepairBuilding(
     throw cmdRejection("Building is not damaged", "BUILDING_NOT_DAMAGED");
   }
 
+  if (parseIntSafe(targetBuilding.raw.rE ?? targetBuilding.raw.repairing, 0) > 0) {
+    throw cmdRejection("Building is already repairing", "BUILDING_ALREADY_REPAIRING");
+  }
+
   setBuildingRepairing(targetBuilding.raw, true);
   return [
     {
@@ -909,10 +1151,11 @@ function handleStartRepairAllBuildings(
   const buildingData = ensureBuildingData(save);
   const buildings = parseBuildings(buildingData);
   const delta: CmdDelta[] = [];
+  const enforceMinimumRepairPercent = isOutpostLikeBaseType(save.type)
+    ? OUTPOST_REPAIR_MIN_PERCENT
+    : 0;
 
   for (const building of buildings) {
-    if (isBuildingBusy(building.raw)) continue;
-
     const typeCode = resolveBuildingTypeCode(building.raw, building.type);
     if (typeCode !== null) {
       applyLegacyRuleDerivedStats(building.raw, typeCode, building.level, {
@@ -922,15 +1165,96 @@ function handleStartRepairAllBuildings(
 
     const normalized = normalizeBuildingRepairState(building.raw);
     if (!normalized.repairable) continue;
-    if (normalized.hp >= normalized.maxHp) continue;
+
+    const minimumHp = Math.min(
+      normalized.maxHp,
+      Math.max(0, Math.ceil(normalized.maxHp * enforceMinimumRepairPercent))
+    );
+    let hp = normalized.hp;
+    const hpClampedByOutpostRule = hp < minimumHp;
+    if (hpClampedByOutpostRule) {
+      hp = minimumHp;
+      building.raw.hp = hp;
+    }
+
+    if (isBuildingBusy(building.raw)) {
+      if (hpClampedByOutpostRule) {
+        delta.push({
+          op: "setBuildingRepairState",
+          id: building.id,
+          hp,
+          maxHp: normalized.maxHp,
+          repairing: parseIntSafe(
+            building.raw.rE ?? building.raw.repairing,
+            0
+          ) > 0,
+        });
+      }
+      continue;
+    }
+
+    const alreadyRepairing = parseIntSafe(
+      building.raw.rE ?? building.raw.repairing,
+      0
+    ) > 0;
+    if (alreadyRepairing) {
+      if (hpClampedByOutpostRule) {
+        delta.push({
+          op: "setBuildingRepairState",
+          id: building.id,
+          hp,
+          maxHp: normalized.maxHp,
+          repairing: true,
+        });
+      }
+      continue;
+    }
+
+    if (hp >= normalized.maxHp) {
+      if (hpClampedByOutpostRule) {
+        delta.push({
+          op: "setBuildingRepairState",
+          id: building.id,
+          hp,
+          maxHp: normalized.maxHp,
+          repairing: false,
+        });
+      }
+      continue;
+    }
 
     setBuildingRepairing(building.raw, true);
     delta.push({
       op: "setBuildingRepairState",
       id: building.id,
-      hp: normalized.hp,
+      hp,
       maxHp: normalized.maxHp,
       repairing: true,
+    });
+  }
+
+  return delta;
+}
+
+function buildLegacyBuildingProgressDeltas(
+  progress: LegacyBuildingProgressResult
+): CmdDelta[] {
+  const delta: CmdDelta[] = [];
+
+  for (const upgrade of progress.completedUpgrades) {
+    delta.push({
+      op: "upgradeBuilding",
+      id: upgrade.id,
+      level: upgrade.toLevel,
+    });
+  }
+
+  for (const fortification of progress.completedFortifications) {
+    delta.push({
+      op: "setBuildingFortification",
+      id: fortification.id,
+      fortification: fortification.toLevel,
+      countdownFortify: 0,
     });
   }
 
@@ -1408,6 +1732,10 @@ function isBuildingBusy(raw: BuildingDataRecord): boolean {
   );
 }
 
+function isOutpostLikeBaseType(baseType: string): boolean {
+  return baseType === BaseType.OUTPOST || baseType === BaseType.INFERNO_TRIBE;
+}
+
 function isMonsterUnlockedInLocker(
   lockerData: Record<string, unknown> | null,
   monsterId: string
@@ -1632,6 +1960,161 @@ function getLegacyCostForTargetLevel(
   return rule.costs[index] ?? null;
 }
 
+function resolveFortifyCostForBuilding(
+  save: Save,
+  buildings: ParsedBuilding[],
+  targetBuilding: ParsedBuilding,
+  opts?: {
+    allowMissingResources?: boolean;
+    allowRunningFortify?: boolean;
+  }
+): {
+  targetCode: number;
+  currentFortification: number;
+  cost: LegacyBuildCost;
+} {
+  const targetCode = resolveBuildingTypeCode(targetBuilding.raw, targetBuilding.type);
+  if (targetCode === null) {
+    throw cmdRejection("Unsupported building type", "INVALID_BUILDING_TYPE");
+  }
+
+  const legacyRule = getLegacyMainYardRule(targetCode);
+  if (!canLegacyRuleFortify(legacyRule, targetCode)) {
+    throw cmdRejection("Building cannot be fortified", "FORTIFY_UNSUPPORTED");
+  }
+
+  if (!findTownHallBuilding(buildings)) {
+    throw cmdRejection("Town Hall is required before fortifying", "TOWN_HALL_REQUIRED");
+  }
+
+  const currentFortification = clampFortificationLevel(
+    parseIntSafe(targetBuilding.raw.fort ?? targetBuilding.raw.fortification, 0)
+  );
+
+  if (parseIntSafe(targetBuilding.raw.cB ?? targetBuilding.raw.countdownBuild, 0) > 0) {
+    throw cmdRejection("Building is still under construction", "BUILDING_STILL_BUILDING");
+  }
+
+  if (parseIntSafe(targetBuilding.raw.cU ?? targetBuilding.raw.countdownUpgrade, 0) > 0) {
+    throw cmdRejection("Building is still upgrading", "BUILDING_STILL_UPGRADING");
+  }
+
+  const runningFortify = parseIntSafe(
+    targetBuilding.raw.cF ?? targetBuilding.raw.countdownFortify,
+    0
+  );
+  if (runningFortify > 0 && !opts?.allowRunningFortify) {
+    throw cmdRejection("Building is still fortifying", "FORTIFY_ALREADY_RUNNING");
+  }
+
+  const cost = getLegacyFortifyCostForLevel(legacyRule, targetCode, currentFortification);
+  if (!cost) {
+    throw cmdRejection("Building is already fully fortified", "FORTIFICATION_MAX_LEVEL");
+  }
+
+  assertLegacyRequirements(buildings, cost.requirements);
+  if (!opts?.allowMissingResources) {
+    assertLegacyBuildCostAffordable(save, cost);
+  }
+
+  return {
+    targetCode,
+    currentFortification,
+    cost,
+  };
+}
+
+function canLegacyRuleFortify(rule: LegacyMainYardRule, typeCode: number): boolean {
+  if (typeof rule.canFortify === "boolean") {
+    return rule.canFortify;
+  }
+
+  if (typeCode === 7) {
+    return false;
+  }
+
+  return getLegacyFortifyCosts(rule).length > 0;
+}
+
+function getLegacyFortifyCosts(rule: LegacyMainYardRule): LegacyBuildCost[] {
+  const explicit = Array.isArray(rule.fortifyCosts) ? rule.fortifyCosts : [];
+  const source = explicit.length > 0 ? explicit : rule.costs;
+  if (!Array.isArray(source) || source.length === 0) return [];
+
+  return source
+    .slice(0, MAX_FORTIFICATION_LEVEL)
+    .map((entry) => ({
+      r1: Math.max(0, parseIntSafe(entry.r1, 0)),
+      r2: Math.max(0, parseIntSafe(entry.r2, 0)),
+      r3: Math.max(0, parseIntSafe(entry.r3, 0)),
+      r4: Math.max(0, parseIntSafe(entry.r4, 0)),
+      time: Math.max(0, parseIntSafe(entry.time, 0)),
+      requirements: Array.isArray(entry.requirements)
+        ? entry.requirements.map((requirement) => ({
+            typeCode: Math.max(0, parseIntSafe(requirement.typeCode, 0)),
+            count: Math.max(0, parseIntSafe(requirement.count, 0)),
+            minLevel: Math.max(1, parseIntSafe(requirement.minLevel, 1)),
+          }))
+        : [],
+    }));
+}
+
+function getLegacyFortifyCostForLevel(
+  rule: LegacyMainYardRule,
+  typeCode: number,
+  currentFortification: number
+): LegacyBuildCost | null {
+  if (!canLegacyRuleFortify(rule, typeCode)) return null;
+  const costs = getLegacyFortifyCosts(rule);
+  const index = Math.max(0, Math.trunc(currentFortification));
+  if (index >= costs.length || index >= MAX_FORTIFICATION_LEVEL) return null;
+  return costs[index] ?? null;
+}
+
+function assertLegacyBuildCostAffordable(
+  save: Save,
+  cost: LegacyBuildCost
+): void {
+  const required = {
+    r1: Math.max(0, parseIntSafe(cost.r1, 0)),
+    r2: Math.max(0, parseIntSafe(cost.r2, 0)),
+    r3: Math.max(0, parseIntSafe(cost.r3, 0)),
+    r4: Math.max(0, parseIntSafe(cost.r4, 0)),
+  };
+
+  const missingResourceKeys: ResourceKey[] = [];
+  const resources = ensureResourceBag(save, "resources");
+  for (const resourceKey of ["r1", "r2", "r3", "r4"] as const) {
+    const current = parseIntSafe(resources[resourceKey], 0);
+    const needed = required[resourceKey];
+    if (current < needed) {
+      missingResourceKeys.push(resourceKey);
+    }
+  }
+
+  if (missingResourceKeys.length > 0) {
+    const summary = missingResourceKeys.join(", ");
+    throw cmdRejection(`Insufficient resources: ${summary}`, "INSUFFICIENT_RESOURCES");
+  }
+}
+
+function calculateLegacyInstantFortifyCredits(cost: LegacyBuildCost): number {
+  const normalizedTime = Math.max(0, parseIntSafe(cost.time, 0));
+  const timeCost = calculateAcademyTimeSpeedupCost(normalizedTime <= 300 ? 0 : normalizedTime);
+  const resourceTotal = Math.max(
+    0,
+    parseIntSafe(cost.r1, 0) + parseIntSafe(cost.r2, 0) + parseIntSafe(cost.r3, 0)
+  );
+  const resourceCost = calculateAcademyResourceSpeedupCost(resourceTotal);
+  const raw = Math.trunc((resourceCost + timeCost) * 0.95);
+  return Math.max(0, raw);
+}
+
+function clampFortificationLevel(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(MAX_FORTIFICATION_LEVEL, Math.trunc(value)));
+}
+
 function assertLegacyQuantityLimit(
   buildings: ParsedBuilding[],
   rule: LegacyMainYardRule,
@@ -1802,6 +2285,36 @@ function applyLegacyBuildCost(save: Save, cost: LegacyBuildCost): CmdDelta[] {
   ];
 }
 
+function refundLegacyBuildCost(save: Save, cost: LegacyBuildCost): CmdDelta[] {
+  const refunded = {
+    r1: Math.max(0, parseIntSafe(cost.r1, 0)),
+    r2: Math.max(0, parseIntSafe(cost.r2, 0)),
+    r3: Math.max(0, parseIntSafe(cost.r3, 0)),
+    r4: Math.max(0, parseIntSafe(cost.r4, 0)),
+  };
+
+  const resourceBag = ensureResourceBag(save, "resources");
+  let refundedAny = false;
+  for (const resourceKey of ["r1", "r2", "r3", "r4"] as const) {
+    const refundAmount = refunded[resourceKey];
+    if (refundAmount <= 0) continue;
+
+    const current = parseIntSafe(resourceBag[resourceKey], 0);
+    resourceBag[resourceKey] = Math.max(0, current + refundAmount);
+    refundedAny = true;
+  }
+
+  if (!refundedAny) return [];
+
+  return [
+    {
+      op: "setResources",
+      bag: "resources",
+      resources: normalizeResourceBag(resourceBag),
+    },
+  ];
+}
+
 function calculateAcademyTimeSpeedupCost(seconds: number): number {
   const clampedSeconds = Math.max(0, Math.trunc(seconds));
   if (clampedSeconds <= 0) return 0;
@@ -1942,6 +2455,9 @@ function parseOperationArgs(
         | { op: "MoveBuilding"; args: MoveBuildingArgs }
         | { op: "UpgradeBuilding"; args: UpgradeBuildingArgs }
         | { op: "CancelUpgrade"; args: CancelUpgradeArgs }
+        | { op: "StartFortifyBuilding"; args: StartFortifyBuildingArgs }
+        | { op: "CancelFortifyBuilding"; args: CancelFortifyBuildingArgs }
+        | { op: "FinishFortifyNow"; args: FinishFortifyNowArgs }
         | { op: "CollectHarvester"; args: CollectHarvesterArgs }
         | { op: "PurchaseStoreItem"; args: PurchaseStoreItemArgs }
         | { op: "ApplyYardPlannerTemplate"; args: ApplyYardPlannerTemplateArgs }
@@ -1982,6 +2498,33 @@ function parseOperationArgs(
 
     case "CancelUpgrade": {
       const parsed = CancelUpgradeArgsSchema.safeParse(rawArgs);
+      if (!parsed.success) return { success: false, errors: collectZodIssues(parsed.error.issues) };
+      return {
+        success: true,
+        data: { op, args: parsed.data },
+      };
+    }
+
+    case "StartFortifyBuilding": {
+      const parsed = StartFortifyBuildingArgsSchema.safeParse(rawArgs);
+      if (!parsed.success) return { success: false, errors: collectZodIssues(parsed.error.issues) };
+      return {
+        success: true,
+        data: { op, args: parsed.data },
+      };
+    }
+
+    case "CancelFortifyBuilding": {
+      const parsed = CancelFortifyBuildingArgsSchema.safeParse(rawArgs);
+      if (!parsed.success) return { success: false, errors: collectZodIssues(parsed.error.issues) };
+      return {
+        success: true,
+        data: { op, args: parsed.data },
+      };
+    }
+
+    case "FinishFortifyNow": {
+      const parsed = FinishFortifyNowArgsSchema.safeParse(rawArgs);
       if (!parsed.success) return { success: false, errors: collectZodIssues(parsed.error.issues) };
       return {
         success: true,

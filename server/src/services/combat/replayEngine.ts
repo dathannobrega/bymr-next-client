@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { monsterStats } from "../../data/monsterStats.js";
+import { BaseType } from "../../enums/Base.js";
 import type { Save } from "../../models/save.model.js";
 import type { User } from "../../models/user.model.js";
 import { normalizeBuildingTypeInput } from "../../utils/buildingType.js";
@@ -19,10 +20,29 @@ const BASE_FALLBACK_DEFENDER_HP = 3200;
 const MIN_TICK_SECONDS = 0.1;
 const YARD_WIDTH = 20;
 const YARD_HEIGHT = 14;
+const STORAGE_LOOT_MAX_TH = 10_000_000;
+const STORAGE_LOOT_MAX_OUTPOST = 10_000_000;
+const STORAGE_LOOT_MAX_SILO = 4_000_000;
+const STORAGE_LOOT_MAX_WM_TH = 2_000_000;
+const STORAGE_LOOT_MAX_WM_SILO = 500_000;
+const STORAGE_LOOT_PCT_TH = 0.1;
+const STORAGE_LOOT_PCT_OUTPOST = 0.05;
+const STORAGE_LOOT_PCT_BASE = 0.04;
+const STORAGE_LOOT_GOO_LIMITER = 0.5;
+const AA_BURST_BY_LEVEL = [4, 4, 6, 8, 10, 12, 14, 16] as const;
 
 type TargetType = "player" | "wild";
 type CombatPool = "hq" | "defense" | "resource" | "storage" | "wall" | "utility" | "other";
 type PathMode = "direct" | "ground";
+type TowerTargetMode = "ground" | "air" | "mixed";
+
+type DefenderAttackPattern = {
+  maxTargets: number;
+  pierceTargets: number;
+  splashRadius: number;
+  splashRatio: number;
+  burstShots: number;
+};
 
 type Point2 = {
   x: number;
@@ -57,6 +77,7 @@ type AttackerGroup = {
   projectileSpeedTilesPerSec: number;
   pathMode: PathMode;
   movementMode: string | null;
+  isFlyer: boolean;
   explodeCharges: number;
   splitFactor: number;
   splitHpRatio: number;
@@ -81,9 +102,12 @@ type AttackerProfile = {
 type DefenderUnit = {
   id: string;
   code: number;
+  level: number;
   pool: CombatPool;
   hp: number;
   maxHp: number;
+  fortification: number;
+  busy: boolean;
   baseDps: number;
   x: number;
   y: number;
@@ -91,6 +115,8 @@ type DefenderUnit = {
   cooldownSec: number;
   attackTimerSec: number;
   projectileSpeedTilesPerSec: number;
+  targetMode: TowerTargetMode;
+  attackPattern: DefenderAttackPattern;
 };
 
 type DefenderProfile = {
@@ -119,9 +145,24 @@ type AttackerProjectile = {
 };
 
 type DefenderProjectile = {
+  sourceX: number;
+  sourceY: number;
   targetKey: string;
+  targetMode: TowerTargetMode;
   damage: number;
   etaSec: number;
+  maxTargets: number;
+  pierceTargets: number;
+  splashRadius: number;
+  splashRatio: number;
+  burstShots: number;
+};
+
+type ResourceSummary = {
+  r1: number;
+  r2: number;
+  r3: number;
+  r4: number;
 };
 
 export function buildCombatReplaySession(
@@ -152,7 +193,7 @@ export function buildCombatReplaySession(
     defenderFallbackPower
   );
 
-  const { frames, summary } = simulateCombat({
+  const { frames, summary, initialUnits, finalUnits } = simulateCombat({
     createdAt,
     tickMs: input.tickMs,
     totalTicks,
@@ -166,8 +207,11 @@ export function buildCombatReplaySession(
     createdAt,
     input.tickMs,
     input.defenderSave,
+    input.targetType,
     rng,
-    summary
+    summary,
+    initialUnits,
+    finalUnits
   );
   const attackerPower = Math.max(attackerFallbackPower, attackerProfile.power);
   const defenderPower = Math.max(defenderFallbackPower, defenderProfile.power);
@@ -209,8 +253,11 @@ function buildCombatResult(
   createdAt: number,
   tickMs: number,
   defenderSave: Save,
+  targetType: TargetType,
   rng: () => number,
-  summary: CombatSimulationSummary
+  summary: CombatSimulationSummary,
+  initialUnits: DefenderUnit[],
+  finalUnits: DefenderUnit[]
 ): CombatReplayResult {
   const lastFrame = frames.at(-1);
   if (!lastFrame) {
@@ -226,7 +273,7 @@ function buildCombatResult(
   const endedAt = createdAt + Math.max(1, Math.trunc((lastFrame.tick * tickMs) / 1000));
   const destroyedRatio = computeDestroyedRatio(summary);
   const loot = winner === "attacker"
-    ? deriveLoot(defenderSave, rng, destroyedRatio)
+    ? deriveLoot(defenderSave, targetType, rng, destroyedRatio, initialUnits, finalUnits)
     : { r1: 0, r2: 0, r3: 0, r4: 0 };
 
   return {
@@ -253,16 +300,30 @@ function resolveWinner(
   return "draw";
 }
 
-function deriveLoot(defenderSave: Save, rng: () => number, destroyedRatio: number) {
-  const resources = toResourceSummary(defenderSave.resources);
-  const factor = clamp(0.12 + destroyedRatio * 0.28 + rng() * 0.08, 0, 0.45);
+function deriveLoot(
+  defenderSave: Save,
+  targetType: TargetType,
+  rng: () => number,
+  destroyedRatio: number,
+  initialUnits: DefenderUnit[],
+  finalUnits: DefenderUnit[]
+): ResourceSummary {
+  const resources = normalizeResourceSummary(toResourceSummary(defenderSave.resources));
+  const storageLoot = deriveLegacyStorageLoot(defenderSave, resources, initialUnits, finalUnits);
+  const storageLootTotal = sumResourceSummary(storageLoot);
+  const storageDamageRatio = computeStorageDamageRatio(initialUnits, finalUnits);
 
-  return {
-    r1: Math.max(0, Math.min(resources.r1, Math.trunc(resources.r1 * factor))),
-    r2: Math.max(0, Math.min(resources.r2, Math.trunc(resources.r2 * factor))),
-    r3: Math.max(0, Math.min(resources.r3, Math.trunc(resources.r3 * factor))),
-    r4: Math.max(0, Math.min(resources.r4, Math.trunc(resources.r4 * factor))),
-  };
+  // Legacy BSTORAGE has both destruction-loot and chip-loot while storages take damage.
+  const ambientBase = storageDamageRatio > 0
+    ? 0.035 + storageDamageRatio * 0.2
+    : 0.01;
+  const ambientFactor = storageLootTotal > 0
+    ? clamp(ambientBase * 0.5 + destroyedRatio * 0.06 + rng() * 0.02, 0, 0.16)
+    : clamp(ambientBase + destroyedRatio * 0.1 + rng() * 0.03, 0, 0.24);
+  const ambientLoot = scaleResourceSummary(resources, ambientFactor);
+  const mergedLoot = mergeLootWithResourceCap(resources, storageLoot, ambientLoot);
+
+  return scaleLootByTargetType(mergedLoot, targetType);
 }
 
 function deriveCombatPower(level: number, baseValue: number): number {
@@ -331,6 +392,7 @@ function buildAttackerProfile(
       );
       const pathMode = resolvePathMode(stat.pathing, stat.movement);
       const movementMode = normalizeTextToken(stat.movement);
+      const isFlyer = movementMode === "fly";
       const position = sampleSpawnPosition(groupIndex, rng);
 
       groups.push({
@@ -351,6 +413,7 @@ function buildAttackerProfile(
         projectileSpeedTilesPerSec,
         pathMode,
         movementMode,
+        isFlyer,
         explodeCharges: explodeEnabled ? count : 0,
         splitFactor,
         splitHpRatio: 0.22,
@@ -391,6 +454,7 @@ function buildAttackerProfile(
       projectileSpeedTilesPerSec: 12,
       pathMode: "ground",
       movementMode: null,
+      isFlyer: false,
       explodeCharges: 0,
       splitFactor: 0,
       splitHpRatio: 0,
@@ -438,6 +502,7 @@ function buildAttackerProfile(
       projectileSpeedTilesPerSec: 10,
       pathMode: "direct",
       movementMode: null,
+      isFlyer: false,
       explodeCharges: 0,
       splitFactor: 0,
       splitHpRatio: 0,
@@ -499,8 +564,10 @@ function buildDefenderProfile(
         0,
         maxHp
       );
-      const baseDps = deriveBuildingBaseDps(typeCode, level);
-      const attackProfile = deriveDefenseAttackProfile(typeCode);
+      const fortification = clamp(parseIntSafe(raw.fort ?? raw.fortification, 0), 0, 4);
+      const busy = isBuildingBusyForCombat(raw);
+      const baseDps = busy ? 0 : deriveBuildingBaseDps(typeCode, level);
+      const attackProfile = deriveDefenseAttackProfile(typeCode, level);
       const footprintW = Math.max(1, parseIntSafe(raw.fw ?? raw.footprintW, 1));
       const footprintH = Math.max(1, parseIntSafe(raw.fh ?? raw.footprintH, 1));
       const x = clamp(parseIntSafe(raw.x ?? raw.X, 0) + footprintW / 2, 0, YARD_WIDTH);
@@ -509,9 +576,12 @@ function buildDefenderProfile(
       units.push({
         id: String(raw.id ?? key),
         code: typeCode,
+        level,
         pool,
         hp,
         maxHp,
+        fortification,
+        busy,
         baseDps,
         x,
         y,
@@ -519,6 +589,8 @@ function buildDefenderProfile(
         cooldownSec: attackProfile.cooldownSec,
         attackTimerSec: 0,
         projectileSpeedTilesPerSec: attackProfile.projectileSpeedTilesPerSec,
+        targetMode: attackProfile.targetMode,
+        attackPattern: attackProfile.pattern,
       });
     }
   }
@@ -529,9 +601,12 @@ function buildDefenderProfile(
     units.push({
       id: "hq-fallback",
       code: 14,
+      level: 1,
       pool: "hq",
       hp: fallbackHqHp,
       maxHp: fallbackHqHp,
+      fortification: 0,
+      busy: false,
       baseDps: 0,
       x: YARD_WIDTH / 2,
       y: YARD_HEIGHT / 2,
@@ -539,13 +614,18 @@ function buildDefenderProfile(
       cooldownSec: 1,
       attackTimerSec: 0,
       projectileSpeedTilesPerSec: 0,
+      targetMode: "ground",
+      attackPattern: emptyDefenderAttackPattern(),
     });
     units.push({
       id: "defense-fallback",
       code: 20,
+      level: 1,
       pool: "defense",
       hp: fallbackDefenseHp,
       maxHp: fallbackDefenseHp,
+      fortification: 0,
+      busy: false,
       baseDps: 40 + fallbackPower,
       x: YARD_WIDTH / 2 + 2,
       y: YARD_HEIGHT / 2 + 1,
@@ -553,6 +633,14 @@ function buildDefenderProfile(
       cooldownSec: 1.35,
       attackTimerSec: 0,
       projectileSpeedTilesPerSec: 9,
+      targetMode: "ground",
+      attackPattern: {
+        maxTargets: 1,
+        pierceTargets: 0,
+        splashRadius: 1.6,
+        splashRatio: 0.2,
+        burstShots: 1,
+      },
     });
   }
 
@@ -581,6 +669,14 @@ function resolveBuildingTypeCode(raw: Record<string, unknown>): number | null {
   }
 
   return null;
+}
+
+function isBuildingBusyForCombat(raw: Record<string, unknown>): boolean {
+  return (
+    parseIntSafe(raw.cB ?? raw.countdownBuild, 0) > 0 ||
+    parseIntSafe(raw.cU ?? raw.countdownUpgrade, 0) > 0 ||
+    parseIntSafe(raw.cF ?? raw.countdownFortify, 0) > 0
+  );
 }
 
 function classifyBuildingPool(typeCode: number): CombatPool {
@@ -675,33 +771,165 @@ function deriveBuildingBaseDps(typeCode: number, level: number): number {
   return base * (1 + (level - 1) * 0.21);
 }
 
-function deriveDefenseAttackProfile(typeCode: number): {
+function deriveDefenseAttackProfile(typeCode: number, level: number): {
   rangeTiles: number;
   cooldownSec: number;
   projectileSpeedTilesPerSec: number;
+  targetMode: TowerTargetMode;
+  pattern: DefenderAttackPattern;
 } {
+  const targetMode = resolveTowerTargetMode(typeCode);
   switch (typeCode) {
     case 20:
-      return { rangeTiles: 6, cooldownSec: 1.25, projectileSpeedTilesPerSec: 8.5 };
+      return {
+        rangeTiles: 6,
+        cooldownSec: 1.25,
+        projectileSpeedTilesPerSec: 8.5,
+        targetMode,
+        pattern: {
+          maxTargets: 1,
+          pierceTargets: 0,
+          splashRadius: 1.7,
+          splashRatio: 0.24,
+          burstShots: 1,
+        },
+      };
     case 21:
-      return { rangeTiles: 9, cooldownSec: 2.1, projectileSpeedTilesPerSec: 12 };
+      return {
+        rangeTiles: 9,
+        cooldownSec: 2.1,
+        projectileSpeedTilesPerSec: 12,
+        targetMode,
+        pattern: emptyDefenderAttackPattern(),
+      };
     case 22:
-      return { rangeTiles: 7.5, cooldownSec: 1.4, projectileSpeedTilesPerSec: 9 };
+      return {
+        rangeTiles: 7.5,
+        cooldownSec: 1.4,
+        projectileSpeedTilesPerSec: 9,
+        targetMode,
+        pattern: {
+          maxTargets: 1,
+          pierceTargets: 0,
+          splashRadius: 1.25,
+          splashRatio: 0.16,
+          burstShots: 1,
+        },
+      };
     case 23:
-      return { rangeTiles: 8.5, cooldownSec: 1.8, projectileSpeedTilesPerSec: 15 };
+      return {
+        rangeTiles: 8.5,
+        cooldownSec: 1.8,
+        projectileSpeedTilesPerSec: 15,
+        targetMode,
+        pattern: {
+          maxTargets: 1,
+          pierceTargets: 0,
+          splashRadius: 1.1,
+          splashRatio: 0.15,
+          burstShots: 1,
+        },
+      };
     case 24:
-      return { rangeTiles: 6.3, cooldownSec: 1.0, projectileSpeedTilesPerSec: 999 };
+      return {
+        rangeTiles: 6.3,
+        cooldownSec: 1.0,
+        projectileSpeedTilesPerSec: 999,
+        targetMode,
+        pattern: {
+          maxTargets: 1,
+          pierceTargets: 0,
+          splashRadius: 0.9,
+          splashRatio: 0.1,
+          burstShots: 1,
+        },
+      };
     case 25:
-      return { rangeTiles: 9.5, cooldownSec: 2.0, projectileSpeedTilesPerSec: 16 };
+      return {
+        rangeTiles: 9.5,
+        cooldownSec: 2.0,
+        projectileSpeedTilesPerSec: 16,
+        targetMode,
+        pattern: {
+          maxTargets: 1,
+          pierceTargets: 0,
+          splashRadius: 1.35,
+          splashRatio: 0.18,
+          burstShots: 3,
+        },
+      };
     case 115:
-      return { rangeTiles: 9, cooldownSec: 1.65, projectileSpeedTilesPerSec: 14 };
+      return {
+        rangeTiles: 9,
+        cooldownSec: 1.65,
+        projectileSpeedTilesPerSec: 14,
+        targetMode,
+        pattern: {
+          maxTargets: resolveAerialBurstCount(level),
+          pierceTargets: 0,
+          splashRadius: 0,
+          splashRatio: 0,
+          burstShots: 1,
+        },
+      };
     case 117:
-      return { rangeTiles: 8, cooldownSec: 1.5, projectileSpeedTilesPerSec: 10 };
+      return {
+        rangeTiles: 8,
+        cooldownSec: 1.5,
+        projectileSpeedTilesPerSec: 10,
+        targetMode,
+        pattern: {
+          maxTargets: 1,
+          pierceTargets: 0,
+          splashRadius: 1.05,
+          splashRatio: 0.14,
+          burstShots: 1,
+        },
+      };
     case 118:
-      return { rangeTiles: 9.8, cooldownSec: 1.95, projectileSpeedTilesPerSec: 16 };
+      return {
+        rangeTiles: 9.8,
+        cooldownSec: 1.95,
+        projectileSpeedTilesPerSec: 16,
+        targetMode,
+        pattern: {
+          maxTargets: 1,
+          pierceTargets: 5,
+          splashRadius: 0,
+          splashRatio: 0,
+          burstShots: 1,
+        },
+      };
     default:
-      return { rangeTiles: 5.5, cooldownSec: 1.35, projectileSpeedTilesPerSec: 9 };
+      return {
+        rangeTiles: 5.5,
+        cooldownSec: 1.35,
+        projectileSpeedTilesPerSec: 9,
+        targetMode,
+        pattern: emptyDefenderAttackPattern(),
+      };
   }
+}
+
+function emptyDefenderAttackPattern(): DefenderAttackPattern {
+  return {
+    maxTargets: 1,
+    pierceTargets: 0,
+    splashRadius: 0,
+    splashRatio: 0,
+    burstShots: 1,
+  };
+}
+
+function resolveTowerTargetMode(typeCode: number): TowerTargetMode {
+  if (typeCode === 115) return "air";
+  if (typeCode === 21 || typeCode === 25) return "mixed";
+  return "ground";
+}
+
+function resolveAerialBurstCount(level: number): number {
+  const idx = Math.min(Math.max(level - 1, 0), AA_BURST_BY_LEVEL.length - 1);
+  return AA_BURST_BY_LEVEL[idx] ?? 4;
 }
 
 function simulateCombat(input: {
@@ -714,8 +942,11 @@ function simulateCombat(input: {
 }): {
   frames: CombatReplayFrame[];
   summary: CombatSimulationSummary;
+  initialUnits: DefenderUnit[];
+  finalUnits: DefenderUnit[];
 } {
-  const units: DefenderUnit[] = input.defender.units.map((unit) => ({ ...unit }));
+  const initialUnits: DefenderUnit[] = input.defender.units.map((unit) => ({ ...unit }));
+  const units: DefenderUnit[] = initialUnits.map((unit) => ({ ...unit }));
   const groups: AttackerGroup[] = input.attacker.groups.map((group) => ({ ...group }));
   const frames: CombatReplayFrame[] = [];
   const tickSeconds = Math.max(MIN_TICK_SECONDS, input.tickMs / 1000);
@@ -810,7 +1041,12 @@ function simulateCombat(input: {
     hqDestroyed: isPoolDestroyed(units, "hq"),
   };
 
-  return { frames, summary };
+  return {
+    frames,
+    summary,
+    initialUnits,
+    finalUnits: units.map((unit) => ({ ...unit })),
+  };
 }
 
 function tickAttackerGroupState(
@@ -847,18 +1083,18 @@ function scheduleAttackerActions(input: {
   attackerVariance: number;
   attackerProjectiles: AttackerProjectile[];
 }): number {
-  const wallPressure = countAlivePool(input.units, "wall");
+  const wallPressure = computeWallPressure(input.units);
   let shieldGain = 0;
 
   for (const group of input.groups) {
     if (group.hp <= 0) continue;
 
-    const target = selectDefenderTarget(input.units, group, wallPressure);
+    const target = selectDefenderTarget(input.units, group, wallPressure, input.units);
     if (!target) continue;
 
-    const pathDistance = computePathDistance(group, target, wallPressure);
+    const pathDistance = computePathDistance(group, target, wallPressure, input.units);
     if (pathDistance > group.rangeTiles) {
-      moveGroupTowards(group, target, input.tickSeconds, wallPressure);
+      moveGroupTowards(group, target, input.tickSeconds, wallPressure, input.units);
       continue;
     }
 
@@ -975,9 +1211,17 @@ function scheduleDefenderActions(input: {
     if (damage > 0) {
       const travelSec = computeProjectileTravelSeconds(dist, unit.projectileSpeedTilesPerSec);
       input.projectiles.push({
+        sourceX: unit.x,
+        sourceY: unit.y,
         targetKey: target.key,
+        targetMode: unit.targetMode,
         damage,
         etaSec: travelSec,
+        maxTargets: Math.max(1, unit.attackPattern.maxTargets),
+        pierceTargets: Math.max(0, unit.attackPattern.pierceTargets),
+        splashRadius: Math.max(0, unit.attackPattern.splashRadius),
+        splashRatio: clamp(unit.attackPattern.splashRatio, 0, 1),
+        burstShots: Math.max(1, unit.attackPattern.burstShots),
       });
     }
 
@@ -1004,8 +1248,8 @@ function resolveDefenderProjectiles(input: {
 
     input.projectiles.splice(index, 1);
 
-    const target = findAttackerByKey(input.groups, projectile.targetKey)
-      ?? findStrongestAttacker(input.groups);
+    const target = findAttackerByKey(input.groups, projectile.targetKey, projectile.targetMode)
+      ?? findStrongestAttacker(input.groups, projectile.targetMode);
     if (!target || target.hp <= 0) continue;
 
     let damage = projectile.damage;
@@ -1017,14 +1261,99 @@ function resolveDefenderProjectiles(input: {
 
     if (damage <= 0) continue;
 
-    const dealt = applyDamageToAttackerGroup(target, damage);
-    damageDealt += dealt;
+    damageDealt += resolveDefenderProjectileImpact(
+      projectile,
+      target,
+      input.groups,
+      damage
+    );
   }
 
   return {
     damageDealt,
     nextShieldPool: Math.max(0, shieldPool),
   };
+}
+
+function resolveDefenderProjectileImpact(
+  projectile: DefenderProjectile,
+  primaryTarget: AttackerGroup,
+  groups: AttackerGroup[],
+  damage: number
+): number {
+  let dealt = 0;
+  const burstShots = Math.max(1, projectile.burstShots);
+  const damagePerBurstShot = damage / burstShots;
+
+  for (let shot = 0; shot < burstShots; shot += 1) {
+    const activePrimary = primaryTarget.hp > 0
+      ? primaryTarget
+      : findStrongestAttacker(groups, projectile.targetMode);
+    if (!activePrimary) break;
+
+    dealt += applyDamageToAttackerGroup(activePrimary, damagePerBurstShot);
+    const hitKeys = new Set<string>([activePrimary.key]);
+
+    if (projectile.maxTargets > 1) {
+      const retargetCount = projectile.maxTargets - 1;
+      const retargets = selectNearestAttackerTargets(
+        groups,
+        projectile.targetMode,
+        activePrimary.position,
+        hitKeys,
+        retargetCount
+      );
+      if (retargets.length > 0) {
+        const sharedRetargetDamage = (damagePerBurstShot * 0.6) / retargets.length;
+        for (const candidate of retargets) {
+          dealt += applyDamageToAttackerGroup(candidate, sharedRetargetDamage);
+          hitKeys.add(candidate.key);
+        }
+      }
+    }
+
+    if (projectile.pierceTargets > 0) {
+      const pierced = selectPierceAttackerTargets(
+        groups,
+        projectile.targetMode,
+        projectile.sourceX,
+        projectile.sourceY,
+        activePrimary.position.x,
+        activePrimary.position.y,
+        hitKeys,
+        projectile.pierceTargets
+      );
+      if (pierced.length > 0) {
+        const sharedPierceDamage = (damagePerBurstShot * 0.9) / pierced.length;
+        for (const candidate of pierced) {
+          dealt += applyDamageToAttackerGroup(candidate, sharedPierceDamage);
+          hitKeys.add(candidate.key);
+        }
+      }
+    }
+
+    if (projectile.splashRadius > 0 && projectile.splashRatio > 0) {
+      const splashCandidates = getAttackableGroupsByMode(groups, projectile.targetMode)
+        .filter((group) => !hitKeys.has(group.key));
+      for (const candidate of splashCandidates) {
+        const dist = distanceBetweenPoints(
+          activePrimary.position.x,
+          activePrimary.position.y,
+          candidate.position.x,
+          candidate.position.y
+        );
+        if (dist > projectile.splashRadius) continue;
+
+        const falloff = clamp(1 - dist / projectile.splashRadius, 0.25, 1);
+        dealt += applyDamageToAttackerGroup(
+          candidate,
+          damagePerBurstShot * projectile.splashRatio * falloff
+        );
+      }
+    }
+  }
+
+  return dealt;
 }
 
 function computeGroupShotDamage(
@@ -1129,7 +1458,8 @@ function consumeExplosiveCharge(group: AttackerGroup): void {
 function selectDefenderTarget(
   units: DefenderUnit[],
   group: AttackerGroup,
-  wallPressure: number
+  wallPressure: number,
+  allUnits: DefenderUnit[]
 ): DefenderUnit | null {
   for (const pool of group.targetPriority) {
     const candidates = units.filter((candidate) => candidate.pool === pool && candidate.hp > 0);
@@ -1138,7 +1468,7 @@ function selectDefenderTarget(
     let best: DefenderUnit | null = null;
     let bestScore = Number.POSITIVE_INFINITY;
     for (const candidate of candidates) {
-      const pathDistance = computePathDistance(group, candidate, wallPressure);
+      const pathDistance = computePathDistance(group, candidate, wallPressure, allUnits);
       const hpRatio = clamp(candidate.hp / Math.max(1, candidate.maxHp), 0, 1);
       const score = pathDistance + hpRatio * 0.6;
       if (score < bestScore) {
@@ -1194,6 +1524,7 @@ function selectAttackerTarget(groups: AttackerGroup[], unit: DefenderUnit): Atta
 
   for (const group of groups) {
     if (group.hp <= 0) continue;
+    if (!canTargetModeHitGroup(unit.targetMode, group)) continue;
 
     const dist = distanceBetweenPoints(unit.x, unit.y, group.position.x, group.position.y);
     const threat = (group.baseDamagePerUnit + group.splitDamageBonus) * Math.max(0.25, group.unitCount);
@@ -1212,7 +1543,8 @@ function moveGroupTowards(
   group: AttackerGroup,
   target: DefenderUnit,
   tickSeconds: number,
-  wallPressure: number
+  wallPressure: number,
+  units: DefenderUnit[]
 ): void {
   const directDistance = distanceBetweenPoints(
     group.position.x,
@@ -1223,9 +1555,10 @@ function moveGroupTowards(
   if (directDistance <= 0.001) return;
 
   const baseSpeed = group.speedTilesPerSec * (group.zombieBoostSec > 0 ? group.zombieSpeedMultiplier : 1);
+  const wallBarrierPenalty = computeWallBarrierPenalty(group, target, units);
   const pathPenalty = group.pathMode === "direct"
     ? 1
-    : clamp(1 - Math.min(0.45, wallPressure * 0.03), 0.55, 1);
+    : clamp(1 - Math.min(0.52, wallPressure * 0.02 + wallBarrierPenalty * 0.08), 0.48, 1);
   const step = Math.max(0, baseSpeed * pathPenalty * tickSeconds);
   if (step <= 0) return;
 
@@ -1236,7 +1569,12 @@ function moveGroupTowards(
   group.position.y = clamp(nextY, 0, YARD_HEIGHT);
 }
 
-function computePathDistance(group: AttackerGroup, target: DefenderUnit, wallPressure: number): number {
+function computePathDistance(
+  group: AttackerGroup,
+  target: DefenderUnit,
+  wallPressure: number,
+  units: DefenderUnit[]
+): number {
   const straight = distanceBetweenPoints(
     group.position.x,
     group.position.y,
@@ -1252,7 +1590,8 @@ function computePathDistance(group: AttackerGroup, target: DefenderUnit, wallPre
     return straight;
   }
 
-  return straight + Math.min(4.5, wallPressure * 0.35);
+  const wallBarrierPenalty = computeWallBarrierPenalty(group, target, units);
+  return straight + Math.min(6.2, wallPressure * 0.36 + wallBarrierPenalty);
 }
 
 function computeProjectileTravelSeconds(distance: number, speedTilesPerSec: number): number {
@@ -1269,17 +1608,26 @@ function findDefenderById(units: DefenderUnit[], id: string): DefenderUnit | nul
   return null;
 }
 
-function findAttackerByKey(groups: AttackerGroup[], key: string): AttackerGroup | null {
+function findAttackerByKey(
+  groups: AttackerGroup[],
+  key: string,
+  targetMode: TowerTargetMode = "mixed"
+): AttackerGroup | null {
   for (const group of groups) {
+    if (!canTargetModeHitGroup(targetMode, group)) continue;
     if (group.key === key && group.hp > 0) return group;
   }
   return null;
 }
 
-function findStrongestAttacker(groups: AttackerGroup[]): AttackerGroup | null {
+function findStrongestAttacker(
+  groups: AttackerGroup[],
+  targetMode: TowerTargetMode = "mixed"
+): AttackerGroup | null {
   let best: AttackerGroup | null = null;
   let bestHp = 0;
   for (const group of groups) {
+    if (!canTargetModeHitGroup(targetMode, group)) continue;
     if (group.hp <= 0) continue;
     if (group.hp > bestHp) {
       bestHp = group.hp;
@@ -1289,14 +1637,147 @@ function findStrongestAttacker(groups: AttackerGroup[]): AttackerGroup | null {
   return best;
 }
 
-function countAlivePool(units: DefenderUnit[], pool: CombatPool): number {
-  let total = 0;
-  for (const unit of units) {
-    if (unit.pool === pool && unit.hp > 0) {
-      total += 1;
-    }
+function getAttackableGroupsByMode(
+  groups: AttackerGroup[],
+  targetMode: TowerTargetMode
+): AttackerGroup[] {
+  return groups.filter((group) => group.hp > 0 && canTargetModeHitGroup(targetMode, group));
+}
+
+function canTargetModeHitGroup(targetMode: TowerTargetMode, group: AttackerGroup): boolean {
+  if (targetMode === "air") return group.isFlyer;
+  if (targetMode === "ground") return !group.isFlyer;
+  return true;
+}
+
+function selectNearestAttackerTargets(
+  groups: AttackerGroup[],
+  targetMode: TowerTargetMode,
+  around: Point2,
+  exclude: Set<string>,
+  count: number
+): AttackerGroup[] {
+  if (count <= 0) return [];
+
+  const candidates = getAttackableGroupsByMode(groups, targetMode)
+    .filter((group) => !exclude.has(group.key));
+  candidates.sort((left, right) => {
+    const leftDist = distanceBetweenPoints(around.x, around.y, left.position.x, left.position.y);
+    const rightDist = distanceBetweenPoints(around.x, around.y, right.position.x, right.position.y);
+    return leftDist - rightDist;
+  });
+  return candidates.slice(0, count);
+}
+
+function selectPierceAttackerTargets(
+  groups: AttackerGroup[],
+  targetMode: TowerTargetMode,
+  sourceX: number,
+  sourceY: number,
+  targetX: number,
+  targetY: number,
+  exclude: Set<string>,
+  count: number
+): AttackerGroup[] {
+  if (count <= 0) return [];
+
+  const withMetrics: Array<{ group: AttackerGroup; dist: number; t: number }> = [];
+  for (const group of getAttackableGroupsByMode(groups, targetMode)) {
+    if (exclude.has(group.key)) continue;
+    const metrics = pointToSegmentMetrics(
+      group.position.x,
+      group.position.y,
+      sourceX,
+      sourceY,
+      targetX,
+      targetY
+    );
+    if (metrics.t <= 0.05 || metrics.t >= 1.1) continue;
+    if (metrics.distance > 1.1) continue;
+    withMetrics.push({
+      group,
+      dist: metrics.distance,
+      t: metrics.t,
+    });
   }
-  return total;
+
+  withMetrics.sort((left, right) => {
+    if (Math.abs(left.t - right.t) > 0.001) return left.t - right.t;
+    return left.dist - right.dist;
+  });
+  return withMetrics.slice(0, count).map((entry) => entry.group);
+}
+
+function computeWallPressure(units: DefenderUnit[]): number {
+  let pressure = 0;
+  for (const unit of units) {
+    if (unit.pool !== "wall" || unit.hp <= 0) continue;
+
+    const hpRatio = clamp(unit.hp / Math.max(1, unit.maxHp), 0.15, 1);
+    const fortificationBoost = 1 + unit.fortification * 0.18;
+    pressure += hpRatio * fortificationBoost;
+  }
+  return pressure;
+}
+
+function computeWallBarrierPenalty(
+  group: AttackerGroup,
+  target: DefenderUnit,
+  units: DefenderUnit[]
+): number {
+  if (group.pathMode === "direct") return 0;
+
+  let penalty = 0;
+  for (const wall of units) {
+    if (wall.pool !== "wall" || wall.hp <= 0) continue;
+
+    const metrics = pointToSegmentMetrics(
+      wall.x,
+      wall.y,
+      group.position.x,
+      group.position.y,
+      target.x,
+      target.y
+    );
+    if (metrics.t <= 0.05 || metrics.t >= 0.95) continue;
+    if (metrics.distance > 0.9) continue;
+
+    const hpRatio = clamp(wall.hp / Math.max(1, wall.maxHp), 0.15, 1);
+    const fortificationBoost = 1 + wall.fortification * 0.18;
+    penalty += hpRatio * fortificationBoost;
+  }
+
+  return penalty;
+}
+
+function pointToSegmentMetrics(
+  px: number,
+  py: number,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number
+): { distance: number; t: number } {
+  const abx = bx - ax;
+  const aby = by - ay;
+  const abLenSq = abx * abx + aby * aby;
+  if (abLenSq <= 0.000001) {
+    return {
+      distance: distanceBetweenPoints(px, py, ax, ay),
+      t: 0,
+    };
+  }
+
+  const apx = px - ax;
+  const apy = py - ay;
+  const rawT = (apx * abx + apy * aby) / abLenSq;
+  const t = clamp(rawT, 0, 1);
+  const closestX = ax + abx * t;
+  const closestY = ay + aby * t;
+  return {
+    distance: distanceBetweenPoints(px, py, closestX, closestY),
+    t: rawT,
+  };
 }
 
 function sumGroupHp(groups: AttackerGroup[]): number {
@@ -1341,6 +1822,185 @@ function computeDestroyedRatio(summary: CombatSimulationSummary): number {
   const startHp = Math.max(1, summary.defenderHpMax);
   const remaining = clamp(summary.defenderHpRemaining, 0, startHp);
   return 1 - remaining / startHp;
+}
+
+type LegacyStorageLootSource = {
+  destroyedRatio: number;
+  pct: number;
+  cap: number;
+  priority: number;
+};
+
+function deriveLegacyStorageLoot(
+  defenderSave: Save,
+  resources: ResourceSummary,
+  initialUnits: DefenderUnit[],
+  finalUnits: DefenderUnit[]
+): ResourceSummary {
+  const finalById = new Map<string, DefenderUnit>();
+  for (const unit of finalUnits) {
+    finalById.set(unit.id, unit);
+  }
+
+  const isOutpostLike = isOutpostLikeCombatBaseType(String(defenderSave.type ?? ""));
+  const lootSources: LegacyStorageLootSource[] = [];
+
+  for (const unit of initialUnits) {
+    if (unit.code !== 6 && unit.code !== 14 && unit.code !== 112) continue;
+
+    const finalUnit = finalById.get(unit.id);
+    const finalHp = finalUnit ? finalUnit.hp : 0;
+    // Legacy BSTORAGE.Destroyed only triggers storage loot when the building is actually down.
+    if (finalHp > 0) continue;
+
+    lootSources.push({
+      destroyedRatio: 1,
+      pct: resolveStorageLootPercent(unit.code),
+      cap: resolveStorageLootCap(unit.code, isOutpostLike),
+      priority: resolveStorageLootPriority(unit.code),
+    });
+  }
+
+  if (lootSources.length === 0) return emptyResourceSummary();
+
+  lootSources.sort((left, right) => left.priority - right.priority);
+
+  const remaining = normalizeResourceSummary(resources);
+  const loot = emptyResourceSummary();
+  for (const source of lootSources) {
+    for (const key of ["r1", "r2", "r3", "r4"] as const) {
+      let amount = Math.trunc(remaining[key] * source.pct * source.destroyedRatio);
+      amount = Math.min(amount, source.cap);
+      if (key === "r4") {
+        amount = Math.ceil(amount * STORAGE_LOOT_GOO_LIMITER);
+      }
+
+      const taken = Math.max(0, Math.min(remaining[key], amount));
+      if (taken <= 0) continue;
+
+      remaining[key] = Math.max(0, remaining[key] - taken);
+      loot[key] = Math.max(0, loot[key] + taken);
+    }
+  }
+
+  return loot;
+}
+
+function computeStorageDamageRatio(
+  initialUnits: DefenderUnit[],
+  finalUnits: DefenderUnit[]
+): number {
+  const finalById = new Map<string, DefenderUnit>();
+  for (const unit of finalUnits) {
+    finalById.set(unit.id, unit);
+  }
+
+  let totalMaxHp = 0;
+  let totalDamage = 0;
+  for (const unit of initialUnits) {
+    if (unit.code !== 6 && unit.code !== 14 && unit.code !== 112) continue;
+    if (unit.maxHp <= 0) continue;
+
+    const finalUnit = finalById.get(unit.id);
+    const finalHp = clamp(finalUnit?.hp ?? 0, 0, unit.maxHp);
+    totalMaxHp += unit.maxHp;
+    totalDamage += Math.max(0, unit.maxHp - finalHp);
+  }
+
+  if (totalMaxHp <= 0) return 0;
+  return clamp(totalDamage / totalMaxHp, 0, 1);
+}
+
+function resolveStorageLootPercent(typeCode: number): number {
+  if (typeCode === 14) return STORAGE_LOOT_PCT_TH;
+  if (typeCode === 112) return STORAGE_LOOT_PCT_OUTPOST;
+  return STORAGE_LOOT_PCT_BASE;
+}
+
+function resolveStorageLootCap(typeCode: number, isOutpostLike: boolean): number {
+  if (typeCode === 14) {
+    return isOutpostLike ? STORAGE_LOOT_MAX_WM_TH : STORAGE_LOOT_MAX_TH;
+  }
+  if (typeCode === 6) {
+    return isOutpostLike ? STORAGE_LOOT_MAX_WM_SILO : STORAGE_LOOT_MAX_SILO;
+  }
+  if (typeCode === 112) {
+    return STORAGE_LOOT_MAX_OUTPOST;
+  }
+  return STORAGE_LOOT_MAX_TH;
+}
+
+function resolveStorageLootPriority(typeCode: number): number {
+  if (typeCode === 14) return 0;
+  if (typeCode === 112) return 1;
+  if (typeCode === 6) return 2;
+  return 3;
+}
+
+function isOutpostLikeCombatBaseType(baseType: string): boolean {
+  return baseType === BaseType.OUTPOST || baseType === BaseType.INFERNO_TRIBE;
+}
+
+function normalizeResourceSummary(input: ResourceSummary): ResourceSummary {
+  return {
+    r1: Math.max(0, Math.trunc(input.r1)),
+    r2: Math.max(0, Math.trunc(input.r2)),
+    r3: Math.max(0, Math.trunc(input.r3)),
+    r4: Math.max(0, Math.trunc(input.r4)),
+  };
+}
+
+function emptyResourceSummary(): ResourceSummary {
+  return {
+    r1: 0,
+    r2: 0,
+    r3: 0,
+    r4: 0,
+  };
+}
+
+function sumResourceSummary(resources: ResourceSummary): number {
+  return resources.r1 + resources.r2 + resources.r3 + resources.r4;
+}
+
+function scaleResourceSummary(resources: ResourceSummary, factor: number): ResourceSummary {
+  const clampedFactor = clamp(factor, 0, 1);
+  return {
+    r1: Math.max(0, Math.trunc(resources.r1 * clampedFactor)),
+    r2: Math.max(0, Math.trunc(resources.r2 * clampedFactor)),
+    r3: Math.max(0, Math.trunc(resources.r3 * clampedFactor)),
+    r4: Math.max(0, Math.trunc(resources.r4 * clampedFactor)),
+  };
+}
+
+function mergeLootWithResourceCap(
+  maxResources: ResourceSummary,
+  ...lootBags: ResourceSummary[]
+): ResourceSummary {
+  const merged = emptyResourceSummary();
+  for (const bag of lootBags) {
+    merged.r1 += bag.r1;
+    merged.r2 += bag.r2;
+    merged.r3 += bag.r3;
+    merged.r4 += bag.r4;
+  }
+
+  return {
+    r1: Math.max(0, Math.min(maxResources.r1, merged.r1)),
+    r2: Math.max(0, Math.min(maxResources.r2, merged.r2)),
+    r3: Math.max(0, Math.min(maxResources.r3, merged.r3)),
+    r4: Math.max(0, Math.min(maxResources.r4, merged.r4)),
+  };
+}
+
+function scaleLootByTargetType(loot: ResourceSummary, targetType: TargetType): ResourceSummary {
+  if (targetType !== "wild") return loot;
+  return {
+    r1: Math.max(0, Math.trunc(loot.r1 * 0.2)),
+    r2: Math.max(0, Math.trunc(loot.r2 * 0.2)),
+    r3: Math.max(0, Math.trunc(loot.r3 * 0.2)),
+    r4: Math.max(0, Math.trunc(loot.r4 * 0.2)),
+  };
 }
 
 function pickLeveledStat(values: number[] | undefined, level: number, fallback: number): number {

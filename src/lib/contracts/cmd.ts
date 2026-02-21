@@ -5,6 +5,9 @@ export const CmdOperationSchema = z.enum([
   "MoveBuilding",
   "UpgradeBuilding",
   "CancelUpgrade",
+  "StartFortifyBuilding",
+  "CancelFortifyBuilding",
+  "FinishFortifyNow",
   "CollectHarvester",
   "PurchaseStoreItem",
   "ApplyYardPlannerTemplate",
@@ -34,6 +37,18 @@ const UpgradeBuildingArgsSchema = z.object({
 });
 
 const CancelUpgradeArgsSchema = z.object({
+  buildingId: z.string().min(1),
+});
+
+const StartFortifyBuildingArgsSchema = z.object({
+  buildingId: z.string().min(1),
+});
+
+const CancelFortifyBuildingArgsSchema = z.object({
+  buildingId: z.string().min(1),
+});
+
+const FinishFortifyNowArgsSchema = z.object({
   buildingId: z.string().min(1),
 });
 
@@ -91,6 +106,9 @@ export const CmdArgsByOperationSchema = z.discriminatedUnion("op", [
   z.object({ op: z.literal("MoveBuilding"), args: MoveBuildingArgsSchema }),
   z.object({ op: z.literal("UpgradeBuilding"), args: UpgradeBuildingArgsSchema }),
   z.object({ op: z.literal("CancelUpgrade"), args: CancelUpgradeArgsSchema }),
+  z.object({ op: z.literal("StartFortifyBuilding"), args: StartFortifyBuildingArgsSchema }),
+  z.object({ op: z.literal("CancelFortifyBuilding"), args: CancelFortifyBuildingArgsSchema }),
+  z.object({ op: z.literal("FinishFortifyNow"), args: FinishFortifyNowArgsSchema }),
   z.object({ op: z.literal("CollectHarvester"), args: CollectHarvesterArgsSchema }),
   z.object({ op: z.literal("PurchaseStoreItem"), args: PurchaseStoreItemArgsSchema }),
   z.object({ op: z.literal("ApplyYardPlannerTemplate"), args: ApplyYardPlannerTemplateArgsSchema }),
@@ -124,6 +142,9 @@ export type PlaceBuildingArgs = z.infer<typeof PlaceBuildingArgsSchema>;
 export type MoveBuildingArgs = z.infer<typeof MoveBuildingArgsSchema>;
 export type UpgradeBuildingArgs = z.infer<typeof UpgradeBuildingArgsSchema>;
 export type CancelUpgradeArgs = z.infer<typeof CancelUpgradeArgsSchema>;
+export type StartFortifyBuildingArgs = z.infer<typeof StartFortifyBuildingArgsSchema>;
+export type CancelFortifyBuildingArgs = z.infer<typeof CancelFortifyBuildingArgsSchema>;
+export type FinishFortifyNowArgs = z.infer<typeof FinishFortifyNowArgsSchema>;
 export type CollectHarvesterArgs = z.infer<typeof CollectHarvesterArgsSchema>;
 export type PurchaseStoreItemArgs = z.infer<typeof PurchaseStoreItemArgsSchema>;
 export type ApplyYardPlannerTemplateArgs = z.infer<typeof ApplyYardPlannerTemplateArgsSchema>;

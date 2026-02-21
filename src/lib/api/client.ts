@@ -24,12 +24,15 @@ import {
   type CmdResponse,
   type ApplyYardPlannerTemplateArgs,
   type CancelUpgradeArgs,
+  type CancelFortifyBuildingArgs,
   type CancelAcademyUpgradeArgs,
   type CollectHarvesterArgs,
+  type FinishFortifyNowArgs,
   type FinishAcademyUpgradeNowArgs,
   type MoveBuildingArgs,
   type PlaceBuildingArgs,
   type PurchaseStoreItemArgs,
+  type StartFortifyBuildingArgs,
   type StartRepairAllBuildingsArgs,
   type StartRepairBuildingArgs,
   type StartAcademyUpgradeArgs,
@@ -195,6 +198,18 @@ export class ApiClient {
 
   async cancelUpgrade(args: CancelUpgradeArgs): Promise<CmdResponse> {
     return this.cmd("CancelUpgrade", args);
+  }
+
+  async startFortifyBuilding(args: StartFortifyBuildingArgs): Promise<CmdResponse> {
+    return this.cmd("StartFortifyBuilding", args);
+  }
+
+  async cancelFortifyBuilding(args: CancelFortifyBuildingArgs): Promise<CmdResponse> {
+    return this.cmd("CancelFortifyBuilding", args);
+  }
+
+  async finishFortifyNow(args: FinishFortifyNowArgs): Promise<CmdResponse> {
+    return this.cmd("FinishFortifyNow", args);
   }
 
   async collectHarvester(args: CollectHarvesterArgs): Promise<CmdResponse> {

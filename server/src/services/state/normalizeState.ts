@@ -30,9 +30,12 @@ export type NormalizedBuilding = {
   x: number;
   y: number;
   level?: number;
+  fortification?: number;
   footprintW?: number;
   footprintH?: number;
+  countdownBuild?: number;
   countdownUpgrade?: number;
+  countdownFortify?: number;
   upgradeToLevel?: number;
   hp?: number;
   maxHp?: number;
@@ -77,10 +80,28 @@ export function toNormalizedBuildings(
     const levelRaw = parseIntSafe(raw.level ?? raw.l, Number.NaN);
     const level = Number.isFinite(levelRaw) && levelRaw > 0 ? levelRaw : undefined;
 
+    const fortificationRaw = parseIntSafe(raw.fortification ?? raw.fort, Number.NaN);
+    const fortification =
+      Number.isFinite(fortificationRaw) && fortificationRaw > 0
+        ? fortificationRaw
+        : undefined;
+
     const countdownUpgradeRaw = parseIntSafe(raw.countdownUpgrade ?? raw.cU, Number.NaN);
     const countdownUpgrade =
       Number.isFinite(countdownUpgradeRaw) && countdownUpgradeRaw > 0
         ? countdownUpgradeRaw
+        : undefined;
+
+    const countdownBuildRaw = parseIntSafe(raw.countdownBuild ?? raw.cB, Number.NaN);
+    const countdownBuild =
+      Number.isFinite(countdownBuildRaw) && countdownBuildRaw > 0
+        ? countdownBuildRaw
+        : undefined;
+
+    const countdownFortifyRaw = parseIntSafe(raw.countdownFortify ?? raw.cF, Number.NaN);
+    const countdownFortify =
+      Number.isFinite(countdownFortifyRaw) && countdownFortifyRaw > 0
+        ? countdownFortifyRaw
         : undefined;
 
     const upgradeToLevelRaw = parseIntSafe(raw.upgradeToLevel, Number.NaN);
@@ -113,9 +134,12 @@ export function toNormalizedBuildings(
       x,
       y,
       ...(level !== undefined ? { level } : {}),
+      ...(fortification !== undefined ? { fortification } : {}),
       ...(footprintW > 1 ? { footprintW } : {}),
       ...(footprintH > 1 ? { footprintH } : {}),
+      ...(countdownBuild !== undefined ? { countdownBuild } : {}),
       ...(countdownUpgrade !== undefined ? { countdownUpgrade } : {}),
+      ...(countdownFortify !== undefined ? { countdownFortify } : {}),
       ...(upgradeToLevel !== undefined ? { upgradeToLevel } : {}),
       ...(hp !== undefined ? { hp } : {}),
       ...(maxHp !== undefined ? { maxHp } : {}),

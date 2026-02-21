@@ -61,7 +61,10 @@ describe("parseBaseLoadResponse legacy compatibility", () => {
           x: 1,
           y: 1,
           level: 2,
+          cB: 30,
           cU: 120,
+          cF: 45,
+          fort: 2,
           upgradeToLevel: 3,
           hp: 2200,
           maxHp: 5000,
@@ -77,7 +80,10 @@ describe("parseBaseLoadResponse legacy compatibility", () => {
       id: "b-1",
       footprintW: 4,
       footprintH: 4,
+      countdownBuild: 30,
       countdownUpgrade: 120,
+      countdownFortify: 45,
+      fortification: 2,
       upgradeToLevel: 3,
       hp: 2200,
       maxHp: 5000,
@@ -105,6 +111,38 @@ describe("parseBaseLoadResponse legacy compatibility", () => {
     expect(parsed.credits).toBe(321);
     expect(parsed.storeData).toEqual({
       HOD: { q: 2, e: 1730003612 },
+    });
+  });
+
+  it("should parse progression and repair summaries", () => {
+    const parsed = parseBaseLoadResponse({
+      progression: {
+        level: 5,
+        tutorialStage: 1,
+        points: 1500,
+        baseValue: 2000,
+        empireValue: 4500,
+        protected: 1,
+        damage: 100,
+        destroyed: 10,
+      },
+      repair: {
+        estimatedDurationSec: 600,
+        repairingCount: 2,
+        damagedCount: 3,
+      },
+    });
+
+    expect(parsed.progression).toMatchObject({
+      level: 5,
+      points: 1500,
+      baseValue: 2000,
+      empireValue: 4500,
+    });
+    expect(parsed.repair).toEqual({
+      estimatedDurationSec: 600,
+      repairingCount: 2,
+      damagedCount: 3,
     });
   });
 

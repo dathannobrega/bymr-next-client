@@ -10,7 +10,11 @@ describe("building info context actions", () => {
       selectedBuildingCode: null,
       selectedBuildingCategory: null,
       selectedBuildingHasPendingUpgrade: false,
+      selectedBuildingHasPendingFortify: false,
+      selectedBuildingCanFortify: false,
+      selectedBuildingFortificationLevel: 0,
       selectedBuildingIsDamaged: false,
+      selectedBuildingCanFunction: false,
       resourceBuildingCount: 3,
       damagedBuildingCount: 2,
     });
@@ -26,7 +30,11 @@ describe("building info context actions", () => {
       selectedBuildingCode: 1,
       selectedBuildingCategory: "resource",
       selectedBuildingHasPendingUpgrade: false,
+      selectedBuildingHasPendingFortify: false,
+      selectedBuildingCanFortify: true,
+      selectedBuildingFortificationLevel: 1,
       selectedBuildingIsDamaged: true,
+      selectedBuildingCanFunction: true,
       resourceBuildingCount: 2,
       damagedBuildingCount: 1,
     });
@@ -42,7 +50,11 @@ describe("building info context actions", () => {
       selectedBuildingCode: 20,
       selectedBuildingCategory: "defense",
       selectedBuildingHasPendingUpgrade: true,
+      selectedBuildingHasPendingFortify: false,
+      selectedBuildingCanFortify: true,
+      selectedBuildingFortificationLevel: 1,
       selectedBuildingIsDamaged: true,
+      selectedBuildingCanFunction: true,
       resourceBuildingCount: 0,
       damagedBuildingCount: 1,
     });
@@ -57,7 +69,11 @@ describe("building info context actions", () => {
       selectedBuildingCode: 12,
       selectedBuildingCategory: "utility",
       selectedBuildingHasPendingUpgrade: false,
+      selectedBuildingHasPendingFortify: false,
+      selectedBuildingCanFortify: true,
+      selectedBuildingFortificationLevel: 0,
       selectedBuildingIsDamaged: false,
+      selectedBuildingCanFunction: true,
       resourceBuildingCount: 0,
       damagedBuildingCount: 0,
     });
@@ -72,7 +88,11 @@ describe("building info context actions", () => {
       selectedBuildingCode: 26,
       selectedBuildingCategory: "utility",
       selectedBuildingHasPendingUpgrade: false,
+      selectedBuildingHasPendingFortify: false,
+      selectedBuildingCanFortify: true,
+      selectedBuildingFortificationLevel: 0,
       selectedBuildingIsDamaged: false,
+      selectedBuildingCanFunction: true,
       resourceBuildingCount: 0,
       damagedBuildingCount: 0,
     });
@@ -84,6 +104,64 @@ describe("building info context actions", () => {
     expect(isBuildingContextActionId("open_maproom")).toBe(true);
     expect(isBuildingContextActionId("collect_selected")).toBe(true);
     expect(isBuildingContextActionId("start_repair_selected")).toBe(true);
+    expect(isBuildingContextActionId("start_fortify_selected")).toBe(true);
     expect(isBuildingContextActionId("invalid_action")).toBe(false);
+  });
+
+  it("should disable store action when building cannot function", () => {
+    const actions = getBuildingInfoContextActions({
+      selectedBuildingCode: 12,
+      selectedBuildingCategory: "utility",
+      selectedBuildingHasPendingUpgrade: false,
+      selectedBuildingHasPendingFortify: false,
+      selectedBuildingCanFortify: true,
+      selectedBuildingFortificationLevel: 0,
+      selectedBuildingIsDamaged: true,
+      selectedBuildingCanFunction: false,
+      resourceBuildingCount: 0,
+      damagedBuildingCount: 1,
+    });
+
+    const storeAction = actions.find((action) => action.id === "open_store");
+    expect(storeAction?.implemented).toBe(true);
+    expect(storeAction?.disabled).toBe(true);
+  });
+
+  it("should expose cancel/finish actions when fortify is running", () => {
+    const actions = getBuildingInfoContextActions({
+      selectedBuildingCode: 20,
+      selectedBuildingCategory: "defense",
+      selectedBuildingHasPendingUpgrade: false,
+      selectedBuildingHasPendingFortify: true,
+      selectedBuildingCanFortify: true,
+      selectedBuildingFortificationLevel: 2,
+      selectedBuildingIsDamaged: false,
+      selectedBuildingCanFunction: true,
+      resourceBuildingCount: 0,
+      damagedBuildingCount: 0,
+    });
+
+    expect(actions.map((action) => action.id)).toContain("cancel_fortify_selected");
+    expect(actions.map((action) => action.id)).toContain("finish_fortify_now_selected");
+    expect(actions.map((action) => action.id)).not.toContain("start_fortify_selected");
+  });
+
+  it("should disable start fortify when building is at max fortification", () => {
+    const actions = getBuildingInfoContextActions({
+      selectedBuildingCode: 20,
+      selectedBuildingCategory: "defense",
+      selectedBuildingHasPendingUpgrade: false,
+      selectedBuildingHasPendingFortify: false,
+      selectedBuildingCanFortify: true,
+      selectedBuildingFortificationLevel: 4,
+      selectedBuildingIsDamaged: false,
+      selectedBuildingCanFunction: true,
+      resourceBuildingCount: 0,
+      damagedBuildingCount: 0,
+    });
+
+    const startFortify = actions.find((action) => action.id === "start_fortify_selected");
+    expect(startFortify?.implemented).toBe(true);
+    expect(startFortify?.disabled).toBe(true);
   });
 });

@@ -36,10 +36,10 @@ Critério de uso de `archived`:
 - Regras de gameplay/fluxo (`core_gameplay_or_flow`, `building_gameplay_logic`) não devem ir para `archived`; nesses casos fica `migrated`, `in_progress` ou `n/a` justificado.
 
 Status atual desta rodada:
-- `pending`: 433
-- `in_progress`: 5
-- `migrated`: 26
-- `archived`: 7
+- `pending`: 341
+- `in_progress`: 4
+- `migrated`: 85
+- `archived`: 41
 
 ## Execução iniciada nesta rodada
 - [x] Comandos autoritativos adicionais migrados: `CancelUpgrade` e `CollectHarvester`

@@ -150,6 +150,7 @@ const TERRAIN_ASSET_BY_THEME: Record<NonNullable<ParsedBaseLoad["yardTheme"]>, s
   grass: [
     "assets/yardbg/grass/2174_isograss1_isograss1.png",
     "assets/yardbg/grass/2173_isograss4_isograss4.png",
+    "assets/yardbg/grass/2347_grass_rock_path_tile_01.jpg",
   ],
   sand: ["assets/yardbg/sand/2167_isosand1_isosand1.png"],
   lava: ["assets/yardbg/lava/2169_inferno_lava1_inferno_lava1.png"],
@@ -278,7 +279,7 @@ export class YardScene {
       : "fallback";
 
     const footer = new Text({
-      text: `Legacy HUD ativo • Wheel: magnify • Z: zoom legado (1x/0.5x) • Shift+Click: Place/Move • Alt+Click/U: Upgrade • X: Cancel • C: Collect • M: Maproom • L: Social`,
+      text: `Legacy HUD ativo • Wheel: magnify • Z: zoom legado (1x/0.5x) • Shift+Click: Place/Move • Alt+Click/U: Upgrade • X: Cancel • F: Fortify • N: Finish fortify • C: Collect • M: Maproom • L: Social`,
       style: { fill: 0x8fa5d6, fontSize: 12 } as any,
     });
     footer.position.set(12, 110);
@@ -559,6 +560,22 @@ export class YardScene {
 
       if (key === "x") {
         void this.executeCancelUpgradeForSelected();
+        return;
+      }
+
+      if (key === "f") {
+        const selected = this.getSelectedBuilding();
+        const runningFortify = this.isBuildingFortifying(selected);
+        if (runningFortify) {
+          void this.executeCancelFortifyForSelected();
+        } else {
+          void this.executeStartFortifyForSelected();
+        }
+        return;
+      }
+
+      if (key === "n") {
+        void this.executeFinishFortifyNowForSelected();
         return;
       }
 
@@ -1062,6 +1079,81 @@ export class YardScene {
     }
   }
 
+  private async executeStartFortifyForSelected(): Promise<void> {
+    const building = this.getSelectedBuilding();
+    if (!building) {
+      this.statusText.text = "Nenhum building selecionado para fortificar.";
+      this.renderBuildingControlPanel();
+      return;
+    }
+
+    if (!this.canBuildingFortify(building) || this.isBuildingFortifying(building)) {
+      this.statusText.text = "Building selecionado nao pode iniciar fortificacao.";
+      this.renderBuildingControlPanel();
+      return;
+    }
+
+    try {
+      this.statusText.text = `StartFortifyBuilding #${building.id}...`;
+      const response = await this.deps.api.startFortifyBuilding({ buildingId: building.id });
+      this.applyCmdResponse(response);
+      this.statusText.text = `StartFortifyBuilding ok (seq=${response.seq ?? "?"})`;
+    } catch (err) {
+      this.statusText.text = `Fortify falhou: ${String((err as Error)?.message ?? err)}`;
+      this.renderBuildingControlPanel();
+    }
+  }
+
+  private async executeCancelFortifyForSelected(): Promise<void> {
+    const building = this.getSelectedBuilding();
+    if (!building) {
+      this.statusText.text = "Nenhum building selecionado para cancelar fortificacao.";
+      this.renderBuildingControlPanel();
+      return;
+    }
+
+    if (!this.isBuildingFortifying(building)) {
+      this.statusText.text = "Building selecionado nao esta fortificando.";
+      this.renderBuildingControlPanel();
+      return;
+    }
+
+    try {
+      this.statusText.text = `CancelFortifyBuilding #${building.id}...`;
+      const response = await this.deps.api.cancelFortifyBuilding({ buildingId: building.id });
+      this.applyCmdResponse(response);
+      this.statusText.text = `CancelFortifyBuilding ok (seq=${response.seq ?? "?"})`;
+    } catch (err) {
+      this.statusText.text = `CancelFortify falhou: ${String((err as Error)?.message ?? err)}`;
+      this.renderBuildingControlPanel();
+    }
+  }
+
+  private async executeFinishFortifyNowForSelected(): Promise<void> {
+    const building = this.getSelectedBuilding();
+    if (!building) {
+      this.statusText.text = "Nenhum building selecionado para finalizar fortificacao.";
+      this.renderBuildingControlPanel();
+      return;
+    }
+
+    if (!this.canBuildingFortify(building)) {
+      this.statusText.text = "Building selecionado nao suporta fortificacao.";
+      this.renderBuildingControlPanel();
+      return;
+    }
+
+    try {
+      this.statusText.text = `FinishFortifyNow #${building.id}...`;
+      const response = await this.deps.api.finishFortifyNow({ buildingId: building.id });
+      this.applyCmdResponse(response);
+      this.statusText.text = `FinishFortifyNow ok (seq=${response.seq ?? "?"})`;
+    } catch (err) {
+      this.statusText.text = `FinishFortifyNow falhou: ${String((err as Error)?.message ?? err)}`;
+      this.renderBuildingControlPanel();
+    }
+  }
+
   private async executeCollectForSelected(): Promise<void> {
     const buildingId = this.getSelectedBuildingId();
     if (!buildingId) {
@@ -1179,6 +1271,15 @@ export class YardScene {
       case "cancel_upgrade_selected":
         await this.executeCancelUpgradeForSelected();
         return;
+      case "start_fortify_selected":
+        await this.executeStartFortifyForSelected();
+        return;
+      case "cancel_fortify_selected":
+        await this.executeCancelFortifyForSelected();
+        return;
+      case "finish_fortify_now_selected":
+        await this.executeFinishFortifyNowForSelected();
+        return;
       case "start_repair_selected":
         await this.executeStartRepairForSelected();
         return;
@@ -1212,6 +1313,12 @@ export class YardScene {
         this.renderBuildingControlPanel();
         return;
       case "open_store":
+        if (!this.canBuildingExecuteOperationalFlow(this.getSelectedBuilding())) {
+          this.statusText.text =
+            "General Store indisponivel: finalize a construcao e repare acima de 50% de HP.";
+          this.renderBuildingControlPanel();
+          return;
+        }
         await this.openStoreFlow("store");
         return;
       case "open_academy":
@@ -1566,14 +1673,22 @@ export class YardScene {
     const selectedBuildingHasPendingUpgrade =
       typeof selectedBuilding?.countdownUpgrade === "number" &&
       selectedBuilding.countdownUpgrade > 0;
+    const selectedBuildingHasPendingFortify = this.isBuildingFortifying(selectedBuilding);
+    const selectedBuildingFortificationLevel = this.getBuildingFortificationLevel(selectedBuilding);
+    const selectedBuildingCanFortify = this.canBuildingFortify(selectedBuilding);
     const resourceBuildingCount = this.countResourceBuildings();
     const damagedBuildingCount = this.countDamagedBuildings();
     const selectedBuildingIsDamaged = this.isBuildingDamaged(selectedBuilding);
+    const selectedBuildingCanFunction = this.canBuildingExecuteOperationalFlow(selectedBuilding);
     const contextActions = getBuildingInfoContextActions({
       selectedBuildingCode,
       selectedBuildingCategory,
       selectedBuildingHasPendingUpgrade,
+      selectedBuildingHasPendingFortify,
+      selectedBuildingCanFortify,
+      selectedBuildingFortificationLevel,
       selectedBuildingIsDamaged,
+      selectedBuildingCanFunction,
       resourceBuildingCount,
       damagedBuildingCount,
     });
@@ -1719,6 +1834,12 @@ export class YardScene {
       ? `${selectedBuilding.type} #${selectedBuilding.id} @ (${selectedBuilding.x}, ${selectedBuilding.y})` +
         `${typeof selectedBuilding.level === "number" ? ` Lv.${selectedBuilding.level}` : ""}` +
         `${
+          typeof selectedBuilding.countdownBuild === "number" &&
+          selectedBuilding.countdownBuild > 0
+            ? ` | construindo ${selectedBuilding.countdownBuild}s`
+            : ""
+        }` +
+        `${
           typeof selectedBuilding.hp === "number" && typeof selectedBuilding.maxHp === "number"
             ? ` | HP ${selectedBuilding.hp}/${selectedBuilding.maxHp}${selectedBuilding.repairing ? " (repair)" : ""}`
             : ""
@@ -1728,6 +1849,19 @@ export class YardScene {
           selectedBuilding.countdownUpgrade > 0
             ? ` | upgrade em ${selectedBuilding.countdownUpgrade}s`
             : ""
+        }` +
+        `${
+          selectedBuildingFortificationLevel > 0
+            ? ` | fort ${selectedBuildingFortificationLevel}`
+            : ""
+        }` +
+        `${
+          this.isBuildingFortifying(selectedBuilding)
+            ? ` | fortificando ${selectedBuilding.countdownFortify}s`
+            : ""
+        }` +
+        `${
+          this.canBuildingExecuteOperationalFlow(selectedBuilding) ? "" : " | inoperante"
         }`
       : "nenhum";
     const activeContextActionCount = contextActions.filter(
@@ -1736,6 +1870,9 @@ export class YardScene {
     const pendingContextActionCount = contextActions.filter(
       (action) => !action.implemented
     ).length;
+    const repairSummaryLine = this.baseState.repair
+      ? `Repair: ${this.baseState.repair.repairingCount} em reparo / ${this.baseState.repair.damagedCount} danificados • ETA ${formatDuration(this.baseState.repair.estimatedDurationSec)}`
+      : "Repair: n/a";
 
     const lines = [
       `Tipo de place: ${placementInfo?.label ?? this.placementType} (${this.placementType})`,
@@ -1745,6 +1882,7 @@ export class YardScene {
       `Tile selecionado: ${tileLabel}`,
       `Building selecionado: ${selectedBuildingText}`,
       `Ações contextuais: ${activeContextActionCount}/${contextActions.length} ativas (${pendingContextActionCount} pendentes)`,
+      repairSummaryLine,
       `Status: ${this.statusText.text || "ready"}`,
       "Ações: selecione tipo no catálogo, clique em tile e use os botões (ou Shift+Click para atalho).",
     ];
@@ -2585,6 +2723,52 @@ export class YardScene {
       return false;
     }
     return building.maxHp > 0 && building.hp >= 0 && building.hp < building.maxHp;
+  }
+
+  private isBuildingFortifying(building: YardBuilding | null | undefined): boolean {
+    if (!building) return false;
+    return typeof building.countdownFortify === "number" && building.countdownFortify > 0;
+  }
+
+  private getBuildingFortificationLevel(building: YardBuilding | null | undefined): number {
+    if (!building || typeof building.fortification !== "number" || !Number.isFinite(building.fortification)) {
+      return 0;
+    }
+    return Math.max(0, Math.trunc(building.fortification));
+  }
+
+  private canBuildingFortify(building: YardBuilding | null | undefined): boolean {
+    if (!building) return false;
+
+    const normalized = normalizePlacementBuildingTypeInput(building.type);
+    const entry = normalized ? describePlacementType(normalized.code) : describePlacementType(building.type);
+    const code = entry?.code ?? null;
+    if (code === null || code === 7) return false;
+
+    if (typeof building.countdownBuild === "number" && building.countdownBuild > 0) {
+      return false;
+    }
+
+    if (typeof building.countdownUpgrade === "number" && building.countdownUpgrade > 0) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private canBuildingExecuteOperationalFlow(
+    building: YardBuilding | null | undefined
+  ): boolean {
+    if (!building) return false;
+    if (typeof building.countdownBuild === "number" && building.countdownBuild > 0) {
+      return false;
+    }
+
+    if (typeof building.hp === "number" && typeof building.maxHp === "number") {
+      return building.maxHp <= 0 || building.hp >= building.maxHp * 0.5;
+    }
+
+    return true;
   }
 
   private promptPlacementType(): void {

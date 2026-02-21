@@ -6,6 +6,8 @@ export default defineConfig({
     strictPort: true,
   },
   build: {
+    copyPublicDir: false,
+    emptyOutDir: false,
     sourcemap: true,
   },
 });

@@ -11,9 +11,12 @@ export const BaseBuildingSchema = z.object({
   x: z.number().int().nonnegative(),
   y: z.number().int().nonnegative(),
   level: z.number().int().positive().optional(),
+  fortification: z.number().int().nonnegative().optional(),
   footprintW: z.number().int().positive().optional(),
   footprintH: z.number().int().positive().optional(),
+  countdownBuild: z.number().int().nonnegative().optional(),
   countdownUpgrade: z.number().int().nonnegative().optional(),
+  countdownFortify: z.number().int().nonnegative().optional(),
   upgradeToLevel: z.number().int().positive().optional(),
   hp: z.number().int().nonnegative().optional(),
   maxHp: z.number().int().positive().optional(),
@@ -39,6 +42,25 @@ export const BaseLoadResponseSchema = z.object({
   yardTheme: YardThemeSchema.optional(),
   buildings: z.array(BaseBuildingSchema).default([]),
   resources: BaseResourcesSchema.optional(),
+  progression: z
+    .object({
+      level: z.number().int().positive(),
+      tutorialStage: z.number().int().nonnegative(),
+      points: z.number().int().nonnegative(),
+      baseValue: z.number().int().nonnegative(),
+      empireValue: z.number().int().nonnegative(),
+      protected: z.number().int().nonnegative(),
+      damage: z.number().int().nonnegative(),
+      destroyed: z.number().int().nonnegative(),
+    })
+    .optional(),
+  repair: z
+    .object({
+      estimatedDurationSec: z.number().int().nonnegative(),
+      repairingCount: z.number().int().nonnegative(),
+      damagedCount: z.number().int().nonnegative(),
+    })
+    .optional(),
   academy: z
     .object({
       buildingId: z.string().nullable(),

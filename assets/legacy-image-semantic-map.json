@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "updatedAt": "2026-02-21",
+  "notes": "Hash-validated mappings from legacy numeric image IDs to semantic assets used by the current pipeline.",
+  "legacySourceRoot": "client(legacy)/images",
+  "mappings": [
+    {
+      "numeric": "2339.jpg",
+      "semantic": "2169_inferno_lava1_inferno_lava1.jpg",
+      "target": "server/public/assets/yardbg/lava/2169_inferno_lava1_inferno_lava1.png"
+    },
+    {
+      "numeric": "2341.jpg",
+      "semantic": "2171_inferno_lava2_inferno_lava2.jpg",
+      "target": "server/public/assets/yardbg/lava/2171_inferno_lava2_inferno_lava2.png"
+    },
+    {
+      "numeric": "2343.jpg",
+      "semantic": "2170_inferno_lava3_inferno_lava3.jpg",
+      "target": "server/public/assets/yardbg/lava/2170_inferno_lava3_inferno_lava3.png"
+    },
+    {
+      "numeric": "2345.jpg",
+      "semantic": "2165_inferno_lava4_inferno_lava4.jpg",
+      "target": "server/public/assets/yardbg/lava/2165_inferno_lava4_inferno_lava4.png"
+    },
+    {
+      "numeric": "2347.jpg",
+      "semantic": "2347_grass_rock_path_tile_01.jpg",
+      "source": "numeric",
+      "expectedSha1": "f08be9cf381a4729f10f2d8b249f1ffd56451f01",
+      "target": "server/public/assets/yardbg/grass/2347_grass_rock_path_tile_01.jpg"
+    }
+  ]
+}

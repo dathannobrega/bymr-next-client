@@ -82,6 +82,9 @@ Supported ops in client:
 - `MoveBuilding`
 - `UpgradeBuilding`
 - `CancelUpgrade`
+- `StartFortifyBuilding`
+- `CancelFortifyBuilding`
+- `FinishFortifyNow`
 - `CollectHarvester`
 - `PurchaseStoreItem`
 - `ApplyYardPlannerTemplate`
@@ -98,7 +101,12 @@ Success response:
   "seq": 42,
   "serverTime": 1730000012,
   "delta": [
-    { "op": "addBuilding", "id": "991", "type": "hq", "x": 10, "y": 15, "level": 1 }
+    { "op": "addBuilding", "id": "991", "type": "hq", "x": 10, "y": 15, "level": 1 },
+    { "op": "setBuildingFortification", "id": "991", "fortification": 2, "countdownFortify": 0 },
+    {
+      "op": "setProgression",
+      "progression": { "level": 5, "points": 1200, "baseValue": 900, "empireValue": 0 }
+    }
   ]
 }
 ```
@@ -136,6 +144,7 @@ Validation error shape (`400`):
 - Optional anti-replay nonce can be validated in Redis (`cmd-nonce:<userId>:<nonce>`).
 - Apply legacy main-yard build rules server-side (`quantityByTownHall`, level requirements and resource costs for place/upgrade).
 - Reject resource/requirement violations with structured `code` (`BUILDING_LIMIT_REACHED`, `BUILDING_REQUIREMENT_NOT_MET`, `INSUFFICIENT_RESOURCES`).
+- Emitir deltas de núcleo (`setProgression`, `setRepairSummary`, `setBuildingRepairState`, `setBuildingFortification`) quando houver mudança autoritativa de progressão/reparo/fortificação.
 - Regression smoke coverage: `./scripts/smoke-cmd-hardening.sh`.
 
 ### `GET /api/:apiVersion/store/catalog`
@@ -155,7 +164,7 @@ Validation error shape (`400`):
   - `yardWidth`
   - `yardHeight`
   - `yardTheme` (`grass|sand|lava|rock|crater`)
-  - `buildings[]` (including optional `footprintW/footprintH` when available)
+  - `buildings[]` (including optional `footprintW/footprintH` and `fortification` when available)
 - Deprecation gate for next-client: when env `DISABLE_NEXT_CLIENT_BASE_LOAD` is enabled (`1|true|yes|enabled`), next-client payloads are rejected with `409` and `code: "NEXT_CLIENT_BASE_LOAD_DEPRECATED"` to force migration to `/api/:apiVersion/state`.
 
 ### `POST /base/save`
@@ -220,7 +229,12 @@ Exemplo de resposta:
       "C1": { "level": 1, "maxLevel": 6, "inLocker": true, "canTrain": true }
     }
   },
-  "buildings": [{ "id": "b1", "type": "hq", "x": 2, "y": 3 }],
+  "repair": {
+    "estimatedDurationSec": 0,
+    "repairingCount": 0,
+    "damagedCount": 0
+  },
+  "buildings": [{ "id": "b1", "type": "hq", "x": 2, "y": 3, "fortification": 2 }],
   "maproom": {
     "worldId": "w-1",
     "mapVersion": 3,
@@ -253,7 +267,7 @@ event: ready
 data: {"connectionId":"c1","serverTime":1730000012,"snapshotVersion":1}
 
 event: snapshot
-data: {"reason":"initial","snapshot":{"snapshotVersion":1,"serverTime":1730000012,"player":{"userId":123,"username":"dev","banned":false,"chatEnabled":true,"friendCount":0},"base":{"baseId":"1001","baseSaveId":22,"type":"main","yardWidth":20,"yardHeight":14,"yardTheme":"grass"},"progression":{"level":5,"tutorialStage":2,"points":1000,"baseValue":12000,"empireValue":9000,"credits":25,"protected":1,"damage":0,"destroyed":0},"resources":{"active":{"r1":10,"r2":20,"r3":30,"r4":40,"r1max":100,"r2max":100,"r3max":100,"r4max":100}},"storeData":{"BEW":{"q":1}},"buildings":[{"id":"b1","type":"hq","x":2,"y":3}],"maproom":{"worldId":"w-1","mapVersion":3,"outpostCount":4,"canAttack":true}}}
+data: {"reason":"initial","snapshot":{"snapshotVersion":1,"serverTime":1730000012,"player":{"userId":123,"username":"dev","banned":false,"chatEnabled":true,"friendCount":0},"base":{"baseId":"1001","baseSaveId":22,"type":"main","yardWidth":20,"yardHeight":14,"yardTheme":"grass"},"progression":{"level":5,"tutorialStage":2,"points":1000,"baseValue":12000,"empireValue":9000,"credits":25,"protected":1,"damage":0,"destroyed":0},"resources":{"active":{"r1":10,"r2":20,"r3":30,"r4":40,"r1max":100,"r2max":100,"r3max":100,"r4max":100}},"storeData":{"BEW":{"q":1}},"buildings":[{"id":"b1","type":"hq","x":2,"y":3,"fortification":2}],"maproom":{"worldId":"w-1","mapVersion":3,"outpostCount":4,"canAttack":true}}}
 
 event: delta
 data: {"serverTime":1730000013,"seq":42,"baseId":"1001","op":"MoveBuilding","delta":[{"op":"moveBuilding","id":"991","x":10,"y":15}]}

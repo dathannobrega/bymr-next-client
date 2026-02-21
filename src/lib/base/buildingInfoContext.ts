@@ -3,6 +3,9 @@ import type { LegacyBuildingCategory } from "./buildingType";
 export const BUILDING_CONTEXT_ACTION_IDS = [
   "upgrade_selected",
   "cancel_upgrade_selected",
+  "start_fortify_selected",
+  "cancel_fortify_selected",
+  "finish_fortify_now_selected",
   "start_repair_selected",
   "start_repair_all",
   "collect_selected",
@@ -34,7 +37,11 @@ export type BuildingContextInput = {
   selectedBuildingCode: number | null;
   selectedBuildingCategory: LegacyBuildingCategory | null;
   selectedBuildingHasPendingUpgrade: boolean;
+  selectedBuildingHasPendingFortify: boolean;
+  selectedBuildingCanFortify: boolean;
+  selectedBuildingFortificationLevel: number;
   selectedBuildingIsDamaged: boolean;
+  selectedBuildingCanFunction: boolean;
   resourceBuildingCount: number;
   damagedBuildingCount: number;
 };
@@ -74,13 +81,33 @@ export function getBuildingInfoContextActions(
     add(enabled("upgrade_selected", "Upgrade"));
   }
 
+  if (input.selectedBuildingCanFortify) {
+    if (input.selectedBuildingHasPendingFortify) {
+      add(enabled("cancel_fortify_selected", "Cancelar fortify"));
+      add(enabled("finish_fortify_now_selected", "Finalizar fortify"));
+    } else if (!input.selectedBuildingHasPendingUpgrade) {
+      if (input.selectedBuildingFortificationLevel >= 4) {
+        add(
+          disabled(
+            "start_fortify_selected",
+            "Fortificar",
+            "Fortificacao ja esta no nivel maximo."
+          )
+        );
+      } else {
+        add(enabled("start_fortify_selected", "Fortificar"));
+      }
+    }
+  }
+
   if (input.selectedBuildingCategory === "resource") {
     add(enabled("collect_selected", "Coletar selecionado"));
   }
 
   if (
     input.selectedBuildingIsDamaged &&
-    !input.selectedBuildingHasPendingUpgrade
+    !input.selectedBuildingHasPendingUpgrade &&
+    !input.selectedBuildingHasPendingFortify
   ) {
     add(enabled("start_repair_selected", "Reparar"));
   }
@@ -90,7 +117,15 @@ export function getBuildingInfoContextActions(
       add(enabled("open_yard_planner", "Yard planner"));
       break;
     case 12:
-      add(enabled("open_store", "Abrir store"));
+      add(
+        input.selectedBuildingCanFunction
+          ? enabled("open_store", "Abrir store")
+          : disabled(
+              "open_store",
+              "Abrir store",
+              "General Store indisponivel enquanto construcao ativa ou HP abaixo de 50%."
+            )
+      );
       break;
     case 26:
       add(enabled("open_academy", "Abrir academy"));
@@ -127,5 +162,19 @@ function enabled(id: BuildingContextActionId, label: string): BuildingContextAct
     label,
     implemented: true,
     disabled: false,
+  };
+}
+
+function disabled(
+  id: BuildingContextActionId,
+  label: string,
+  reason: string
+): BuildingContextAction {
+  return {
+    id,
+    label,
+    implemented: true,
+    disabled: true,
+    reason,
   };
 }

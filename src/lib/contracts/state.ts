@@ -79,6 +79,13 @@ export const StateSnapshotResponseSchema = z.object({
       ),
     })
     .optional(),
+  repair: z
+    .object({
+      estimatedDurationSec: z.number().int().nonnegative(),
+      repairingCount: z.number().int().nonnegative(),
+      damagedCount: z.number().int().nonnegative(),
+    })
+    .optional(),
   buildings: z.array(BaseBuildingSchema).default([]),
   maproom: z.object({
     worldId: z.string().nullable(),

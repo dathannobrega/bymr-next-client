@@ -28,6 +28,10 @@ import {
   applyLegacyAcademyProgress,
   buildAcademyStateSummary,
 } from "../../services/state/academyState.js";
+import {
+  applyLegacyBaseProgression,
+  buildLegacyRepairSummary,
+} from "../../services/state/legacyBaseCoreParity.js";
 
 const MAIN_BASE_ALIASES = new Set(["home", "self", "main", "default", "0"]);
 const INFERNO_BASE_ALIASES = new Set(["inferno", "i", "inferno-main"]);
@@ -155,6 +159,8 @@ export async function resolveInfernoSave(
 }
 
 export function buildStateSnapshot(user: User, save: Save) {
+  const progression = applyLegacyBaseProgression(save).progression;
+  const repair = buildLegacyRepairSummary(save);
   const isInfernoBase =
     save.type === BaseType.INFERNO || save.type === BaseType.INFERNO_TRIBE;
   const activeResources = isInfernoBase && user.save?.iresources
@@ -183,11 +189,11 @@ export function buildStateSnapshot(user: User, save: Save) {
       yardTheme: deriveYardTheme(save),
     },
     progression: {
-      level: Math.max(1, parseIntSafe(save.level, 1)),
+      level: progression.level,
       tutorialStage: Math.max(0, parseIntSafe(save.tutorialstage, 0)),
-      points: Math.max(0, parseIntSafe(save.points, 0)),
-      baseValue: Math.max(0, parseIntSafe(save.basevalue, 0)),
-      empireValue: Math.max(0, parseIntSafe(save.empirevalue, 0)),
+      points: progression.points,
+      baseValue: progression.baseValue,
+      empireValue: progression.empireValue,
       credits: Math.max(0, parseIntSafe(user.save?.credits ?? save.credits, 0)),
       protected: Math.max(0, parseIntSafe(save.protected, 0)),
       damage: Math.max(0, parseIntSafe(save.damage, 0)),
@@ -204,6 +210,11 @@ export function buildStateSnapshot(user: User, save: Save) {
     },
     storeData: toStoreDataSummary(save.storedata),
     academy: buildAcademyStateSummary(save),
+    repair: {
+      estimatedDurationSec: repair.estimatedDurationSec,
+      repairingCount: repair.repairingCount,
+      damagedCount: repair.damagedCount,
+    },
     buildings: toNormalizedBuildings(save, {
       yardWidth: YARD_WIDTH,
       yardHeight: YARD_HEIGHT,

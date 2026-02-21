@@ -25,6 +25,8 @@ export type LegacyMainYardRule = {
   category: string;
   quantityByTownHall: number[];
   costs: LegacyBuildCost[];
+  canFortify?: boolean;
+  fortifyCosts?: LegacyBuildCost[];
   hpByLevel?: number[];
   capacityByLevel?: number[];
   produceByLevel?: number[];

@@ -416,11 +416,32 @@ describe("ApiClient contracts", () => {
         status: 200,
         statusText: "OK",
         text: async () => JSON.stringify({ ok: true, seq: 9, serverTime: 1730000020, delta: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify({ ok: true, seq: 10, serverTime: 1730000021, delta: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify({ ok: true, seq: 11, serverTime: 1730000022, delta: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify({ ok: true, seq: 12, serverTime: 1730000023, delta: [] }),
       });
     vi.stubGlobal("fetch", fetchMock);
 
     const api = new ApiClient(config, tokenStore);
     await api.cancelUpgrade({ buildingId: "b-1" });
+    await api.startFortifyBuilding({ buildingId: "b-1" });
+    await api.cancelFortifyBuilding({ buildingId: "b-1" });
+    await api.finishFortifyNow({ buildingId: "b-1" });
     await api.collectHarvester({ buildingId: "b-2", amount: 50 });
     await api.purchaseStoreItem({ item: "hod", quantity: 2 });
     await api.applyYardPlannerTemplate({ slotId: 3 });
@@ -435,36 +456,48 @@ describe("ApiClient contracts", () => {
     expect(firstBody.args).toEqual({ buildingId: "b-1" });
 
     const secondBody = JSON.parse(String((fetchMock.mock.calls[1] as [string, RequestInit])[1].body));
-    expect(secondBody.op).toBe("CollectHarvester");
-    expect(secondBody.args).toEqual({ buildingId: "b-2", amount: 50 });
+    expect(secondBody.op).toBe("StartFortifyBuilding");
+    expect(secondBody.args).toEqual({ buildingId: "b-1" });
 
     const thirdBody = JSON.parse(String((fetchMock.mock.calls[2] as [string, RequestInit])[1].body));
-    expect(thirdBody.op).toBe("PurchaseStoreItem");
-    expect(thirdBody.args).toEqual({ item: "HOD", quantity: 2 });
+    expect(thirdBody.op).toBe("CancelFortifyBuilding");
+    expect(thirdBody.args).toEqual({ buildingId: "b-1" });
 
     const fourthBody = JSON.parse(String((fetchMock.mock.calls[3] as [string, RequestInit])[1].body));
-    expect(fourthBody.op).toBe("ApplyYardPlannerTemplate");
-    expect(fourthBody.args).toEqual({ slotId: 3 });
+    expect(fourthBody.op).toBe("FinishFortifyNow");
+    expect(fourthBody.args).toEqual({ buildingId: "b-1" });
 
     const fifthBody = JSON.parse(String((fetchMock.mock.calls[4] as [string, RequestInit])[1].body));
-    expect(fifthBody.op).toBe("StartAcademyUpgrade");
-    expect(fifthBody.args).toEqual({ monsterId: "C1" });
+    expect(fifthBody.op).toBe("CollectHarvester");
+    expect(fifthBody.args).toEqual({ buildingId: "b-2", amount: 50 });
 
     const sixthBody = JSON.parse(String((fetchMock.mock.calls[5] as [string, RequestInit])[1].body));
-    expect(sixthBody.op).toBe("CancelAcademyUpgrade");
-    expect(sixthBody.args).toEqual({ monsterId: "C1" });
+    expect(sixthBody.op).toBe("PurchaseStoreItem");
+    expect(sixthBody.args).toEqual({ item: "HOD", quantity: 2 });
 
     const seventhBody = JSON.parse(String((fetchMock.mock.calls[6] as [string, RequestInit])[1].body));
-    expect(seventhBody.op).toBe("FinishAcademyUpgradeNow");
-    expect(seventhBody.args).toEqual({ monsterId: "C1" });
+    expect(seventhBody.op).toBe("ApplyYardPlannerTemplate");
+    expect(seventhBody.args).toEqual({ slotId: 3 });
 
     const eighthBody = JSON.parse(String((fetchMock.mock.calls[7] as [string, RequestInit])[1].body));
-    expect(eighthBody.op).toBe("StartRepairBuilding");
-    expect(eighthBody.args).toEqual({ buildingId: "b-3" });
+    expect(eighthBody.op).toBe("StartAcademyUpgrade");
+    expect(eighthBody.args).toEqual({ monsterId: "C1" });
 
     const ninthBody = JSON.parse(String((fetchMock.mock.calls[8] as [string, RequestInit])[1].body));
-    expect(ninthBody.op).toBe("StartRepairAllBuildings");
-    expect(ninthBody.args).toEqual({});
+    expect(ninthBody.op).toBe("CancelAcademyUpgrade");
+    expect(ninthBody.args).toEqual({ monsterId: "C1" });
+
+    const tenthBody = JSON.parse(String((fetchMock.mock.calls[9] as [string, RequestInit])[1].body));
+    expect(tenthBody.op).toBe("FinishAcademyUpgradeNow");
+    expect(tenthBody.args).toEqual({ monsterId: "C1" });
+
+    const eleventhBody = JSON.parse(String((fetchMock.mock.calls[10] as [string, RequestInit])[1].body));
+    expect(eleventhBody.op).toBe("StartRepairBuilding");
+    expect(eleventhBody.args).toEqual({ buildingId: "b-3" });
+
+    const twelfthBody = JSON.parse(String((fetchMock.mock.calls[11] as [string, RequestInit])[1].body));
+    expect(twelfthBody.op).toBe("StartRepairAllBuildings");
+    expect(twelfthBody.args).toEqual({});
   });
 
   it("yard planner template apply should validate slot id", async () => {

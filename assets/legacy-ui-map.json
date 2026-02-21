@@ -71,6 +71,18 @@
       "to": "overlay_text.png"
     },
     {
+      "from": "images/2656_screenshot_border1_screenshot_border1.png",
+      "to": "screenshot_border1.png"
+    },
+    {
+      "from": "images/2655_screenshot_border2_screenshot_border2.png",
+      "to": "screenshot_border2.png"
+    },
+    {
+      "from": "images/2654_screenshot_border3_screenshot_border3.png",
+      "to": "screenshot_border3.png"
+    },
+    {
       "from": "images/2045_frame2_bottom_right_frame2_bottom_right.png",
       "to": "frame2_bottom_right.png"
     },

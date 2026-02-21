@@ -5,6 +5,8 @@ type CmdDeltaItem = Record<string, unknown>;
 export function applyCmdDeltaToBase(base: ParsedBaseLoad, delta: CmdDeltaItem[]): ParsedBaseLoad {
   const nextBuildings = [...base.buildings];
   let nextResources = base.resources;
+  let nextProgression = base.progression;
+  let nextRepair = base.repair;
   let nextCredits = base.credits;
   let nextStoreData = base.storeData ? { ...base.storeData } : undefined;
   let nextAcademy = base.academy;
@@ -107,6 +109,24 @@ export function applyCmdDeltaToBase(base: ParsedBaseLoad, delta: CmdDeltaItem[])
       return;
     }
 
+    if (op === "setBuildingFortification") {
+      const buildingId = typeof item.id === "string" ? item.id : null;
+      const fortification = toNumber(item.fortification ?? item.fort);
+      const countdownFortify = toNumber(item.countdownFortify ?? item.cF);
+      if (!buildingId) return;
+
+      const index = nextBuildings.findIndex((b) => b.id === buildingId);
+      if (index < 0) return;
+      nextBuildings[index] = {
+        ...nextBuildings[index],
+        ...(fortification !== null ? { fortification } : {}),
+        ...(countdownFortify !== null
+          ? { countdownFortify }
+          : { countdownFortify: undefined }),
+      };
+      return;
+    }
+
     if (op === "setResources") {
       const bag = typeof item.bag === "string" ? item.bag : "resources";
       if (bag !== "resources") return;
@@ -121,6 +141,48 @@ export function applyCmdDeltaToBase(base: ParsedBaseLoad, delta: CmdDeltaItem[])
         r2max: toNumber(resources.r2max) ?? 0,
         r3max: toNumber(resources.r3max) ?? 0,
         r4max: toNumber(resources.r4max) ?? 0,
+      };
+      return;
+    }
+
+    if (op === "setProgression") {
+      const progression = asRecord(item.progression);
+      if (!progression) return;
+      const level = toNumber(progression.level);
+      if (level === null || level <= 0) return;
+
+      nextProgression = {
+        level,
+        tutorialStage: Math.max(0, toNumber(progression.tutorialStage) ?? 0),
+        points: Math.max(0, toNumber(progression.points) ?? 0),
+        baseValue: Math.max(0, toNumber(progression.baseValue) ?? 0),
+        empireValue: Math.max(0, toNumber(progression.empireValue) ?? 0),
+        protected: Math.max(0, toNumber(progression.protected) ?? 0),
+        damage: Math.max(0, toNumber(progression.damage) ?? 0),
+        destroyed: Math.max(0, toNumber(progression.destroyed) ?? 0),
+      };
+      return;
+    }
+
+    if (op === "setRepairSummary") {
+      const repair = asRecord(item.repair);
+      if (!repair) return;
+
+      const estimatedDurationSec = toNumber(repair.estimatedDurationSec);
+      const repairingCount = toNumber(repair.repairingCount);
+      const damagedCount = toNumber(repair.damagedCount);
+      if (
+        estimatedDurationSec === null ||
+        repairingCount === null ||
+        damagedCount === null
+      ) {
+        return;
+      }
+
+      nextRepair = {
+        estimatedDurationSec: Math.max(0, estimatedDurationSec),
+        repairingCount: Math.max(0, repairingCount),
+        damagedCount: Math.max(0, damagedCount),
       };
       return;
     }
@@ -158,6 +220,8 @@ export function applyCmdDeltaToBase(base: ParsedBaseLoad, delta: CmdDeltaItem[])
     ...base,
     buildings: nextBuildings,
     resources: nextResources,
+    progression: nextProgression,
+    repair: nextRepair,
     credits: nextCredits,
     storeData: nextStoreData,
     academy: nextAcademy,
@@ -173,9 +237,12 @@ function parseBuilding(raw: CmdDeltaItem): YardBuilding | null {
   if (!id || !type || x === null || y === null) return null;
 
   const level = toNumber(raw.level);
+  const fortification = toNumber(raw.fortification ?? raw.fort);
   const footprintW = toNumber(raw.footprintW);
   const footprintH = toNumber(raw.footprintH);
+  const countdownBuild = toNumber(raw.countdownBuild ?? raw.cB);
   const countdownUpgrade = toNumber(raw.countdownUpgrade ?? raw.cU);
+  const countdownFortify = toNumber(raw.countdownFortify ?? raw.cF);
   const upgradeToLevel = toNumber(raw.upgradeToLevel);
   const hp = toNumber(raw.hp);
   const maxHp = toNumber(raw.maxHp ?? raw.maxHealth);
@@ -186,9 +253,12 @@ function parseBuilding(raw: CmdDeltaItem): YardBuilding | null {
     x,
     y,
     ...(level !== null ? { level } : {}),
+    ...(fortification !== null ? { fortification } : {}),
     ...(footprintW !== null ? { footprintW } : {}),
     ...(footprintH !== null ? { footprintH } : {}),
+    ...(countdownBuild !== null ? { countdownBuild } : {}),
     ...(countdownUpgrade !== null ? { countdownUpgrade } : {}),
+    ...(countdownFortify !== null ? { countdownFortify } : {}),
     ...(upgradeToLevel !== null ? { upgradeToLevel } : {}),
     ...(hp !== null ? { hp } : {}),
     ...(maxHp !== null ? { maxHp } : {}),

@@ -16,7 +16,14 @@ export type LegacyBuildingProgressResult = {
     fromLevel: number;
     toLevel: number;
   }>;
+  completedFortifications: Array<{
+    id: string;
+    fromLevel: number;
+    toLevel: number;
+  }>;
 };
+
+const MAX_FORTIFICATION_LEVEL = 4;
 
 export function applyLegacyBuildingProgress(
   save: Save,
@@ -34,6 +41,7 @@ export function applyLegacyBuildingProgress(
       changed: false,
       appliedElapsedSec: 0,
       completedUpgrades: [],
+      completedFortifications: [],
     };
   }
 
@@ -43,11 +51,13 @@ export function applyLegacyBuildingProgress(
       changed: false,
       appliedElapsedSec: elapsedSec,
       completedUpgrades: [],
+      completedFortifications: [],
     };
   }
 
   let changed = false;
   const completedUpgrades: LegacyBuildingProgressResult["completedUpgrades"] = [];
+  const completedFortifications: LegacyBuildingProgressResult["completedFortifications"] = [];
 
   for (const [key, rawValue] of Object.entries(buildingData)) {
     const raw = asRecord(rawValue);
@@ -55,10 +65,13 @@ export function applyLegacyBuildingProgress(
 
     const id = String(raw.id ?? key);
     const fromLevel = Math.max(1, parseIntSafe(raw.l ?? raw.level, 1));
+    const fromFortification = clampFortificationLevel(
+      parseIntSafe(raw.fort ?? raw.fortification, 0)
+    );
     const initialBusySec = getMaxBusyCountdown(raw);
 
     const buildTick = tickCountdown(raw, "cB", "countdownBuild", elapsedSec);
-    const fortifyTick = tickCountdown(raw, "cF", "countdownFortify", elapsedSec);
+    const fortifyTick = tickFortifyCountdown(raw, elapsedSec, fromFortification);
     const typeCode = resolveLegacyBuildingTypeCode(raw);
     const currentLevel = Math.max(1, parseIntSafe(raw.l ?? raw.level, 1));
     let activeLevel = currentLevel;
@@ -91,6 +104,16 @@ export function applyLegacyBuildingProgress(
       changed = true;
     }
 
+    if (fortifyTick.completedToLevel !== null) {
+      const toLevel = clampFortificationLevel(fortifyTick.completedToLevel);
+      completedFortifications.push({
+        id,
+        fromLevel: fromFortification,
+        toLevel,
+      });
+      changed = true;
+    }
+
     if (typeCode !== null) {
       const repairTick = tickAutoRepair(raw, typeCode, elapsedSec);
       if (repairTick.changed) {
@@ -114,6 +137,7 @@ export function applyLegacyBuildingProgress(
     changed,
     appliedElapsedSec: elapsedSec,
     completedUpgrades,
+    completedFortifications,
   };
 }
 
@@ -162,6 +186,42 @@ function tickUpgradeCountdown(
   return {
     changed: true,
     completedToLevel: targetLevel > 0 ? targetLevel : null,
+  };
+}
+
+function tickFortifyCountdown(
+  raw: BuildingRecord,
+  elapsedSec: number,
+  currentFortification: number
+): { changed: boolean; completedToLevel: number | null } {
+  const pending = parseIntSafe(raw.cF ?? raw.countdownFortify, 0);
+  if (pending <= 0) {
+    return {
+      changed: false,
+      completedToLevel: null,
+    };
+  }
+
+  const next = Math.max(0, pending - elapsedSec);
+  raw.cF = next;
+  raw.countdownFortify = next;
+
+  if (next > 0) {
+    return {
+      changed: next !== pending,
+      completedToLevel: null,
+    };
+  }
+
+  const normalizedCurrent = clampFortificationLevel(currentFortification);
+  const nextFortification = clampFortificationLevel(normalizedCurrent + 1);
+  raw.fort = nextFortification;
+  raw.fortification = nextFortification;
+
+  return {
+    changed: true,
+    completedToLevel:
+      nextFortification !== normalizedCurrent ? nextFortification : null,
   };
 }
 
@@ -272,6 +332,11 @@ function getMaxBusyCountdown(raw: BuildingRecord): number {
 function clampNonNegative(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.trunc(value));
+}
+
+function clampFortificationLevel(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(MAX_FORTIFICATION_LEVEL, Math.max(0, Math.trunc(value)));
 }
 
 function isBuildingBusy(raw: BuildingRecord): boolean {

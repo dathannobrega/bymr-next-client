@@ -13,9 +13,12 @@ export type YardBuilding = {
   x: number;
   y: number;
   level?: number;
+  fortification?: number;
   footprintW?: number;
   footprintH?: number;
+  countdownBuild?: number;
   countdownUpgrade?: number;
+  countdownFortify?: number;
   upgradeToLevel?: number;
   hp?: number;
   maxHp?: number;
@@ -64,12 +67,31 @@ export type AcademyState = {
   monsters: Record<string, AcademyMonsterState>;
 };
 
+export type BaseProgressionSummary = {
+  level: number;
+  tutorialStage: number;
+  points: number;
+  baseValue: number;
+  empireValue: number;
+  protected: number;
+  damage: number;
+  destroyed: number;
+};
+
+export type BaseRepairSummary = {
+  estimatedDurationSec: number;
+  repairingCount: number;
+  damagedCount: number;
+};
+
 export type ParsedBaseLoad = {
   yardWidth: number;
   yardHeight: number;
   yardTheme?: "grass" | "sand" | "lava" | "rock" | "crater";
   buildings: YardBuilding[];
   resources?: BaseResourceSummary;
+  progression?: BaseProgressionSummary;
+  repair?: BaseRepairSummary;
   credits?: number;
   storeData?: Record<string, StoreInventoryEntry>;
   academy?: AcademyState;
@@ -108,6 +130,8 @@ export function parseBaseLoadResponse(raw: unknown): ParsedBaseLoad {
     yardTheme: parseYardTheme(obj.yardTheme ?? obj.terrainTheme ?? obj.yardType),
     buildings,
     resources: parseResourceSummary(obj.resources),
+    progression: parseProgressionSummary(obj.progression),
+    repair: parseRepairSummary(obj.repair),
     credits: optionalNonNegativeNumberFromUnknown(obj.credits),
     storeData: parseStoreData(obj.storeData ?? obj.storedata),
     academy: parseAcademyState(obj.academy),
@@ -133,10 +157,19 @@ function parseBuilding(value: unknown, yardWidth: number, yardHeight: number): Y
     x,
     y,
     level: optionalNumberFromUnknown(value.level ?? value.Level ?? value.l ?? value.L),
+    fortification: optionalNonNegativeNumberFromUnknown(
+      value.fortification ?? value.fort
+    ),
     footprintW: optionalPositiveNumberFromUnknown(value.footprintW ?? value.fw),
     footprintH: optionalPositiveNumberFromUnknown(value.footprintH ?? value.fh),
+    countdownBuild: optionalNumberFromUnknown(
+      value.countdownBuild ?? value.cB ?? value.countdownbuild
+    ),
     countdownUpgrade: optionalNumberFromUnknown(
       value.countdownUpgrade ?? value.cU ?? value.countdownupgrade
+    ),
+    countdownFortify: optionalNumberFromUnknown(
+      value.countdownFortify ?? value.cF ?? value.countdownfortify
     ),
     upgradeToLevel: optionalNumberFromUnknown(value.upgradeToLevel),
     hp: optionalNonNegativeNumberFromUnknown(value.hp),
@@ -156,6 +189,45 @@ function parseResourceSummary(value: unknown): BaseResourceSummary | undefined {
     r2max: numberFromUnknown(value.r2max, 0),
     r3max: numberFromUnknown(value.r3max, 0),
     r4max: numberFromUnknown(value.r4max, 0),
+  };
+}
+
+function parseProgressionSummary(value: unknown): BaseProgressionSummary | undefined {
+  if (!isRecord(value)) return undefined;
+
+  const level = optionalPositiveNumberFromUnknown(value.level);
+  if (level === undefined) return undefined;
+
+  return {
+    level,
+    tutorialStage: optionalNonNegativeNumberFromUnknown(value.tutorialStage) ?? 0,
+    points: optionalNonNegativeNumberFromUnknown(value.points) ?? 0,
+    baseValue: optionalNonNegativeNumberFromUnknown(value.baseValue) ?? 0,
+    empireValue: optionalNonNegativeNumberFromUnknown(value.empireValue) ?? 0,
+    protected: optionalNonNegativeNumberFromUnknown(value.protected) ?? 0,
+    damage: optionalNonNegativeNumberFromUnknown(value.damage) ?? 0,
+    destroyed: optionalNonNegativeNumberFromUnknown(value.destroyed) ?? 0,
+  };
+}
+
+function parseRepairSummary(value: unknown): BaseRepairSummary | undefined {
+  if (!isRecord(value)) return undefined;
+
+  const estimatedDurationSec = optionalNonNegativeNumberFromUnknown(value.estimatedDurationSec);
+  const repairingCount = optionalNonNegativeNumberFromUnknown(value.repairingCount);
+  const damagedCount = optionalNonNegativeNumberFromUnknown(value.damagedCount);
+  if (
+    estimatedDurationSec === undefined ||
+    repairingCount === undefined ||
+    damagedCount === undefined
+  ) {
+    return undefined;
+  }
+
+  return {
+    estimatedDurationSec,
+    repairingCount,
+    damagedCount,
   };
 }
 

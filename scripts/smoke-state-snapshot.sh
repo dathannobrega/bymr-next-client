@@ -128,6 +128,12 @@ assert_json "State snapshot" "$STATE_RESP" '
   (.base.baseId | type == "string") and
   .base.yardWidth == 20 and
   .base.yardHeight == 14 and
+  (.progression.level >= 1) and
+  (.progression.baseValue >= 0) and
+  (.repair.estimatedDurationSec >= 0) and
+  (.repair.repairingCount >= 0) and
+  (.repair.damagedCount >= 0) and
+  ([.buildings[]? | select(has("fortification")) | (.fortification >= 0)] | all) and
   (.resources.active.r1max >= 0) and
   (.player.userId | type == "number")
 '

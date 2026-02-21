@@ -86,7 +86,7 @@
 - Idempotência Redis por `cmd:<userId>:<idempotencyKey>`.
 - Rejeição por sequência fora de ordem, anti-replay por nonce e rate-limit por operação.
 - Operações atuais: `PlaceBuilding`, `MoveBuilding`, `UpgradeBuilding`, `CancelUpgrade`, `CollectHarvester`, `PurchaseStoreItem`, `ApplyYardPlannerTemplate`, `StartRepairBuilding`, `StartRepairAllBuildings`, `StartAcademyUpgrade`, `CancelAcademyUpgrade`, `FinishAcademyUpgradeNow`.
-- Retorno em delta canônico (`addBuilding`, `moveBuilding`, `upgradeBuilding`, `startUpgrade`, `cancelUpgrade`, `setBuildingRepairState`, `setResources`, `setCredits`, `setStoreItem`).
+- Retorno em delta canônico (`addBuilding`, `moveBuilding`, `upgradeBuilding`, `startUpgrade`, `cancelUpgrade`, `setBuildingRepairState`, `setBuildingFortification`, `setProgression`, `setRepairSummary`, `setResources`, `setCredits`, `setStoreItem`).
 - Place/Move agora validam ocupação por `footprint` legado (não apenas 1 tile), com checagem de bounds por área.
 - Smoke dedicado de hardening: `./scripts/smoke-cmd-hardening.sh` (idempotência, `SEQ_OUT_OF_ORDER`, `INVALID_ENVELOPE`, `INVALID_ARGS`, `INVALID_BUILDING_TYPE`, `ANTI_REPLAY`, `RATE_LIMIT`).
 
@@ -98,6 +98,7 @@
 ### `GET /api/:apiVersion/state`
 - Status: **Implementado**
 - Entrega snapshot canônico e tipado: `player`, `base`, `progression`, `resources`, `buildings`, `maproom`.
+- Inclui resumo autoritativo de reparo (`repair.estimatedDurationSec`, `repair.repairingCount`, `repair.damagedCount`) para paridade com o núcleo de `BASE.as`.
 - Suporta `scope=auto|main|inferno` e `baseId` opcional.
 - Erros estruturados para cliente: `INVALID_STATE_QUERY`, `STATE_BASE_NOT_FOUND`, `STATE_SNAPSHOT_FAILED`.
 
@@ -173,6 +174,17 @@
   - smokes de regressão robustos com usuários únicos por execução para stream/mail, evitando falso-negativo por estado persistido entre runs.
   - smoke dedicado de hardening para `/cmd` cobrindo guardrails de protocolo e anti-abuso.
   - interceptor global com tratamento explícito de erro de validação (Zod) para retorno `400` consistente.
+
+## BASE.as (núcleo) - paridade método-a-método (checkpoint atual)
+- `CanBuild/CanUpgrade`: cobertos no autoritativo (`/cmd`) com gates de TH, requirements, limits e custos legados.
+- `CanFortify`: coberto no `/cmd` com operações dedicadas (`StartFortifyBuilding`, `CancelFortifyBuilding`, `FinishFortifyNow`) e validações legadas de requisitos/custos.
+- `applyTemplate/getTemplate/getYardPlannerBuildings`: cobertos com Yard Planner autoritativo (`gettemplates/savetemplate` + `ApplyYardPlannerTemplate`).
+- `CalcBaseValue/BaseLevel`: agora cobertos no servidor via `legacyBaseCoreParity` com atualização autoritativa de `baseValue/level` e delta `setProgression`.
+- `getEstimatedRepairDuration`: coberto via resumo canônico `repair` no `/state` e delta `setRepairSummary`.
+- `repairAllBuildingsToMinimumPercentage`: coberto no `/cmd StartRepairAllBuildings` com clamp mínimo de HP (25%) para outposts antes de iniciar reparo em lote.
+- Conclusão de fortificação (`countdownFortify -> fort+1`): coberta no ticker autoritativo (`applyLegacyBuildingProgress`) com delta `setBuildingFortification` e campo canônico `fortification` em `/state`/`/base/load`.
+- `Charge/Fund/SaveDeltaResources/CleanDeltaResources`: cobertos funcionalmente via fluxo autoritativo de comandos e `setResources` (sem replicar a mecânica client-trust de delta local do Flash).
+- `BuildBlockers/BuildingOverlap/GetBuildingOverlap`: cobertos por validação de footprint/overlap/bounds no servidor.
 
 ## Conclusão
 - A integração central cliente/server ficou substancialmente mais próxima do objetivo de produção descrito na documentação.
