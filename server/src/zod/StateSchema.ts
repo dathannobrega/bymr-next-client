@@ -18,6 +18,37 @@ export const StateResourceSummarySchema = z.object({
   r4max: z.number().int().nonnegative(),
 });
 
+export const StateStoreItemSchema = z.object({
+  q: z.number().int().nonnegative(),
+  e: z.number().int().nonnegative().optional(),
+});
+
+export const StateAcademyTrainingSchema = z.object({
+  startedAt: z.number().int().nonnegative(),
+  durationSec: z.number().int().positive(),
+  completesAt: z.number().int().positive(),
+  remainingSec: z.number().int().nonnegative(),
+  targetLevel: z.number().int().positive(),
+});
+
+export const StateAcademyMonsterSchema = z.object({
+  level: z.number().int().positive(),
+  maxLevel: z.number().int().positive(),
+  inLocker: z.boolean(),
+  canTrain: z.boolean(),
+  nextTrainingCostR3: z.number().int().nonnegative().optional(),
+  nextTrainingDurationSec: z.number().int().nonnegative().optional(),
+  training: StateAcademyTrainingSchema.optional(),
+});
+
+export const StateAcademySchema = z.object({
+  buildingId: z.string().nullable(),
+  buildingLevel: z.number().int().nonnegative(),
+  busy: z.boolean(),
+  activeMonsterId: z.string().nullable(),
+  monsters: z.record(z.string(), StateAcademyMonsterSchema),
+});
+
 export const StateBuildingSchema = z.object({
   id: z.string().min(1),
   type: z.string().min(1),
@@ -28,6 +59,9 @@ export const StateBuildingSchema = z.object({
   footprintH: z.number().int().positive().optional(),
   countdownUpgrade: z.number().int().nonnegative().optional(),
   upgradeToLevel: z.number().int().positive().optional(),
+  hp: z.number().int().nonnegative().optional(),
+  maxHp: z.number().int().positive().optional(),
+  repairing: z.boolean().optional(),
 });
 
 export const StateYardThemeSchema = z.enum(["grass", "sand", "lava", "rock", "crater"]);
@@ -66,6 +100,8 @@ export const StateSnapshotResponseSchema = z.object({
     main: StateResourceSummarySchema.optional(),
     inferno: StateResourceSummarySchema.optional(),
   }),
+  storeData: z.record(z.string(), StateStoreItemSchema).optional(),
+  academy: StateAcademySchema.optional(),
   buildings: z.array(StateBuildingSchema),
   maproom: z.object({
     worldId: z.string().nullable(),

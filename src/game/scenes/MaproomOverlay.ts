@@ -88,7 +88,7 @@ export class MaproomOverlay {
     }
   }
 
-  private async open(): Promise<void> {
+  async open(): Promise<void> {
     this.ensureDom();
     if (!this.wrapper) return;
 
@@ -101,38 +101,29 @@ export class MaproomOverlay {
     if (this.wrapper) return;
 
     const wrapper = document.createElement("div");
-    wrapper.style.position = "fixed";
-    wrapper.style.left = "12px";
-    wrapper.style.bottom = "12px";
-    wrapper.style.width = "min(96vw, 820px)";
-    wrapper.style.maxHeight = "76vh";
-    wrapper.style.overflow = "auto";
-    wrapper.style.zIndex = "9998";
-    wrapper.style.background = "rgba(13, 18, 30, 0.97)";
-    wrapper.style.border = "1px solid #2f3a55";
-    wrapper.style.borderRadius = "12px";
-    wrapper.style.padding = "12px";
-    wrapper.style.color = "#ffffff";
+    wrapper.className = "legacy-window legacy-window-maproom";
+    wrapper.dataset.legacyTheme = "active";
+    wrapper.dataset.legacyFrame = "frame3";
     wrapper.style.display = "none";
 
     wrapper.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
-        <strong style="font-size:14px;">Maproom v3</strong>
-        <button data-maproom-close style="padding:6px 10px;background:#2d3d60;border:none;color:#fff;border-radius:6px;cursor:pointer;">Fechar (M)</button>
+      <div class="legacy-window-header">
+        <strong class="legacy-window-title">Maproom v3</strong>
+        <button data-maproom-close class="legacy-btn legacy-btn-ghost">Fechar (M)</button>
       </div>
 
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-        <button data-maproom-refresh style="padding:6px 10px;background:#4765ff;border:none;color:#fff;border-radius:6px;cursor:pointer;">Atualizar</button>
-        <button data-maproom-relocate style="padding:6px 10px;background:#18a058;border:none;color:#fff;border-radius:6px;cursor:pointer;">Relocar base</button>
-        <button data-maproom-up style="padding:6px 10px;background:#273554;border:none;color:#fff;border-radius:6px;cursor:pointer;">↑</button>
-        <button data-maproom-left style="padding:6px 10px;background:#273554;border:none;color:#fff;border-radius:6px;cursor:pointer;">←</button>
-        <button data-maproom-right style="padding:6px 10px;background:#273554;border:none;color:#fff;border-radius:6px;cursor:pointer;">→</button>
-        <button data-maproom-down style="padding:6px 10px;background:#273554;border:none;color:#fff;border-radius:6px;cursor:pointer;">↓</button>
-        <button data-maproom-center style="padding:6px 10px;background:#273554;border:none;color:#fff;border-radius:6px;cursor:pointer;">Centralizar</button>
+      <div class="legacy-form-row legacy-form-row-wrap">
+        <button data-maproom-refresh class="legacy-btn legacy-btn-primary">Atualizar</button>
+        <button data-maproom-relocate class="legacy-btn legacy-btn-positive">Relocar base</button>
+        <button data-maproom-up class="legacy-btn legacy-btn-ghost legacy-maproom-dir-btn">↑</button>
+        <button data-maproom-left class="legacy-btn legacy-btn-ghost legacy-maproom-dir-btn">←</button>
+        <button data-maproom-right class="legacy-btn legacy-btn-ghost legacy-maproom-dir-btn">→</button>
+        <button data-maproom-down class="legacy-btn legacy-btn-ghost legacy-maproom-dir-btn">↓</button>
+        <button data-maproom-center class="legacy-btn legacy-btn-ghost">Centralizar</button>
       </div>
 
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-        <select data-maproom-filter style="padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;min-width:170px;">
+      <div class="legacy-form-row legacy-form-row-wrap">
+        <select data-maproom-filter class="legacy-input legacy-maproom-filter">
           <option value="all">Filtro: Todas</option>
           <option value="mine">Filtro: Minhas</option>
           <option value="enemy">Filtro: Inimigas</option>
@@ -140,35 +131,45 @@ export class MaproomOverlay {
           <option value="damaged">Filtro: Danificadas</option>
           <option value="protected">Filtro: Protegidas</option>
         </select>
-        <input data-maproom-jump-x type="number" min="0" max="799" placeholder="X" style="padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;width:85px;" />
-        <input data-maproom-jump-y type="number" min="0" max="799" placeholder="Y" style="padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;width:85px;" />
-        <button data-maproom-jump style="padding:6px 10px;background:#355b8b;border:none;color:#fff;border-radius:6px;cursor:pointer;">Ir para coord</button>
+        <input data-maproom-jump-x type="number" min="0" max="799" placeholder="X" class="legacy-input legacy-maproom-jump-input" />
+        <input data-maproom-jump-y type="number" min="0" max="799" placeholder="Y" class="legacy-input legacy-maproom-jump-input" />
+        <button data-maproom-jump class="legacy-btn legacy-btn-primary">Ir para coord</button>
       </div>
 
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-        <input data-maproom-takeover-shiny type="number" min="1" placeholder="Shiny takeover" style="padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;min-width:130px;" />
-        <input data-maproom-takeover-resources placeholder='Recursos takeover {"r1":1000}' style="padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;min-width:230px;" />
-        <button data-maproom-takeover style="padding:6px 10px;background:#aa3b3b;border:none;color:#fff;border-radius:6px;cursor:pointer;">Takeover selecionada</button>
-        <button data-maproom-start-replay style="padding:6px 10px;background:#7a4ad9;border:none;color:#fff;border-radius:6px;cursor:pointer;">Iniciar replay</button>
+      <div class="legacy-form-row legacy-form-row-wrap">
+        <input
+          data-maproom-takeover-shiny
+          type="number"
+          min="1"
+          placeholder="Shiny takeover"
+          class="legacy-input legacy-maproom-shiny-input"
+        />
+        <input
+          data-maproom-takeover-resources
+          placeholder='Recursos takeover {"r1":1000}'
+          class="legacy-input legacy-input-wide legacy-maproom-resources-input"
+        />
+        <button data-maproom-takeover class="legacy-btn legacy-btn-danger">Takeover selecionada</button>
+        <button data-maproom-start-replay class="legacy-btn legacy-btn-primary">Iniciar replay</button>
       </div>
 
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-        <button data-maproom-mark-source style="padding:6px 10px;background:#2d7bb8;border:none;color:#fff;border-radius:6px;cursor:pointer;">Definir origem transf.</button>
-        <button data-maproom-mark-target style="padding:6px 10px;background:#2d7bb8;border:none;color:#fff;border-radius:6px;cursor:pointer;">Definir destino transf.</button>
-        <button data-maproom-transfer style="padding:6px 10px;background:#1b8f68;border:none;color:#fff;border-radius:6px;cursor:pointer;">Transferir todos</button>
+      <div class="legacy-form-row legacy-form-row-wrap">
+        <button data-maproom-mark-source class="legacy-btn legacy-btn-primary">Definir origem transf.</button>
+        <button data-maproom-mark-target class="legacy-btn legacy-btn-primary">Definir destino transf.</button>
+        <button data-maproom-transfer class="legacy-btn legacy-btn-positive">Transferir todos</button>
       </div>
 
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-        <input data-maproom-bookmark-name placeholder="Nome do bookmark" style="padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;min-width:220px;" />
-        <button data-maproom-bookmark-add style="padding:6px 10px;background:#4757aa;border:none;color:#fff;border-radius:6px;cursor:pointer;">Salvar bookmark</button>
-        <input data-maproom-bookmark-search placeholder="Filtrar bookmarks" style="padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;min-width:180px;" />
+      <div class="legacy-form-row legacy-form-row-wrap">
+        <input data-maproom-bookmark-name placeholder="Nome do bookmark" class="legacy-input legacy-maproom-bookmark-name" />
+        <button data-maproom-bookmark-add class="legacy-btn legacy-btn-primary">Salvar bookmark</button>
+        <input data-maproom-bookmark-search placeholder="Filtrar bookmarks" class="legacy-input legacy-maproom-bookmark-search" />
       </div>
 
-      <div data-maproom-selection style="font-size:12px;color:#d7def5;min-height:20px;margin-bottom:6px;"></div>
-      <div data-maproom-status style="font-size:12px;color:#b9c3dd;min-height:18px;margin-bottom:8px;"></div>
-      <div data-maproom-details style="font-size:12px;color:#dde5ff;background:#131c30;border:1px solid #2f3a55;border-radius:8px;padding:8px;margin-bottom:10px;"></div>
-      <div data-maproom-grid style="margin-bottom:10px;"></div>
-      <div data-maproom-visible-list style="margin-bottom:10px;"></div>
+      <div data-maproom-selection class="legacy-muted-text legacy-maproom-selection"></div>
+      <div data-maproom-status class="legacy-muted-text legacy-maproom-status"></div>
+      <div data-maproom-details class="legacy-info-box legacy-maproom-details"></div>
+      <div data-maproom-grid class="legacy-maproom-panel-block"></div>
+      <div data-maproom-visible-list class="legacy-maproom-panel-block"></div>
       <div data-maproom-bookmarks></div>
     `;
 
@@ -443,30 +444,26 @@ export class MaproomOverlay {
         const role = classifyMaproomCell(cell, this.currentUserId);
         const visibleInFilter = matchesCellFilter(cell, this.currentUserId, this.cellFilter);
 
-        const bg = isHome
-          ? "#2a5a34"
-          : role === "mine"
-            ? "#274766"
-            : role === "enemy"
-              ? "#2a3555"
-              : "#161d30";
-        const border = isSelected ? "2px solid #f7d774" : "1px solid #2f3a55";
+        const cellClasses = ["legacy-maproom-cell", `is-role-${role}`];
+        if (isHome) cellClasses.push("is-home");
+        if (isSelected) cellClasses.push("is-selected");
+        if (!visibleInFilter) cellClasses.push("is-filtered");
         const label = cell?.uid
           ? `${escapeHtml(cell.n)} Lv.${cell.l}${role === "mine" ? " (você)" : ""}`
           : "Livre";
         const subLabel = !visibleInFilter
-          ? `<div style="color:#6f83ae;">Filtrado</div>`
+          ? `<div class="legacy-maproom-cell-note is-filtered">Filtrado</div>`
           : cell?.dm
-            ? `<div style="color:#ffb17d;">dano=${cell.dm}%</div>`
+            ? `<div class="legacy-maproom-cell-note is-damaged">dano=${cell.dm}%</div>`
             : cell?.p
-              ? `<div style="color:#95d6a8;">protegida</div>`
+              ? `<div class="legacy-maproom-cell-note is-protected">protegida</div>`
               : "";
 
         cols.push(
-          `<td data-maproom-cell="${x}:${y}" style="border:${border};padding:4px;min-width:96px;height:54px;vertical-align:top;background:${bg};font-size:11px;line-height:1.25;cursor:pointer;opacity:${visibleInFilter ? "1" : "0.42"};">
-            <div style="color:#8ea3cf;">${x},${y}${isHome ? " ★" : ""}</div>
-            <div style="color:${hasBase ? "#d8e3ff" : "#8ea3cf"}">${label}</div>
-            ${cell?.bid ? `<div style="color:#89a8da;">base=${escapeHtml(cell.bid)}</div>` : ""}
+          `<td data-maproom-cell="${x}:${y}" class="${cellClasses.join(" ")}">
+            <div class="legacy-maproom-cell-coord">${x},${y}${isHome ? " ★" : ""}</div>
+            <div class="legacy-maproom-cell-label${hasBase ? " has-base" : ""}">${label}</div>
+            ${cell?.bid ? `<div class="legacy-maproom-cell-base">base=${escapeHtml(cell.bid)}</div>` : ""}
             ${subLabel}
           </td>`
         );
@@ -475,8 +472,8 @@ export class MaproomOverlay {
     }
 
     this.gridEl.innerHTML = `
-      <div style="overflow:auto;border:1px solid #2f3a55;border-radius:8px;">
-        <table style="border-collapse:collapse;width:100%;table-layout:fixed;">${rows.join("")}</table>
+      <div class="legacy-maproom-grid-wrap">
+        <table class="legacy-maproom-grid-table">${rows.join("")}</table>
       </div>
     `;
 
@@ -533,8 +530,8 @@ export class MaproomOverlay {
     const selected = this.getSelectedCell();
     if (!selected) {
       this.detailsEl.innerHTML = `
-        <div><strong>Célula (${this.selectedCoord.x}, ${this.selectedCoord.y})</strong></div>
-        <div style="color:#95a7d3;">Sem dados de base nesta janela (provavelmente célula livre).</div>
+        <div class="legacy-maproom-details-title"><strong>Célula (${this.selectedCoord.x}, ${this.selectedCoord.y})</strong></div>
+        <div class="legacy-maproom-details-note">Sem dados de base nesta janela (provavelmente célula livre).</div>
       `;
       return;
     }
@@ -556,13 +553,13 @@ export class MaproomOverlay {
     }
 
     this.detailsEl.innerHTML = `
-      <div style="margin-bottom:4px;"><strong>Detalhes da célula selecionada</strong></div>
+      <div class="legacy-maproom-details-title"><strong>Detalhes da célula selecionada</strong></div>
       <div>Coord: (${selected.x}, ${selected.y}) • Base: ${escapeHtml(selected.bid)} • Dono: ${escapeHtml(selected.n)} (uid=${selected.uid})</div>
       <div>Role: ${role} • Lv.${selected.l} • Dano=${selected.dm}% • Protegida=${selected.p ? "sim" : "não"}</div>
       <div>Monstros: ${typeof monsterCount === "number" ? String(monsterCount) : "n/a"}</div>
       <div>Recursos: ${resourcesSummary}</div>
-      <div style="color:#97a8d6;">${actionLines.join(" ") || "Ações dependem do estado do servidor."}</div>
-      <div style="color:#c7b7ff;">Replay: ${escapeHtml(this.combatReplaySummary ?? "nenhum ativo")}</div>
+      <div class="legacy-maproom-details-note">${actionLines.join(" ") || "Ações dependem do estado do servidor."}</div>
+      <div class="legacy-maproom-details-replay">Replay: ${escapeHtml(this.combatReplaySummary ?? "nenhum ativo")}</div>
     `;
   }
 
@@ -575,7 +572,8 @@ export class MaproomOverlay {
       .slice(0, MAX_VISIBLE_LIST_ITEMS);
 
     if (visibleCells.length === 0) {
-      this.visibleListEl.innerHTML = `<div style="font-size:12px;color:#8ea3cf;">Nenhuma célula visível para o filtro atual nesta viewport.</div>`;
+      this.visibleListEl.innerHTML =
+        '<div class="legacy-empty-state">Nenhuma célula visível para o filtro atual nesta viewport.</div>';
       return;
     }
 
@@ -586,15 +584,16 @@ export class MaproomOverlay {
         const protection = cell.p ? " • protegida" : "";
 
         return `
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:12px;color:#d7def5;">
-            <button data-maproom-visible-select="${cell.x}:${cell.y}" style="padding:4px 8px;background:#273554;border:none;color:#fff;border-radius:6px;cursor:pointer;">Selecionar</button>
-            <span>(${cell.x},${cell.y}) • ${escapeHtml(cell.n)} • base=${escapeHtml(cell.bid)} • role=${role}${damage}${protection}</span>
+          <div class="legacy-maproom-list-row">
+            <button data-maproom-visible-select="${cell.x}:${cell.y}" class="legacy-btn legacy-btn-ghost legacy-btn-sm">Selecionar</button>
+            <span class="legacy-maproom-list-text">(${cell.x},${cell.y}) • ${escapeHtml(cell.n)} • base=${escapeHtml(cell.bid)} • role=${role}${damage}${protection}</span>
           </div>
         `;
       })
       .join("");
 
-    this.visibleListEl.innerHTML = `<div style="font-size:12px;color:#8ea3cf;margin-bottom:4px;">Células no filtro (${visibleCells.length}):</div>${rows}`;
+    this.visibleListEl.innerHTML =
+      `<div class="legacy-maproom-list-header">Células no filtro (${visibleCells.length}):</div>${rows}`;
 
     this.visibleListEl
       .querySelectorAll<HTMLButtonElement>("[data-maproom-visible-select]")
@@ -618,7 +617,7 @@ export class MaproomOverlay {
     if (!this.bookmarksEl) return;
 
     if (this.bookmarks.length === 0) {
-      this.bookmarksEl.innerHTML = `<div style="font-size:12px;color:#8ea3cf;">Bookmarks: nenhum salvo.</div>`;
+      this.bookmarksEl.innerHTML = '<div class="legacy-empty-state">Bookmarks: nenhum salvo.</div>';
       return;
     }
 
@@ -633,7 +632,8 @@ export class MaproomOverlay {
     });
 
     if (filtered.length === 0) {
-      this.bookmarksEl.innerHTML = `<div style="font-size:12px;color:#8ea3cf;">Nenhum bookmark para o filtro informado.</div>`;
+      this.bookmarksEl.innerHTML =
+        '<div class="legacy-empty-state">Nenhum bookmark para o filtro informado.</div>';
       return;
     }
 
@@ -641,16 +641,17 @@ export class MaproomOverlay {
       .map((bookmark) => {
         const baseText = bookmark.bid ? ` • base=${escapeHtml(bookmark.bid)}` : "";
         return `
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:12px;color:#d7def5;">
-            <button data-maproom-bookmark-goto="${escapeHtml(bookmark.id)}" style="padding:4px 8px;background:#273554;border:none;color:#fff;border-radius:6px;cursor:pointer;">Ir</button>
-            <button data-maproom-bookmark-remove="${escapeHtml(bookmark.id)}" style="padding:4px 8px;background:#5a2a2a;border:none;color:#fff;border-radius:6px;cursor:pointer;">Remover</button>
-            <span>${escapeHtml(bookmark.name)} (${bookmark.x},${bookmark.y})${baseText}</span>
+          <div class="legacy-maproom-list-row">
+            <button data-maproom-bookmark-goto="${escapeHtml(bookmark.id)}" class="legacy-btn legacy-btn-ghost legacy-btn-sm">Ir</button>
+            <button data-maproom-bookmark-remove="${escapeHtml(bookmark.id)}" class="legacy-btn legacy-btn-danger legacy-btn-sm">Remover</button>
+            <span class="legacy-maproom-list-text">${escapeHtml(bookmark.name)} (${bookmark.x},${bookmark.y})${baseText}</span>
           </div>
         `;
       })
       .join("");
 
-    this.bookmarksEl.innerHTML = `<div style="font-size:12px;color:#8ea3cf;margin-bottom:4px;">Bookmarks (${filtered.length}/${this.bookmarks.length}):</div>${rows}`;
+    this.bookmarksEl.innerHTML =
+      `<div class="legacy-maproom-list-header">Bookmarks (${filtered.length}/${this.bookmarks.length}):</div>${rows}`;
 
     this.bookmarksEl
       .querySelectorAll<HTMLButtonElement>("[data-maproom-bookmark-goto]")

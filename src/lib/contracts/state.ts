@@ -42,6 +42,43 @@ export const StateSnapshotResponseSchema = z.object({
     main: BaseResourcesSchema.optional(),
     inferno: BaseResourcesSchema.optional(),
   }),
+  storeData: z
+    .record(
+      z.string(),
+      z.object({
+        q: z.number().int().nonnegative(),
+        e: z.number().int().nonnegative().optional(),
+      })
+    )
+    .optional(),
+  academy: z
+    .object({
+      buildingId: z.string().nullable(),
+      buildingLevel: z.number().int().nonnegative(),
+      busy: z.boolean(),
+      activeMonsterId: z.string().nullable(),
+      monsters: z.record(
+        z.string(),
+        z.object({
+          level: z.number().int().positive(),
+          maxLevel: z.number().int().positive(),
+          inLocker: z.boolean(),
+          canTrain: z.boolean(),
+          nextTrainingCostR3: z.number().int().nonnegative().optional(),
+          nextTrainingDurationSec: z.number().int().nonnegative().optional(),
+          training: z
+            .object({
+              startedAt: z.number().int().nonnegative(),
+              durationSec: z.number().int().positive(),
+              completesAt: z.number().int().positive(),
+              remainingSec: z.number().int().nonnegative(),
+              targetLevel: z.number().int().positive(),
+            })
+            .optional(),
+        })
+      ),
+    })
+    .optional(),
   buildings: z.array(BaseBuildingSchema).default([]),
   maproom: z.object({
     worldId: z.string().nullable(),

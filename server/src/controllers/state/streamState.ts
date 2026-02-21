@@ -9,6 +9,8 @@ import { postgres } from "../../server.js";
 import { getCurrentDateTime } from "../../utils/getCurrentDateTime.js";
 import type { KoaController } from "../../utils/KoaController.js";
 import { logger } from "../../utils/logger.js";
+import { applyLegacyBuildingProgress } from "../../services/state/applyLegacyBuildingProgress.js";
+import { applyLegacyAcademyProgress } from "../../services/state/academyState.js";
 import {
   StateStreamDeltaPayloadSchema,
   StateStreamReadyPayloadSchema,
@@ -53,6 +55,7 @@ export const streamState: KoaController = async (ctx) => {
     let closed = false;
     let unsubscribe: (() => void) | null = null;
     let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+    let progressCursorSec = normalizeTimestamp(targetSave.savetime);
 
     // SSE requires bypassing Koa default response handling.
     ctx.respond = false;
@@ -105,6 +108,13 @@ export const streamState: KoaController = async (ctx) => {
     });
     writeEvent("ready", readyPayload);
 
+    const snapshotNow = getCurrentDateTime();
+    applyLegacyBuildingProgress(targetSave, snapshotNow, {
+      baselineSec: progressCursorSec,
+    });
+    applyLegacyAcademyProgress(targetSave, snapshotNow);
+    progressCursorSec = snapshotNow;
+
     const initialSnapshot = StateStreamSnapshotPayloadSchema.parse({
       reason: "initial" as const,
       snapshot: buildStateSnapshot(user, targetSave),
@@ -132,10 +142,28 @@ export const streamState: KoaController = async (ctx) => {
     });
 
     heartbeatTimer = setInterval(() => {
-      const payload = StateStreamTickPayloadSchema.parse({
-        serverTime: getCurrentDateTime(),
+      const serverTime = getCurrentDateTime();
+      const progress = applyLegacyBuildingProgress(targetSave, serverTime, {
+        baselineSec: progressCursorSec,
       });
-      if (!writeEvent("tick", payload)) {
+      const academyProgress = applyLegacyAcademyProgress(targetSave, serverTime);
+      progressCursorSec = serverTime;
+
+      if (progress.changed || academyProgress.changed) {
+        const snapshotPayload = StateStreamSnapshotPayloadSchema.parse({
+          reason: "resync" as const,
+          snapshot: buildStateSnapshot(user, targetSave),
+        });
+        if (!writeEvent("snapshot", snapshotPayload)) {
+          closeConnection();
+          return;
+        }
+      }
+
+      const tickPayload = StateStreamTickPayloadSchema.parse({
+        serverTime,
+      });
+      if (!writeEvent("tick", tickPayload)) {
         closeConnection();
       }
     }, HEARTBEAT_INTERVAL_MS);
@@ -179,4 +207,17 @@ function formatError(err: unknown): string {
   } catch {
     return String(err);
   }
+}
+
+function normalizeTimestamp(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.max(0, Math.trunc(value));
+  }
+  if (typeof value === "string") {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed)) {
+      return Math.max(0, parsed);
+    }
+  }
+  return 0;
 }

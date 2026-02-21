@@ -57,7 +57,7 @@ Checklist por épico com referência de PR(s).
 
 ## E05 — Combat replay server-simulated
 - [x] E05-S01 Baseline autoritativo: `POST /api/:apiVersion/combat/start` + stream `GET /api/:apiVersion/combat/replay/:replayId` (SSE com `ready/snapshot/frame/result`) e replay determinístico server-side
-- [ ] E05-S02 Simulação de combate com regras completas de unidade/projétil/pathfinding equivalentes ao legado
+- [x] E05-S02 Simulação de combate com regras completas de unidade/projétil/pathfinding equivalentes ao legado
 - PRs: —
 
 ## E06 — Social
@@ -106,9 +106,48 @@ Checklist por épico com referência de PR(s).
 - [x] Gap A26 resolvido: fluxo `BUILDINGOPTIONS/BUILDINGOPTIONSPOPUP` migrado para painel `Building Ops` no Yard (`click` para tile + botões place/move/upgrade/cancel/collect + filtro de catálogo legado)
 - [x] Gap A27 resolvido: login voltou a aceitar senha em formato legado (política forte mantida em `register/reset`) para preservar compatibilidade de contas antigas durante o cutover
 - [x] Gap A28 resolvido: tracker legado atualizado com `scripts/BUILDINGOPTIONS.as` e `scripts/BUILDINGOPTIONSPOPUP.as` em `migrated`, `scripts/BUILDINGOPTIONSPOPUP_CLIP.as` em `archived` e contagens recalculadas (`pending=442`, `in_progress=7`, `migrated=21`, `archived=1`)
+- [x] Gap A29 resolvido: migração de `BUILDINGSPOPUP/BUILDINGBUTTON/BUILDINGSARROW` para o novo `Building Ops` com abas (`resources/buildings/defensive/decorations`), subabas de decoração, paginação de 10 itens, cards com status por quantidade e fallback `coming soon`; tracker atualizado (`pending=434`, `in_progress=8`, `migrated=23`, `archived=6`)
+- [x] Gap A30 resolvido: suíte Docker reexecutada após migração do catálogo (`typecheck/lint/test/build/guard`, `bunx tsc --noEmit` e 8 smoke tests E2E) sem regressões
+- [x] Gap A31 resolvido: `BUILDINGINFO` evoluído no novo client com matriz de ações contextuais por building (`upgrade/cancel/collect/collect-all/maproom/social`) e ações não migradas marcadas explicitamente como pendentes (`store/hatchery/bunker/housing/juice/lockers/baiter`)
+- [x] Gap A32 resolvido: overlays `Maproom` e `Social` passaram a suportar abertura programática (`open()`), permitindo paridade de atalhos contextuais vindos do painel de building
+- [x] Gap A33 resolvido: suíte Docker reexecutada após contexto de `BUILDINGINFO` (`typecheck/lint/test/build/guard`, `bunx tsc --noEmit` e 8 smoke tests E2E) sem regressões
+- [x] Gap A34 resolvido: `ERRORMESSAGE` migrado para modal global de erro no novo client (captura `error/unhandledrejection` + fatal startup), com payload estruturado (`code/traceId/issue`) derivado de `ClientHttpError`
+- [x] Gap A35 resolvido: tracker legado atualizado com `scripts/ERRORMESSAGE.as` em `migrated` e `scripts/ERRORMESSAGE_CLIP.as` em `archived`, com contagens recalculadas (`pending=433`, `in_progress=7`, `migrated=24`, `archived=7`)
+- [x] Gap A36 resolvido: `/cmd` expandido com `PurchaseStoreItem` (idempotência/seq/rate-limit), dedução de créditos autoritativa e deltas canônicos `setCredits` + `setStoreItem`; endpoint autenticado `GET /api/:apiVersion/store/catalog` entregue para catálogo real no client
+- [x] Gap A37 resolvido: `BUILDINGINFO` fechado com fluxos reais no novo client (`open_store/open_hatchery/open_bunker/open_housing/open_juice/open_lockers/open_baiter`) via overlay operacional de compras + persistência autoritativa em `/cmd`
+- [x] Gap A38 resolvido: `open_yard_planner` migrado com fluxo real (listar/salvar templates via `bm/yardplanner/gettemplates` e `bm/yardplanner/savetemplate`) integrado no overlay de building
+- [x] Gap A39 resolvido: `BUILDINGS` fechado com paridade de compra/store no catálogo (`SKU/custo/estoque` por card, compra direta e sincronização de inventário/créditos no estado local)
+- [x] Gap A40 resolvido: `BRESOURCE/BFOUNDATION/BUILDING14` avançados no autoritativo com regras adicionais (`TOWN_HALL_REQUIRED`, `TOWN_HALL_ALREADY_EXISTS`, limites de prédios únicos, upgrade estritamente +1 nível e bloqueio de coleta em harvester ocupado/danificado)
+- [x] Gap A41 resolvido: tracker legado atualizado com `scripts/BUILDINGINFO.as` e `scripts/BUILDINGS.as` em `migrated`, contagens recalculadas (`pending=433`, `in_progress=5`, `migrated=26`, `archived=7`)
+- [x] Gap A42 resolvido: suíte Docker reexecutada após fechamento de fluxos (`typecheck/lint/test/build/guard`, `bunx tsc --noEmit` e 8 smoke tests E2E) sem regressões
+- [x] Gap A43 resolvido: `ATTACK` evoluído além do baseline para replay determinístico baseado em estado real (`monsters.housed` + `buildingdata`), com prioridades de alvo por grupo, DPS por tick dependente de composição, vitória por destruição do HQ e loot proporcional ao dano aplicado
+- [x] Gap A44 resolvido: `/cmd` passou a aplicar regras legadas reais de `YARD_PROPS` para `PlaceBuilding/UpgradeBuilding` (limites `quantityByTownHall`, requirements por nível e custos de build/upgrade com `setResources`) via `legacyMainYardRules`
+- [x] Gap A45 resolvido: `CollectHarvester` alinhado ao main yard legado (coletores suportados `building-1..4`), removendo mapeamento incorreto de `5..8` para coleta
+- [x] Gap A46 resolvido: `register` endurecido com `safeParse` + erro cliente `400 VALIDATION_ERROR` (sem queda para `500` em payload inválido)
+- [x] Gap A47 resolvido: smoke `/cmd` reforçado para validar dedução de recursos no place, gate de limite por TH e bloqueio `INSUFFICIENT_RESOURCES`; suíte Docker completa reexecutada sem regressões
+- [x] Gap A48 resolvido: progresso temporal legado aplicado de forma autoritativa no servidor (`build/upgrade/fortify` countdown + produção de coletores `building-1..4`) via `applyLegacyBuildingProgress`, integrado em `/cmd`, `/state`, `/base/load` e snapshot inicial do stream
+- [x] Gap A49 resolvido: migração de imagens do catálogo de construções com thumbs legadas reais (`assets/building-thumbnail-map.json` + `buildingbuttons/*`) no `Building Ops`, com fallback para textura de building e sync automático no pipeline `assets:sync-yard`
+- [x] Gap A50 resolvido: smoke `/cmd` expandido para validar progressão temporal de countdown deferido via `/state`; suíte Docker completa reexecutada após mudanças sem regressões
+- [x] Gap A51 resolvido: snapshot canônico `/state` ampliado com `storeData` tipado (`q/e`) e consumo no bootstrap do client (`stateSnapshotToParsedBaseLoad`), reduzindo divergência com inventário real da store
+- [x] Gap A52 resolvido: `stream` de estado passou a emitir `snapshot` de `resync` quando há progresso temporal legado em conexão aberta (contadores/produção), mantendo sincronismo autoritativo sem depender de novo `/cmd`
+- [x] Gap A53 resolvido: `ATTACK` fechado para E05-S02 com motor determinístico de combate avançado (pathfinding por perfil, projéteis com tempo de voo, skills `explode/splits/zombie/support`, torres por range/cooldown/projétil e seleção de alvo por prioridade legada)
+- [x] Gap A54 resolvido: fechamento final de `BFOUNDATION/BRESOURCE/BUILDING14` via `legacyBuildingRuleEffects` aplicado em `/cmd` (place/upgrade/collect) e no ticker temporal (`maxHp`, reparo, capacidade/ciclo/produção de coletores e clamp autoritativo)
+- [x] Gap A55 resolvido: revalidação Docker pós-fechamento (`client typecheck/build`, `server bunx tsc --noEmit`, `smoke-cmd-hardening.sh`, `smoke-combat-replay.sh`) sem regressões
+- [x] Gap A56 resolvido: paridade visual do yard avançada com port do modelo legado de câmera (`MAP/GLOBAL`: clamp de pan por viewport, zoom legado `1x/0.5x`, magnificação wheel `0.6..2.75`), origem isométrica centralizada e ajuste de escala de sprites para reduzir divergência de proporção GUI vs client Flash; cobertura unitária adicionada para regras de bounds/smoothing
+- [x] Gap A57 resolvido: viewport legado fixo (`760x670`) no runtime Pixi com letterbox responsivo e manutenção de aspect ratio, removendo variação de escala/tamanho do yard entre resoluções; cobertura unitária adicionada para cálculo de layout (`computeLegacyViewportLayout`)
+- [x] Gap A58 resolvido: migração robusta de paridade visual `UI2` no next-client com `LegacyHUD` completo (top/bottom HUD, botões, tipografia legada `GROBOLD/Verdana`, linha de status e atalhos operacionais para build/store/map/social/zoom/collect), além de skin legacy aplicada às janelas de `Building Ops`, `Store Flow`, `Maproom` e `Social`
+- [x] Gap A59 resolvido: pipeline `assets:sync-yard` expandido para sincronizar assets legados de HUD/janelas (`assets/legacy-ui-map.json`: frames + ícones + fontes) e tracker atualizado para itens `frame1_*`, `frame_button_*` e fontes usadas no HUD
+- [x] Gap A60 resolvido: fechamento de paridade visual das janelas restantes com layout legacy orientado a classes (sem inline CSS em conteúdo dinâmico) para `Building Ops`, `Store Flow`, `Yard Planner`, `Maproom` e `Social`, incluindo estados de catálogo/listas/tabelas/cards no padrão visual UI2
+- [x] Gap A61 resolvido: skin de janela legado ampliado com `frame2_*`, `frame3_*` e `bmp_overlaytext` em produção (`assets/legacy-ui-map.json` + `src/style.css`), aplicando variantes reais de frame por overlay (`Building/Flow=frame2`, `Maproom/Social=frame3`)
+- [x] Gap A62 resolvido: recontagem do tracker após esta etapa (`pending=395`, `in_progress=1`, `migrated=68`, `archived=7`)
+- [x] Gap A63 resolvido: `ACADEMY` migrou para fluxo autoritativo em `/cmd` com `StartAcademyUpgrade`/`CancelAcademyUpgrade`/`FinishAcademyUpgradeNow`, validações legadas (locker unlock, gate por nível do building 26, custo em `r3`, speedup por créditos), progressão temporal server-side e exposição canônica no `/state`/`/stream`
+- [x] Gap A64 resolvido: cliente novo integrou overlay Academy real (lista de monstros, status de treino, start/cancel/finalização instantânea + refresh de snapshot), consumindo `academy` no estado base e em deltas (`setAcademyState`); tracker atualizado para (`pending=391`, `in_progress=1`, `migrated=71`, `archived=8`)
+- [x] Gap A65 resolvido: `BASE/Yard Planner` avançado para fluxo autoritativo completo de aplicação de layout via `/cmd ApplyYardPlannerTemplate` (validação server-side de template/ocupação/bounds/building busy + deltas `moveBuilding`), com integração no overlay (`Aplicar slot`) e alinhamento do save com regra legada (ignorar type `7` no template)
+- [x] Gap A66 resolvido: bloco pendente de wrappers `BasePlanner*` (símbolos Flash `reference_only`) foi fechado como `archived` no tracker, com evidência do overlay runtime no novo client e fluxo autoritativo no `/cmd`; contagens recalculadas (`pending=370`, `in_progress=1`, `migrated=71`, `archived=29`)
+- [x] Gap A67 resolvido: `BASE` ganhou fluxo autoritativo de reparo (`StartRepairBuilding`/`StartRepairAllBuildings`) com estado explícito `hp/maxHp/repairing` no `/state` e nos deltas (`setBuildingRepairState`), integração no `YardScene` (botões/contexto/atalho `R`) e tick de reparo controlado por estado (sem auto-heal implícito)
 
 ## Validação Docker (2026-02-20)
-- [x] Client gate: `typecheck`, `lint`, `test` (41 testes), `build`, `guard:legacy-runtime`
+- [x] Client gate: `typecheck`, `lint`, `test` (53 testes), `build`, `guard:legacy-runtime`
 - [x] Server gate: `bunx tsc --noEmit`
 - [x] Smokes end-to-end:
   - `scripts/smoke-auth-bootstrap.sh`
@@ -120,7 +159,27 @@ Checklist por épico com referência de PR(s).
   - `scripts/smoke-mail.sh`
   - `scripts/smoke-cmd-hardening.sh`
 
+## Validação Docker (2026-02-21)
+- [x] Client gate: `assets:sync-yard`, `typecheck`, `lint`, `test` (57 testes), `build`, `guard:legacy-runtime`
+- [x] Server gate: `docker compose exec -T server bunx tsc --noEmit`
+- [x] Smokes end-to-end (suite completa):
+  - `scripts/smoke-auth-bootstrap.sh`
+  - `scripts/smoke-state-snapshot.sh`
+  - `scripts/smoke-state-stream.sh`
+  - `scripts/smoke-maproom-v3.sh`
+  - `scripts/smoke-combat-replay.sh` (com validações reforçadas de SSE/payload/monotonicidade)
+  - `scripts/smoke-social.sh`
+  - `scripts/smoke-mail.sh`
+  - `scripts/smoke-cmd-hardening.sh`
+- [x] Revalidação incremental pós-paridade GUI legado: `docker compose run --rm --no-deps client` (`typecheck`, `test` com 63 testes totais, `build`) + `docker compose run --rm --no-deps server` (`bunx tsc --noEmit`)
+- [x] Revalidação incremental pós-viewport legado: `docker compose run --rm --no-deps client` (`typecheck`, `lint`, `test` com 66 testes totais, `build`) + `docker compose run --rm --no-deps server` (`bunx tsc --noEmit`)
+- [x] Revalidação incremental pós-UI2/HUD legado: `docker compose run --rm --no-deps client` (`assets:sync-yard`, `typecheck`, `lint`, `test` com 66 testes totais, `build`) + `docker compose run --rm --no-deps server` (`bunx tsc --noEmit`)
+- [x] Revalidação incremental pós-paridade visual completa de overlays/UI2: `docker compose run --rm --no-deps client` (`assets:sync-yard`, `typecheck`, `lint`, `test` com 66 testes totais, `build`) + `docker compose run --rm --no-deps server` (`bun install --frozen-lockfile`, `bunx tsc --noEmit`) + smokes E2E (`scripts/smoke-maproom-v3.sh`, `scripts/smoke-social.sh`, `scripts/smoke-mail.sh`, `scripts/smoke-cmd-hardening.sh`)
+- [x] Revalidação incremental pós-migração Academy: `docker compose run --rm --no-deps client` (`typecheck`, `lint`, `test` com 69 testes totais, `build`) + `docker compose run --rm --no-deps server` (`bun install --frozen-lockfile`, `bunx tsc --noEmit`) + smokes focados (`scripts/smoke-state-snapshot.sh`, `scripts/smoke-state-stream.sh`, `scripts/smoke-cmd-hardening.sh`) e regressão cruzada (`scripts/smoke-maproom-v3.sh`, `scripts/smoke-social.sh`, `scripts/smoke-mail.sh`)
+- [x] Revalidação incremental pós-`BASE` Yard Planner autoritativo: `docker compose run --rm --no-deps client` (`typecheck`, `lint`, `test` com 70 testes totais, `build`) + `docker compose run --rm --no-deps server` (`bun install --frozen-lockfile`, `bunx tsc --noEmit`) + smoke atualizado `scripts/smoke-cmd-hardening.sh` (inclui `ApplyYardPlannerTemplate`)
+- [x] Revalidação incremental pós-`BASE` repair autoritativo: `docker compose run --rm --no-deps client` (`typecheck`, `lint`, `test` com 71 testes totais, `build`) + `docker compose run --rm --no-deps server` (`bun install --frozen-lockfile`, `bunx tsc --noEmit`) + smoke atualizado `scripts/smoke-cmd-hardening.sh` (inclui `StartRepairAllBuildings`)
+
 ## Próximos passos sugeridos
-1. Evoluir E05 para regras de combate completas (unidades, torres, skills e loot final) com equivalência detalhada ao legado.
-2. Expandir testes automáticos server-side para cenários de concorrência (thread/message + cmd simultâneo) e cobertura de combate avançado.
-3. Assinar envelopes `/cmd` (nonce + assinatura) para hardening anti-replay em release futura.
+1. Expandir testes automáticos server-side para cenários de concorrência (thread/message + cmd simultâneo) e cobertura específica de balanceamento de combate avançado.
+2. Assinar envelopes `/cmd` (nonce + assinatura) para hardening anti-replay em release futura.
+3. Planejar fase de remoção física de `client(legacy)` com gate final de cutover e monitoramento pós-release.

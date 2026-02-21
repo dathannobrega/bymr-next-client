@@ -7,6 +7,7 @@ import { emailUniqueErr, usernameUniqueErr } from "../../errors/errors.js";
 import { logger } from "../../utils/logger.js";
 import { Status } from "../../enums/StatusCodes.js";
 import { UserRegistrationSchema } from "../../zod/AuthSchemas.js";
+import { ClientSafeError } from "../../middleware/clientSafeError.js";
 
 /**
  * Controller to handle user registration.
@@ -20,7 +21,21 @@ import { UserRegistrationSchema } from "../../zod/AuthSchemas.js";
  * @throws {Error} - Throws an error if registration fails or if the request body is invalid.
  */
 export const register: KoaController = async (ctx) => {
-  const registeredUser = UserRegistrationSchema.parse(ctx.request.body);
+  const parsedRegistration = UserRegistrationSchema.safeParse(ctx.request.body);
+  if (!parsedRegistration.success) {
+    const issues = parsedRegistration.error.issues.map((issue) => issue.message);
+    throw new ClientSafeError({
+      message: issues[0] ?? "Invalid registration payload.",
+      status: Status.BAD_REQUEST,
+      data: {
+        code: "VALIDATION_ERROR",
+        issues,
+      },
+      internalInfo: parsedRegistration.error,
+      isClientFriendly: true,
+    });
+  }
+  const registeredUser = parsedRegistration.data;
 
   // Find user by username or email
   const existingUser = await postgres.em.findOne(User, {

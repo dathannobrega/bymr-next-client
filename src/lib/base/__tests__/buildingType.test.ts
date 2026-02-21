@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   coerceBuildingTypeFromRecord,
   describePlacementType,
+  listBuildingCatalogTabs,
+  listPlacementTypeCatalogEntriesForTab,
   listPlacementTypeCatalogEntries,
   normalizePlacementBuildingTypeInput,
+  paginatePlacementTypeCatalogEntries,
 } from "../buildingType";
 
 describe("legacy building type normalization", () => {
@@ -51,5 +54,52 @@ describe("legacy building type normalization", () => {
 
     const tower = describePlacementType("building-118");
     expect(tower?.legacyClass).toBe("BTOWER");
+
+    const bunker = describePlacementType("building-22");
+    expect(bunker?.maxPerYard).toBe(1);
+  });
+
+  it("should expose catalog tabs and decoration subtabs", () => {
+    const tabs = listBuildingCatalogTabs();
+    expect(tabs.map((tab) => tab.id)).toEqual([
+      "resources",
+      "buildings",
+      "defensive",
+      "decorations",
+    ]);
+    expect(
+      tabs
+        .find((tab) => tab.id === "decorations")
+        ?.subTabs?.map((subTab) => subTab.id)
+    ).toEqual(["all", "evil", "plants", "good", "flags", "premium"]);
+  });
+
+  it("should filter entries by tab and decoration subgroup", () => {
+    const resources = listPlacementTypeCatalogEntriesForTab("resources");
+    expect(resources.length).toBeGreaterThan(0);
+    expect(resources.every((entry) => entry.tabId === "resources")).toBe(true);
+
+    const plants = listPlacementTypeCatalogEntriesForTab("decorations", "plants");
+    expect(plants.some((entry) => entry.code === 7)).toBe(true);
+    expect(plants.every((entry) => entry.decorationGroupId === "plants")).toBe(true);
+
+    const premium = listPlacementTypeCatalogEntriesForTab("decorations", "premium");
+    expect(premium.some((entry) => entry.code === 52)).toBe(true);
+    expect(premium.every((entry) => entry.decorationGroupId === "premium")).toBe(true);
+  });
+
+  it("should paginate entries deterministically", () => {
+    const buildings = listPlacementTypeCatalogEntriesForTab("buildings");
+    const pageZero = paginatePlacementTypeCatalogEntries(buildings, 0, 10);
+    expect(pageZero.page).toBe(0);
+    expect(pageZero.pageSize).toBe(10);
+    expect(pageZero.totalEntries).toBe(buildings.length);
+    expect(pageZero.pageEntries.length).toBeLessThanOrEqual(10);
+
+    const clampedLow = paginatePlacementTypeCatalogEntries(buildings, -12, 10);
+    expect(clampedLow.page).toBe(0);
+
+    const clampedHigh = paginatePlacementTypeCatalogEntries(buildings, 999, 10);
+    expect(clampedHigh.page).toBe(clampedHigh.totalPages - 1);
   });
 });

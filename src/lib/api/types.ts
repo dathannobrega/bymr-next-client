@@ -20,8 +20,33 @@ export {
   type MoveBuildingArgs,
   type UpgradeBuildingArgs,
   type CancelUpgradeArgs,
+  type CancelAcademyUpgradeArgs,
   type CollectHarvesterArgs,
+  type FinishAcademyUpgradeNowArgs,
+  type PurchaseStoreItemArgs,
+  type ApplyYardPlannerTemplateArgs,
+  type StartRepairBuildingArgs,
+  type StartRepairAllBuildingsArgs,
+  type StartAcademyUpgradeArgs,
 } from "../contracts/cmd";
+
+export {
+  StoreCatalogItemSchema,
+  StoreInventoryEntrySchema,
+  StoreCatalogResponseSchema,
+  type StoreCatalogItem,
+  type StoreInventoryEntry,
+  type StoreCatalogResponse,
+} from "../contracts/store";
+
+export {
+  YardPlannerTemplateSchema,
+  YardPlannerTemplatesResponseSchema,
+  YardPlannerSaveTemplateRequestSchema,
+  type YardPlannerTemplate,
+  type YardPlannerTemplatesResponse,
+  type YardPlannerSaveTemplateRequest,
+} from "../contracts/yardPlanner";
 
 export {
   BaseLoadRequestSchema,

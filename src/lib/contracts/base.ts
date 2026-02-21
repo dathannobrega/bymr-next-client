@@ -15,6 +15,9 @@ export const BaseBuildingSchema = z.object({
   footprintH: z.number().int().positive().optional(),
   countdownUpgrade: z.number().int().nonnegative().optional(),
   upgradeToLevel: z.number().int().positive().optional(),
+  hp: z.number().int().nonnegative().optional(),
+  maxHp: z.number().int().positive().optional(),
+  repairing: z.boolean().optional(),
 });
 
 export const BaseResourcesSchema = z.object({
@@ -36,6 +39,34 @@ export const BaseLoadResponseSchema = z.object({
   yardTheme: YardThemeSchema.optional(),
   buildings: z.array(BaseBuildingSchema).default([]),
   resources: BaseResourcesSchema.optional(),
+  academy: z
+    .object({
+      buildingId: z.string().nullable(),
+      buildingLevel: z.number().int().nonnegative(),
+      busy: z.boolean(),
+      activeMonsterId: z.string().nullable(),
+      monsters: z.record(
+        z.string(),
+        z.object({
+          level: z.number().int().positive(),
+          maxLevel: z.number().int().positive(),
+          inLocker: z.boolean(),
+          canTrain: z.boolean(),
+          nextTrainingCostR3: z.number().int().nonnegative().optional(),
+          nextTrainingDurationSec: z.number().int().nonnegative().optional(),
+          training: z
+            .object({
+              startedAt: z.number().int().nonnegative(),
+              durationSec: z.number().int().positive(),
+              completesAt: z.number().int().positive(),
+              remainingSec: z.number().int().nonnegative(),
+              targetLevel: z.number().int().positive(),
+            })
+            .optional(),
+        })
+      ),
+    })
+    .optional(),
 });
 
 export const NonCriticalBaseSaveActionSchema = z.enum([

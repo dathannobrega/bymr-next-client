@@ -63,6 +63,9 @@ describe("parseBaseLoadResponse legacy compatibility", () => {
           level: 2,
           cU: 120,
           upgradeToLevel: 3,
+          hp: 2200,
+          maxHp: 5000,
+          repairing: 1,
           footprintW: 4,
           footprintH: 4,
         },
@@ -76,6 +79,9 @@ describe("parseBaseLoadResponse legacy compatibility", () => {
       footprintH: 4,
       countdownUpgrade: 120,
       upgradeToLevel: 3,
+      hp: 2200,
+      maxHp: 5000,
+      repairing: true,
     });
   });
 
@@ -85,5 +91,50 @@ describe("parseBaseLoadResponse legacy compatibility", () => {
 
     expect(parsed.yardTheme).toBe("lava");
     expect(fallback.yardTheme).toBeUndefined();
+  });
+
+  it("should parse credits and store inventory data", () => {
+    const parsed = parseBaseLoadResponse({
+      credits: 321,
+      storeData: {
+        hod: { q: 2, e: 1730003612 },
+        invalid: { q: -1 },
+      },
+    });
+
+    expect(parsed.credits).toBe(321);
+    expect(parsed.storeData).toEqual({
+      HOD: { q: 2, e: 1730003612 },
+    });
+  });
+
+  it("should parse academy canonical summary", () => {
+    const parsed = parseBaseLoadResponse({
+      academy: {
+        buildingId: "26",
+        buildingLevel: 3,
+        busy: true,
+        activeMonsterId: "C1",
+        monsters: {
+          C1: {
+            level: 2,
+            maxLevel: 6,
+            inLocker: true,
+            canTrain: false,
+            training: {
+              startedAt: 1730000000,
+              durationSec: 7200,
+              completesAt: 1730007200,
+              remainingSec: 3600,
+              targetLevel: 3,
+            },
+          },
+        },
+      },
+    });
+
+    expect(parsed.academy?.buildingId).toBe("26");
+    expect(parsed.academy?.activeMonsterId).toBe("C1");
+    expect(parsed.academy?.monsters.C1?.training?.durationSec).toBe(7200);
   });
 });

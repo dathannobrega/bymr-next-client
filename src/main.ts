@@ -1,6 +1,9 @@
 import "./style.css";
 import { GameApp } from "./game/GameApp";
 import { loadClientConfig } from "./lib/config";
+import { installGlobalErrorModal, showGlobalError } from "./lib/ui/globalErrorModal";
+
+installGlobalErrorModal();
 
 async function main() {
   const canvas = document.getElementById("game-canvas") as HTMLCanvasElement | null;
@@ -14,8 +17,8 @@ async function main() {
 
 main().catch((err) => {
   console.error(err);
-  const el = document.createElement("pre");
-  el.style.color = "white";
-  el.textContent = String(err?.stack || err);
-  document.body.appendChild(el);
+  showGlobalError(err, {
+    title: "Falha na inicialização",
+    fatal: true,
+  });
 });

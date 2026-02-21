@@ -85,10 +85,15 @@
 - Envelope validado (`op`, `args`, `seq`, `idempotencyKey`).
 - Idempotência Redis por `cmd:<userId>:<idempotencyKey>`.
 - Rejeição por sequência fora de ordem, anti-replay por nonce e rate-limit por operação.
-- Operações atuais: `PlaceBuilding`, `MoveBuilding`, `UpgradeBuilding`, `CancelUpgrade`, `CollectHarvester`.
-- Retorno em delta canônico (`addBuilding`, `moveBuilding`, `upgradeBuilding`, `startUpgrade`, `cancelUpgrade`, `setResources`).
+- Operações atuais: `PlaceBuilding`, `MoveBuilding`, `UpgradeBuilding`, `CancelUpgrade`, `CollectHarvester`, `PurchaseStoreItem`, `ApplyYardPlannerTemplate`, `StartRepairBuilding`, `StartRepairAllBuildings`, `StartAcademyUpgrade`, `CancelAcademyUpgrade`, `FinishAcademyUpgradeNow`.
+- Retorno em delta canônico (`addBuilding`, `moveBuilding`, `upgradeBuilding`, `startUpgrade`, `cancelUpgrade`, `setBuildingRepairState`, `setResources`, `setCredits`, `setStoreItem`).
 - Place/Move agora validam ocupação por `footprint` legado (não apenas 1 tile), com checagem de bounds por área.
 - Smoke dedicado de hardening: `./scripts/smoke-cmd-hardening.sh` (idempotência, `SEQ_OUT_OF_ORDER`, `INVALID_ENVELOPE`, `INVALID_ARGS`, `INVALID_BUILDING_TYPE`, `ANTI_REPLAY`, `RATE_LIMIT`).
+
+### `GET /api/:apiVersion/store/catalog`
+- Status: **Implementado**
+- Entrega catálogo de store (`items`) e estado do jogador (`credits`, `storeData`).
+- Consumido pelo novo client para fluxos reais de `BUILDINGINFO/BUILDINGS` (compra via `/cmd PurchaseStoreItem`).
 
 ### `GET /api/:apiVersion/state`
 - Status: **Implementado**

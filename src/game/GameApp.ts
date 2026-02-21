@@ -2,6 +2,11 @@ import { Application, Container, Text } from "pixi.js";
 import type { ClientConfig } from "../lib/config";
 import { ApiClient } from "../lib/api/client";
 import { DesktopSecureTokenStore, MemoryTokenStore, type TokenStore } from "../lib/auth/tokenStore";
+import {
+  LEGACY_VIEWPORT_HEIGHT,
+  LEGACY_VIEWPORT_WIDTH,
+  computeLegacyViewportLayout,
+} from "./legacyViewport";
 import { BootScene } from "./scenes/BootScene";
 
 export type GameAppOptions = {
@@ -14,6 +19,7 @@ export class GameApp {
   private readonly root: Container;
   private readonly api: ApiClient;
   private readonly tokenStore: TokenStore;
+  private readonly resizeHandler = () => this.syncLegacyCanvasLayout();
 
   constructor(private readonly opts: GameAppOptions) {
     this.pixi = new Application();
@@ -26,10 +32,14 @@ export class GameApp {
   async start(): Promise<void> {
     await this.pixi.init({
       canvas: this.opts.canvas,
-      resizeTo: window,
+      width: LEGACY_VIEWPORT_WIDTH,
+      height: LEGACY_VIEWPORT_HEIGHT,
       antialias: true,
       backgroundAlpha: 0,
+      autoDensity: true,
     });
+    this.syncLegacyCanvasLayout();
+    window.addEventListener("resize", this.resizeHandler);
 
     this.pixi.stage.addChild(this.root);
 
@@ -46,6 +56,14 @@ export class GameApp {
       config: this.opts.config,
     });
     await boot.run();
+  }
+
+  private syncLegacyCanvasLayout(): void {
+    if (typeof window === "undefined") return;
+
+    const layout = computeLegacyViewportLayout(window.innerWidth, window.innerHeight);
+    this.opts.canvas.style.width = `${layout.cssWidth}px`;
+    this.opts.canvas.style.height = `${layout.cssHeight}px`;
   }
 }
 

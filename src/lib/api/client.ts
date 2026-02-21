@@ -22,10 +22,17 @@ import {
   CmdResponseSchema,
   type CmdOperation,
   type CmdResponse,
+  type ApplyYardPlannerTemplateArgs,
   type CancelUpgradeArgs,
+  type CancelAcademyUpgradeArgs,
   type CollectHarvesterArgs,
+  type FinishAcademyUpgradeNowArgs,
   type MoveBuildingArgs,
   type PlaceBuildingArgs,
+  type PurchaseStoreItemArgs,
+  type StartRepairAllBuildingsArgs,
+  type StartRepairBuildingArgs,
+  type StartAcademyUpgradeArgs,
   type UpgradeBuildingArgs,
 } from "../contracts/cmd";
 import {
@@ -37,11 +44,8 @@ import {
   type BaseSaveResponse,
   type NonCriticalBaseSaveAction,
 } from "../contracts/base";
-import {
-  ClientSafeErrorEnvelopeSchema,
-  StructuredHttpErrorSchema,
-} from "../contracts/http";
 import { parseBaseLoadResponse } from "../base/baseLoad";
+import { ClientHttpError } from "./httpError";
 import {
   StateSnapshotQuerySchema,
   StateSnapshotResponseSchema,
@@ -110,6 +114,16 @@ import {
   type ReportMessageThreadRequest,
   type SendMessageRequest,
 } from "../contracts/mail";
+import {
+  StoreCatalogResponseSchema,
+  type StoreCatalogResponse,
+} from "../contracts/store";
+import {
+  YardPlannerSaveTemplateRequestSchema,
+  type YardPlannerSaveTemplateRequest,
+  type YardPlannerTemplatesResponse,
+  parseYardPlannerTemplatesResponse,
+} from "../contracts/yardPlanner";
 
 export type StateStreamHandlers = {
   onEvent: (event: StateStreamEvent) => void;
@@ -187,13 +201,41 @@ export class ApiClient {
     return this.cmd("CollectHarvester", args);
   }
 
+  async purchaseStoreItem(args: PurchaseStoreItemArgs): Promise<CmdResponse> {
+    return this.cmd("PurchaseStoreItem", args);
+  }
+
+  async applyYardPlannerTemplate(args: ApplyYardPlannerTemplateArgs): Promise<CmdResponse> {
+    return this.cmd("ApplyYardPlannerTemplate", args);
+  }
+
+  async startRepairBuilding(args: StartRepairBuildingArgs): Promise<CmdResponse> {
+    return this.cmd("StartRepairBuilding", args);
+  }
+
+  async startRepairAllBuildings(args: StartRepairAllBuildingsArgs = {}): Promise<CmdResponse> {
+    return this.cmd("StartRepairAllBuildings", args);
+  }
+
+  async startAcademyUpgrade(args: StartAcademyUpgradeArgs): Promise<CmdResponse> {
+    return this.cmd("StartAcademyUpgrade", args);
+  }
+
+  async cancelAcademyUpgrade(args: CancelAcademyUpgradeArgs): Promise<CmdResponse> {
+    return this.cmd("CancelAcademyUpgrade", args);
+  }
+
+  async finishAcademyUpgradeNow(args: FinishAcademyUpgradeNowArgs): Promise<CmdResponse> {
+    return this.cmd("FinishAcademyUpgradeNow", args);
+  }
+
   async cmd(op: CmdOperation, args: Record<string, unknown>): Promise<CmdResponse> {
-    CmdArgsByOperationSchema.parse({ op, args });
+    const validated = CmdArgsByOperationSchema.parse({ op, args });
 
     this.seq += 1;
     const envelope = CmdEnvelopeSchema.parse({
       op,
-      args,
+      args: validated.args,
       seq: this.seq,
       idempotencyKey: nanoid(),
     });
@@ -201,6 +243,32 @@ export class ApiClient {
     const path = `/api/${encodeURIComponent(this.config.apiVersion)}/cmd`;
     const res = await this.requestJson("POST", path, envelope, { auth: true });
     return CmdResponseSchema.parse(res);
+  }
+
+  async getStoreCatalog(): Promise<StoreCatalogResponse> {
+    const path = `/api/${encodeURIComponent(this.config.apiVersion)}/store/catalog`;
+    const res = await this.requestJson("GET", path, undefined, { auth: true });
+    return StoreCatalogResponseSchema.parse(res);
+  }
+
+  async getYardPlannerTemplates(): Promise<YardPlannerTemplatesResponse> {
+    const path = `/api/${encodeURIComponent(this.config.apiVersion)}/bm/yardplanner/gettemplates`;
+    const res = await this.requestJson("GET", path, undefined, { auth: true });
+    return parseYardPlannerTemplatesResponse(res);
+  }
+
+  async saveYardPlannerTemplate(
+    payload: YardPlannerSaveTemplateRequest
+  ): Promise<YardPlannerTemplatesResponse> {
+    const parsed = YardPlannerSaveTemplateRequestSchema.parse(payload);
+    const path = `/api/${encodeURIComponent(this.config.apiVersion)}/bm/yardplanner/savetemplate`;
+    const body = {
+      slotid: parsed.slotId,
+      name: parsed.name,
+      data: parsed.data,
+    };
+    const res = await this.requestJson("POST", path, body, { auth: true });
+    return parseYardPlannerTemplatesResponse(res);
   }
 
   async baseLoad(baseId: string, mode: "view" | "build"): Promise<BaseLoadResponse> {
@@ -469,8 +537,13 @@ export class ApiClient {
     }
 
     if (!res.ok) {
-      const fallback = `HTTP ${res.status} ${res.statusText}`;
-      throw new Error(toHttpErrorMessage(data, method, path, fallback));
+      throw new ClientHttpError({
+        status: res.status,
+        statusText: res.statusText,
+        method,
+        path,
+        payload: data,
+      });
     }
 
     return data;
@@ -594,10 +667,6 @@ export class ApiClient {
   }
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
-}
-
 function normalizeBearerToken(token: string | null): string | null {
   if (!token) return null;
   const normalized = token.trim();
@@ -633,74 +702,13 @@ async function createHttpError(
     data = { raw: text };
   }
 
-  const fallback = `HTTP ${res.status} ${res.statusText}`;
-  return new Error(toHttpErrorMessage(data, method, path, fallback));
-}
-
-type ParsedHttpErrorPayload = {
-  error: string;
-  code?: string;
-  traceId?: string;
-  issue?: string;
-};
-
-function toHttpErrorMessage(
-  data: unknown,
-  method: "GET" | "POST",
-  path: string,
-  fallback: string
-): string {
-  const parsed = parseHttpErrorPayload(data);
-  if (!parsed) {
-    return `${fallback} (${method} ${path})`;
-  }
-
-  const suffix = [
-    parsed.code ? `code=${parsed.code}` : null,
-    parsed.traceId ? `traceId=${parsed.traceId}` : null,
-    parsed.issue ? `issue=${parsed.issue}` : null,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  return `${parsed.error}${suffix ? ` (${suffix})` : ""} (${method} ${path})`;
-}
-
-function parseHttpErrorPayload(data: unknown): ParsedHttpErrorPayload | null {
-  const clientSafe = ClientSafeErrorEnvelopeSchema.safeParse(data);
-  if (clientSafe.success && clientSafe.data.errorDetails) {
-    const envelope = clientSafe.data;
-    const code = envelope.errorDetails?.data?.code ?? envelope.errorDetails?.code;
-    const traceId = envelope.errorDetails?.traceId;
-    const issueCandidate = envelope.errorDetails?.data?.issues?.[0];
-    const issue =
-      issueCandidate && issueCandidate !== envelope.error
-        ? issueCandidate
-        : undefined;
-
-    return {
-      error: envelope.error,
-      ...(code ? { code } : {}),
-      ...(traceId ? { traceId } : {}),
-      ...(issue ? { issue } : {}),
-    };
-  }
-
-  const structured = StructuredHttpErrorSchema.safeParse(data);
-  if (structured.success) {
-    return {
-      error: structured.data.error,
-      ...(structured.data.code ? { code: structured.data.code } : {}),
-      ...(structured.data.traceId ? { traceId: structured.data.traceId } : {}),
-    };
-  }
-
-  const rawError = asRecord(data)?.error;
-  if (typeof rawError === "string" && rawError.trim().length > 0) {
-    return { error: rawError };
-  }
-
-  return null;
+  return new ClientHttpError({
+    status: res.status,
+    statusText: res.statusText,
+    method,
+    path,
+    payload: data,
+  });
 }
 
 async function readSseStream(

@@ -22,6 +22,10 @@ export const getDefaultBaseData = (user: User, baseType: BaseType) => {
 
   const currentTime = getCurrentDateTime();
   const sevenDays = 7 * 24 * 60 * 60;
+  const starterMainResources = Math.max(
+    0,
+    Number.parseInt(process.env.BYMR_STARTER_MAIN_RESOURCES ?? "10000", 10) || 10000
+  );
 
   return {
     saveuserid: user.userid,
@@ -34,10 +38,10 @@ export const getDefaultBaseData = (user: User, baseType: BaseType) => {
 
     // Pre-populated Objects
     resources: {
-      r1: 0,
-      r2: 0,
-      r3: 0,
-      r4: 0,
+      r1: starterMainResources,
+      r2: starterMainResources,
+      r3: starterMainResources,
+      r4: starterMainResources,
       r1max: 10000,
       r2max: 10000,
       r3max: 10000,

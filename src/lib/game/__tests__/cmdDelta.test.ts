@@ -101,4 +101,80 @@ describe("applyCmdDeltaToBase", () => {
 
     expect(next.resources).toMatchObject({ r1: 100, r2: 200, r3: 300, r4: 400 });
   });
+
+  it("should apply credits and store inventory deltas", () => {
+    const next = applyCmdDeltaToBase(
+      {
+        yardWidth: 20,
+        yardHeight: 14,
+        buildings: [],
+        credits: 25,
+      },
+      [
+        { op: "setCredits", credits: 123 },
+        { op: "setStoreItem", item: "HOD", q: 2, e: 1730003612 },
+      ]
+    );
+
+    expect(next.credits).toBe(123);
+    expect(next.storeData?.HOD).toEqual({ q: 2, e: 1730003612 });
+  });
+
+  it("should apply academy snapshot delta", () => {
+    const next = applyCmdDeltaToBase(
+      {
+        yardWidth: 20,
+        yardHeight: 14,
+        buildings: [],
+      },
+      [
+        {
+          op: "setAcademyState",
+          academy: {
+            buildingId: "26",
+            buildingLevel: 3,
+            busy: true,
+            activeMonsterId: "C1",
+            monsters: {
+              C1: {
+                level: 2,
+                maxLevel: 6,
+                inLocker: true,
+                canTrain: false,
+                training: {
+                  startedAt: 1730000000,
+                  durationSec: 7200,
+                  completesAt: 1730007200,
+                  remainingSec: 3600,
+                  targetLevel: 3,
+                },
+              },
+            },
+          },
+        },
+      ]
+    );
+
+    expect(next.academy?.buildingId).toBe("26");
+    expect(next.academy?.activeMonsterId).toBe("C1");
+    expect(next.academy?.monsters.C1?.training?.remainingSec).toBe(3600);
+  });
+
+  it("should apply repair state delta to existing building", () => {
+    const next = applyCmdDeltaToBase(
+      {
+        yardWidth: 20,
+        yardHeight: 14,
+        buildings: [{ id: "b-1", type: "hq", x: 1, y: 2, hp: 1200, maxHp: 5000 }],
+      },
+      [{ op: "setBuildingRepairState", id: "b-1", hp: 1200, maxHp: 5000, repairing: true }]
+    );
+
+    expect(next.buildings[0]).toMatchObject({
+      id: "b-1",
+      hp: 1200,
+      maxHp: 5000,
+      repairing: true,
+    });
+  });
 });

@@ -38,7 +38,8 @@ Maintain legacy footprint mapping in `assets/legacy-footprints.json`:
 Current migration baseline:
 - `assets/manifest.json` now tracks yard v1 assets reused from legacy (`yardbg/*` + `yardplanner/top.1.png`).
 - Client runtime loads terrain/building textures from CDN first and local packaged assets as fallback (works in web + Tauri).
-- Re-sync helper: `npm run assets:sync-yard` (copies `server/public/assets/yardbg` + `yardplanner/top.1.png` to `public/assets/*`).
+- Catálogo de building no `Building Ops` usa thumbs legadas reais de `assets/building-thumbnail-map.json` (`server/public/assets/buildingbuttons/*`) com fallback para textura de building quando não há thumb dedicada.
+- Re-sync helper: `npm run assets:sync-yard` (copia `server/public/assets/yardbg` + assets mapeados de `building-texture-map.json` e `building-thumbnail-map.json` para `public/assets/*`).
 - Footprint migration baseline: shared legacy footprint catalog consumed by renderer and `/cmd` occupancy validation.
 
 ## Risks

@@ -11,6 +11,7 @@ import {
   YARD_WIDTH,
   deriveYardTheme,
   parseIntSafe,
+  toStoreDataSummary,
   toNormalizedBuildings,
   toResourceSummary,
 } from "../../services/state/normalizeState.js";
@@ -22,6 +23,11 @@ import {
   type StateQuery,
 } from "../../zod/StateSchema.js";
 import { getCurrentDateTime } from "../../utils/getCurrentDateTime.js";
+import { applyLegacyBuildingProgress } from "../../services/state/applyLegacyBuildingProgress.js";
+import {
+  applyLegacyAcademyProgress,
+  buildAcademyStateSummary,
+} from "../../services/state/academyState.js";
 
 const MAIN_BASE_ALIASES = new Set(["home", "self", "main", "default", "0"]);
 const INFERNO_BASE_ALIASES = new Set(["inferno", "i", "inferno-main"]);
@@ -51,6 +57,9 @@ export const getState: KoaController = async (ctx) => {
       };
       return;
     }
+
+    applyLegacyBuildingProgress(targetSave);
+    applyLegacyAcademyProgress(targetSave);
 
     const response = StateSnapshotResponseSchema.parse(
       buildStateSnapshot(user, targetSave)
@@ -193,6 +202,8 @@ export function buildStateSnapshot(user: User, save: Save) {
           ? toResourceSummary(user.infernosave.resources)
           : undefined,
     },
+    storeData: toStoreDataSummary(save.storedata),
+    academy: buildAcademyStateSummary(save),
     buildings: toNormalizedBuildings(save, {
       yardWidth: YARD_WIDTH,
       yardHeight: YARD_HEIGHT,

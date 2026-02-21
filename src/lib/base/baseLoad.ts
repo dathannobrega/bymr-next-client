@@ -17,6 +17,9 @@ export type YardBuilding = {
   footprintH?: number;
   countdownUpgrade?: number;
   upgradeToLevel?: number;
+  hp?: number;
+  maxHp?: number;
+  repairing?: boolean;
 };
 
 export type BaseResourceSummary = {
@@ -30,12 +33,46 @@ export type BaseResourceSummary = {
   r4max: number;
 };
 
+export type StoreInventoryEntry = {
+  q: number;
+  e?: number;
+};
+
+export type AcademyMonsterTraining = {
+  startedAt: number;
+  durationSec: number;
+  completesAt: number;
+  remainingSec: number;
+  targetLevel: number;
+};
+
+export type AcademyMonsterState = {
+  level: number;
+  maxLevel: number;
+  inLocker: boolean;
+  canTrain: boolean;
+  nextTrainingCostR3?: number;
+  nextTrainingDurationSec?: number;
+  training?: AcademyMonsterTraining;
+};
+
+export type AcademyState = {
+  buildingId: string | null;
+  buildingLevel: number;
+  busy: boolean;
+  activeMonsterId: string | null;
+  monsters: Record<string, AcademyMonsterState>;
+};
+
 export type ParsedBaseLoad = {
   yardWidth: number;
   yardHeight: number;
   yardTheme?: "grass" | "sand" | "lava" | "rock" | "crater";
   buildings: YardBuilding[];
   resources?: BaseResourceSummary;
+  credits?: number;
+  storeData?: Record<string, StoreInventoryEntry>;
+  academy?: AcademyState;
 };
 
 export function buildBaseLoadPayload(input: BaseLoadPayload): Record<string, unknown> {
@@ -71,6 +108,9 @@ export function parseBaseLoadResponse(raw: unknown): ParsedBaseLoad {
     yardTheme: parseYardTheme(obj.yardTheme ?? obj.terrainTheme ?? obj.yardType),
     buildings,
     resources: parseResourceSummary(obj.resources),
+    credits: optionalNonNegativeNumberFromUnknown(obj.credits),
+    storeData: parseStoreData(obj.storeData ?? obj.storedata),
+    academy: parseAcademyState(obj.academy),
   };
 }
 
@@ -99,6 +139,9 @@ function parseBuilding(value: unknown, yardWidth: number, yardHeight: number): Y
       value.countdownUpgrade ?? value.cU ?? value.countdownupgrade
     ),
     upgradeToLevel: optionalNumberFromUnknown(value.upgradeToLevel),
+    hp: optionalNonNegativeNumberFromUnknown(value.hp),
+    maxHp: optionalPositiveNumberFromUnknown(value.maxHp ?? value.maxHealth),
+    repairing: optionalBooleanFromUnknown(value.repairing ?? value.rE),
   };
 }
 
@@ -135,6 +178,124 @@ function optionalPositiveNumberFromUnknown(value: unknown): number | undefined {
   const parsed = optionalNumberFromUnknown(value);
   if (parsed === undefined) return undefined;
   return parsed > 0 ? parsed : undefined;
+}
+
+function optionalNonNegativeNumberFromUnknown(value: unknown): number | undefined {
+  const parsed = optionalNumberFromUnknown(value);
+  if (parsed === undefined) return undefined;
+  return parsed >= 0 ? parsed : undefined;
+}
+
+function optionalBooleanFromUnknown(value: unknown): boolean | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.trunc(value) > 0;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return undefined;
+    if (normalized === "1" || normalized === "true" || normalized === "yes") return true;
+    if (normalized === "0" || normalized === "false" || normalized === "no") return false;
+  }
+  return undefined;
+}
+
+function parseStoreData(value: unknown): Record<string, StoreInventoryEntry> | undefined {
+  if (!isRecord(value)) return undefined;
+
+  const out: Record<string, StoreInventoryEntry> = {};
+  for (const [key, rawEntry] of Object.entries(value)) {
+    if (!isRecord(rawEntry)) continue;
+
+    const q = numberFromUnknown(rawEntry.q, Number.NaN);
+    if (!Number.isFinite(q) || q < 0) continue;
+
+    const e = optionalNonNegativeNumberFromUnknown(rawEntry.e);
+    out[key.toUpperCase()] = {
+      q,
+      ...(e !== undefined ? { e } : {}),
+    };
+  }
+
+  return out;
+}
+
+function parseAcademyState(value: unknown): AcademyState | undefined {
+  if (!isRecord(value)) return undefined;
+
+  const buildingIdRaw = value.buildingId;
+  const activeMonsterIdRaw = value.activeMonsterId;
+  const monstersRaw = isRecord(value.monsters) ? value.monsters : value;
+  const monsters: Record<string, AcademyMonsterState> = {};
+
+  for (const [rawMonsterId, rawEntry] of Object.entries(monstersRaw)) {
+    if (!isRecord(rawEntry)) continue;
+    const monsterId = rawMonsterId.trim().toUpperCase();
+    if (!monsterId) continue;
+
+    const level = Math.max(1, numberFromUnknown(rawEntry.level, 1));
+    const maxLevel = Math.max(level, numberFromUnknown(rawEntry.maxLevel, 6));
+    const inLocker = Boolean(rawEntry.inLocker);
+    const canTrain = Boolean(rawEntry.canTrain);
+    const nextTrainingCostR3 = optionalNonNegativeNumberFromUnknown(rawEntry.nextTrainingCostR3);
+    const nextTrainingDurationSec = optionalNonNegativeNumberFromUnknown(
+      rawEntry.nextTrainingDurationSec
+    );
+    const training = parseAcademyTraining(rawEntry.training ?? rawEntry);
+
+    monsters[monsterId] = {
+      level,
+      maxLevel,
+      inLocker,
+      canTrain,
+      ...(nextTrainingCostR3 !== undefined ? { nextTrainingCostR3 } : {}),
+      ...(nextTrainingDurationSec !== undefined ? { nextTrainingDurationSec } : {}),
+      ...(training ? { training } : {}),
+    };
+  }
+
+  return {
+    buildingId:
+      typeof buildingIdRaw === "string" && buildingIdRaw.trim().length > 0
+        ? buildingIdRaw
+        : null,
+    buildingLevel: Math.max(0, numberFromUnknown(value.buildingLevel, 0)),
+    busy: Boolean(value.busy),
+    activeMonsterId:
+      typeof activeMonsterIdRaw === "string" && activeMonsterIdRaw.trim().length > 0
+        ? activeMonsterIdRaw.toUpperCase()
+        : null,
+    monsters,
+  };
+}
+
+function parseAcademyTraining(value: unknown): AcademyMonsterTraining | undefined {
+  if (!isRecord(value)) return undefined;
+
+  const startedAt = optionalNonNegativeNumberFromUnknown(value.startedAt);
+  const durationSec = optionalPositiveNumberFromUnknown(value.durationSec ?? value.duration);
+  const completesAt = optionalPositiveNumberFromUnknown(value.completesAt ?? value.time);
+  const remainingSec = optionalNonNegativeNumberFromUnknown(value.remainingSec);
+  const targetLevel = optionalPositiveNumberFromUnknown(value.targetLevel);
+
+  if (
+    startedAt === undefined ||
+    durationSec === undefined ||
+    completesAt === undefined ||
+    remainingSec === undefined ||
+    targetLevel === undefined
+  ) {
+    return undefined;
+  }
+
+  return {
+    startedAt,
+    durationSec,
+    completesAt,
+    remainingSec,
+    targetLevel,
+  };
 }
 
 function parseYardTheme(value: unknown): ParsedBaseLoad["yardTheme"] {

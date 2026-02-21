@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiClient } from "../client";
 import { MemoryTokenStore } from "../../auth/tokenStore";
+import { ClientHttpError } from "../httpError";
 
 const config = {
   baseUrl: "https://bymr.local",
@@ -43,6 +44,24 @@ const canonicalSnapshot = {
   resources: {
     active: { r1: 10, r2: 20, r3: 30, r4: 40, r1max: 100, r2max: 100, r3max: 100, r4max: 100 },
     main: { r1: 10, r2: 20, r3: 30, r4: 40, r1max: 100, r2max: 100, r3max: 100, r4max: 100 },
+  },
+  storeData: {
+    BEW: { q: 2 },
+    BUILDING22: { q: 1, e: 1730001234 },
+  },
+  academy: {
+    buildingId: "26",
+    buildingLevel: 2,
+    busy: false,
+    activeMonsterId: null,
+    monsters: {
+      C1: {
+        level: 1,
+        maxLevel: 6,
+        inLocker: true,
+        canTrain: true,
+      },
+    },
   },
   buildings: [{ id: "b1", type: "hq", x: 2, y: 3 }],
   maproom: {
@@ -242,6 +261,8 @@ describe("ApiClient contracts", () => {
     expect(result.snapshotVersion).toBe(1);
     expect(result.base.baseId).toBe("1001");
     expect(result.buildings[0]?.type).toBe("hq");
+    expect(result.storeData?.BEW?.q).toBe(2);
+    expect(result.academy?.monsters.C1?.canTrain).toBe(true);
 
     const call = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(call[0]).toBe("https://bymr.local/api/v-test/state?baseId=home&scope=main");
@@ -262,9 +283,21 @@ describe("ApiClient contracts", () => {
     );
 
     const api = new ApiClient(config, tokenStore);
-    await expect(api.placeBuilding({ buildingType: "hq", x: 1, y: 1 })).rejects.toThrow(
-      "Replay blocked (code=ANTI_REPLAY traceId=tr-123)"
-    );
+
+    try {
+      await api.placeBuilding({ buildingType: "hq", x: 1, y: 1 });
+      throw new Error("Expected placeBuilding to throw");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ClientHttpError);
+      const typed = error as ClientHttpError;
+      expect(typed.message).toContain("Replay blocked");
+      expect(typed.message).toContain("code=ANTI_REPLAY");
+      expect(typed.message).toContain("traceId=tr-123");
+      expect(typed.code).toBe("ANTI_REPLAY");
+      expect(typed.traceId).toBe("tr-123");
+      expect(typed.status).toBe(409);
+      expect(typed.path).toBe("/api/v-test/cmd");
+    }
   });
 
   it("should parse client-safe validation envelopes from middleware errors", async () => {
@@ -324,7 +357,7 @@ describe("ApiClient contracts", () => {
     expect(typeof body.idempotencyKey).toBe("string");
   });
 
-  it("cmd should support CancelUpgrade and CollectHarvester ops", async () => {
+  it("cmd should support building, planner, store and academy ops", async () => {
     const tokenStore = new MemoryTokenStore();
     await tokenStore.set("dev-token");
 
@@ -341,12 +374,61 @@ describe("ApiClient contracts", () => {
         status: 200,
         statusText: "OK",
         text: async () => JSON.stringify({ ok: true, seq: 2, serverTime: 1730000013, delta: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify({ ok: true, seq: 3, serverTime: 1730000014, delta: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify({ ok: true, seq: 4, serverTime: 1730000015, delta: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify({ ok: true, seq: 5, serverTime: 1730000016, delta: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify({ ok: true, seq: 6, serverTime: 1730000017, delta: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify({ ok: true, seq: 7, serverTime: 1730000018, delta: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify({ ok: true, seq: 8, serverTime: 1730000019, delta: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () => JSON.stringify({ ok: true, seq: 9, serverTime: 1730000020, delta: [] }),
       });
     vi.stubGlobal("fetch", fetchMock);
 
     const api = new ApiClient(config, tokenStore);
     await api.cancelUpgrade({ buildingId: "b-1" });
     await api.collectHarvester({ buildingId: "b-2", amount: 50 });
+    await api.purchaseStoreItem({ item: "hod", quantity: 2 });
+    await api.applyYardPlannerTemplate({ slotId: 3 });
+    await api.startAcademyUpgrade({ monsterId: "c1" });
+    await api.cancelAcademyUpgrade({ monsterId: "c1" });
+    await api.finishAcademyUpgradeNow({ monsterId: "c1" });
+    await api.startRepairBuilding({ buildingId: "b-3" });
+    await api.startRepairAllBuildings();
 
     const firstBody = JSON.parse(String((fetchMock.mock.calls[0] as [string, RequestInit])[1].body));
     expect(firstBody.op).toBe("CancelUpgrade");
@@ -355,6 +437,127 @@ describe("ApiClient contracts", () => {
     const secondBody = JSON.parse(String((fetchMock.mock.calls[1] as [string, RequestInit])[1].body));
     expect(secondBody.op).toBe("CollectHarvester");
     expect(secondBody.args).toEqual({ buildingId: "b-2", amount: 50 });
+
+    const thirdBody = JSON.parse(String((fetchMock.mock.calls[2] as [string, RequestInit])[1].body));
+    expect(thirdBody.op).toBe("PurchaseStoreItem");
+    expect(thirdBody.args).toEqual({ item: "HOD", quantity: 2 });
+
+    const fourthBody = JSON.parse(String((fetchMock.mock.calls[3] as [string, RequestInit])[1].body));
+    expect(fourthBody.op).toBe("ApplyYardPlannerTemplate");
+    expect(fourthBody.args).toEqual({ slotId: 3 });
+
+    const fifthBody = JSON.parse(String((fetchMock.mock.calls[4] as [string, RequestInit])[1].body));
+    expect(fifthBody.op).toBe("StartAcademyUpgrade");
+    expect(fifthBody.args).toEqual({ monsterId: "C1" });
+
+    const sixthBody = JSON.parse(String((fetchMock.mock.calls[5] as [string, RequestInit])[1].body));
+    expect(sixthBody.op).toBe("CancelAcademyUpgrade");
+    expect(sixthBody.args).toEqual({ monsterId: "C1" });
+
+    const seventhBody = JSON.parse(String((fetchMock.mock.calls[6] as [string, RequestInit])[1].body));
+    expect(seventhBody.op).toBe("FinishAcademyUpgradeNow");
+    expect(seventhBody.args).toEqual({ monsterId: "C1" });
+
+    const eighthBody = JSON.parse(String((fetchMock.mock.calls[7] as [string, RequestInit])[1].body));
+    expect(eighthBody.op).toBe("StartRepairBuilding");
+    expect(eighthBody.args).toEqual({ buildingId: "b-3" });
+
+    const ninthBody = JSON.parse(String((fetchMock.mock.calls[8] as [string, RequestInit])[1].body));
+    expect(ninthBody.op).toBe("StartRepairAllBuildings");
+    expect(ninthBody.args).toEqual({});
+  });
+
+  it("yard planner template apply should validate slot id", async () => {
+    const tokenStore = new MemoryTokenStore();
+    await tokenStore.set("dev-token");
+    vi.stubGlobal("fetch", vi.fn());
+
+    const api = new ApiClient(config, tokenStore);
+    await expect(api.applyYardPlannerTemplate({ slotId: 0 })).rejects.toThrow(
+      "Number must be greater than 0"
+    );
+  });
+
+  it("store catalog should validate schema", async () => {
+    const tokenStore = new MemoryTokenStore();
+    await tokenStore.set("dev-token");
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () =>
+          JSON.stringify({
+            error: 0,
+            serverTime: 1730000012,
+            credits: 500,
+            items: {
+              HOD: { t: "Hatchery Overdrive Stage 1", d: "desc", du: 3600, c: [30], i: 0, a: 1 },
+            },
+            storeData: {
+              HOD: { q: 1, e: 1730003612 },
+            },
+          }),
+      })
+    );
+
+    const api = new ApiClient(config, tokenStore);
+    const response = await api.getStoreCatalog();
+    expect(response.credits).toBe(500);
+    expect(response.items.HOD?.c[0]).toBe(30);
+    expect(response.storeData.HOD?.q).toBe(1);
+  });
+
+  it("yard planner templates should parse legacy-indexed payload shape", async () => {
+    const tokenStore = new MemoryTokenStore();
+    await tokenStore.set("dev-token");
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () =>
+          JSON.stringify({
+            error: 0,
+            0: { slotid: 1, name: "Alpha", data: { a: { id: 1 } } },
+            1: { slotid: 2, name: "Bravo", data: { b: { id: 2 } } },
+          }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        text: async () =>
+          JSON.stringify({
+            error: 0,
+            templates: [{ slotid: 3, name: "Charlie", data: { c: { id: 3 } } }],
+          }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const api = new ApiClient(config, tokenStore);
+    const templates = await api.getYardPlannerTemplates();
+    expect(templates.templates).toHaveLength(2);
+    expect(templates.templates[0]).toMatchObject({ slotId: 1, name: "Alpha" });
+
+    const saved = await api.saveYardPlannerTemplate({
+      slotId: 3,
+      name: "Charlie",
+      data: { c: { id: 3 } },
+    });
+    expect(saved.templates[0]).toMatchObject({ slotId: 3, name: "Charlie" });
+
+    const saveCall = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(saveCall[0]).toBe("https://bymr.local/api/v-test/bm/yardplanner/savetemplate");
+    expect(JSON.parse(String(saveCall[1].body))).toEqual({
+      slotid: 3,
+      name: "Charlie",
+      data: { c: { id: 3 } },
+    });
   });
 
   it("/base/save should enforce non-critical action and include audit", async () => {

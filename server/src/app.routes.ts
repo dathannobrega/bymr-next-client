@@ -14,6 +14,7 @@ import { infernoMonsters } from "./controllers/inferno/infernoMonsters.js";
 import { recordDebugData } from "./controllers/debug/recordDebugData.js";
 import { getTemplates } from "./controllers/yardplanner/getTemplates.js";
 import { saveTemplate } from "./controllers/yardplanner/saveTemplate.js";
+import { getStoreCatalog } from "./controllers/store/getCatalog.js";
 import { getArea } from "./controllers/maproom/v2/getArea.js";
 import { initialPlayerCellData } from "./controllers/maproom/v3/initialPlayerCellData.js";
 import { setMapVersion } from "./controllers/maproom/setMapVersion.js";
@@ -183,6 +184,18 @@ router.post(
   verifyUserAuth,
   logRequest("Authoritative command"),
   cmd
+);
+
+/**
+ * Store catalog + user inventory snapshot
+ * @name GET /api/:apiVersion/store/catalog
+ */
+router.get(
+  "/api/:apiVersion/store/catalog",
+  apiVersion,
+  verifyUserAuth,
+  logRequest("Store catalog"),
+  getStoreCatalog
 );
 
 /**

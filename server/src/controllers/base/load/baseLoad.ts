@@ -32,6 +32,11 @@ import {
   toNormalizedBuildings,
   toResourceSummary,
 } from "../../../services/state/normalizeState.js";
+import { applyLegacyBuildingProgress } from "../../../services/state/applyLegacyBuildingProgress.js";
+import {
+  applyLegacyAcademyProgress,
+  buildAcademyStateSummary,
+} from "../../../services/state/academyState.js";
 
 const NextClientBaseLoadSchema = z.object({
   baseId: z.string().min(1),
@@ -113,6 +118,9 @@ export const baseLoad: KoaController = async (ctx) => {
       default:
         throw new Error(`Base type not handled, type: ${type}.`);
     }
+
+    applyLegacyBuildingProgress(baseSave);
+    applyLegacyAcademyProgress(baseSave);
 
     if (parsedRequest.nextClient) {
       ctx.status = Status.OK;
@@ -255,6 +263,7 @@ function toNextClientBaseLoad(save: Save) {
     yardTheme: deriveYardTheme(save),
     buildings,
     resources,
+    academy: buildAcademyStateSummary(save),
   };
 }
 

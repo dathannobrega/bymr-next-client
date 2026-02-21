@@ -8,5 +8,8 @@ export function stateSnapshotToParsedBaseLoad(snapshot: StateSnapshotResponse): 
     yardTheme: snapshot.base.yardTheme,
     buildings: snapshot.buildings,
     resources: snapshot.resources.active,
+    credits: snapshot.progression.credits,
+    storeData: snapshot.storeData,
+    academy: snapshot.academy,
   };
 }

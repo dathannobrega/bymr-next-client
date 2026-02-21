@@ -72,7 +72,7 @@ export class SocialOverlay {
     }
   }
 
-  private async open(): Promise<void> {
+  async open(): Promise<void> {
     this.ensureDom();
     if (!this.wrapper) return;
 
@@ -85,69 +85,57 @@ export class SocialOverlay {
     if (this.wrapper) return;
 
     const wrapper = document.createElement("div");
-    wrapper.style.position = "fixed";
-    wrapper.style.right = "12px";
-    wrapper.style.bottom = "12px";
-    wrapper.style.width = "min(96vw, 620px)";
-    wrapper.style.maxHeight = "78vh";
-    wrapper.style.overflow = "auto";
-    wrapper.style.zIndex = "9998";
-    wrapper.style.background = "rgba(11, 18, 32, 0.97)";
-    wrapper.style.border = "1px solid #2b4669";
-    wrapper.style.borderRadius = "12px";
-    wrapper.style.padding = "12px";
-    wrapper.style.color = "#ffffff";
+    wrapper.className = "legacy-window legacy-window-social";
+    wrapper.dataset.legacyTheme = "active";
+    wrapper.dataset.legacyFrame = "frame3";
     wrapper.style.display = "none";
 
     wrapper.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
-        <strong style="font-size:14px;">Social: rankings + logs + mensagens</strong>
-        <button data-social-close style="padding:6px 10px;background:#2d3d60;border:none;color:#fff;border-radius:6px;cursor:pointer;">Fechar (L)</button>
+      <div class="legacy-window-header">
+        <strong class="legacy-window-title">Social: rankings + logs + mensagens</strong>
+        <button data-social-close class="legacy-btn legacy-btn-ghost">Fechar (L)</button>
       </div>
 
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-        <button data-social-refresh style="padding:6px 10px;background:#4068cc;border:none;color:#fff;border-radius:6px;cursor:pointer;">Atualizar tudo</button>
-        <button data-social-load-mail style="padding:6px 10px;background:#2d8cff;border:none;color:#fff;border-radius:6px;cursor:pointer;">Atualizar mensagens</button>
+      <div class="legacy-form-row legacy-form-row-wrap">
+        <button data-social-refresh class="legacy-btn legacy-btn-primary">Atualizar tudo</button>
+        <button data-social-load-mail class="legacy-btn legacy-btn-primary">Atualizar mensagens</button>
       </div>
 
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-        <select data-social-world style="padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;min-width:250px;"></select>
-        <button data-social-load-lb style="padding:6px 10px;background:#1c8f66;border:none;color:#fff;border-radius:6px;cursor:pointer;">Recarregar leaderboard</button>
+      <div class="legacy-form-row legacy-form-row-wrap">
+        <select data-social-world class="legacy-input legacy-social-world-select"></select>
+        <button data-social-load-lb class="legacy-btn legacy-btn-positive">Recarregar leaderboard</button>
       </div>
 
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-        <select data-social-filter style="padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;min-width:200px;">
+      <div class="legacy-form-row legacy-form-row-wrap">
+        <select data-social-filter class="legacy-input legacy-social-filter-select">
           ${ATTACK_FILTERS.map((option) => `<option value="${option.value}">${escapeHtml(option.label)}</option>`).join("")}
         </select>
-        <button data-social-load-logs style="padding:6px 10px;background:#8b3db0;border:none;color:#fff;border-radius:6px;cursor:pointer;">Recarregar logs</button>
+        <button data-social-load-logs class="legacy-btn legacy-btn-primary">Recarregar logs</button>
       </div>
 
-      <div data-social-status style="font-size:12px;color:#bdcae8;min-height:18px;margin-bottom:8px;"></div>
+      <div data-social-status class="legacy-muted-text legacy-social-status"></div>
 
-      <div style="font-size:12px;color:#9fb4d9;margin-bottom:4px;">Leaderboard</div>
-      <div data-social-leaderboard style="margin-bottom:10px;"></div>
+      <div class="legacy-window-section-title">Leaderboard</div>
+      <div data-social-leaderboard class="legacy-window-section"></div>
 
-      <div style="font-size:12px;color:#9fb4d9;margin-bottom:4px;">Attack logs</div>
-      <div data-social-attacklogs style="margin-bottom:10px;"></div>
+      <div class="legacy-window-section-title">Attack logs</div>
+      <div data-social-attacklogs class="legacy-window-section"></div>
 
-      <div style="font-size:12px;color:#9fb4d9;margin-bottom:4px;">Threads</div>
-      <div data-social-threads style="margin-bottom:10px;"></div>
+      <div class="legacy-window-section-title">Threads</div>
+      <div data-social-threads class="legacy-window-section"></div>
 
-      <div style="font-size:12px;color:#9fb4d9;margin-bottom:4px;">Mensagens da thread</div>
-      <div data-social-thread-detail style="margin-bottom:10px;"></div>
+      <div class="legacy-window-section-title">Mensagens da thread</div>
+      <div data-social-thread-detail class="legacy-window-section"></div>
 
-      <div style="font-size:12px;color:#9fb4d9;margin-bottom:4px;">Enviar mensagem</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
-        <input data-social-targetid type="number" min="1" placeholder="Target user id"
-          style="padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;min-width:150px;" />
-        <input data-social-subject placeholder="Assunto"
-          style="padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;min-width:220px;flex:1;" />
+      <div class="legacy-window-section-title">Enviar mensagem</div>
+      <div class="legacy-form-row legacy-form-row-wrap">
+        <input data-social-targetid type="number" min="1" placeholder="Target user id" class="legacy-input legacy-social-target-input" />
+        <input data-social-subject placeholder="Assunto" class="legacy-input legacy-social-subject-input" />
       </div>
-      <textarea data-social-message rows="3" placeholder="Mensagem..."
-        style="width:100%;box-sizing:border-box;padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;margin-bottom:6px;resize:vertical;"></textarea>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;">
-        <button data-social-send-message style="padding:6px 10px;background:#18925e;border:none;color:#fff;border-radius:6px;cursor:pointer;">Enviar</button>
-        <button data-social-report-thread style="padding:6px 10px;background:#a34747;border:none;color:#fff;border-radius:6px;cursor:pointer;">Reportar/Bloquear thread selecionada</button>
+      <textarea data-social-message rows="3" placeholder="Mensagem..." class="legacy-input legacy-input-wide legacy-social-message-input"></textarea>
+      <div class="legacy-form-row legacy-form-row-wrap">
+        <button data-social-send-message class="legacy-btn legacy-btn-positive">Enviar</button>
+        <button data-social-report-thread class="legacy-btn legacy-btn-danger">Reportar/Bloquear thread selecionada</button>
       </div>
     `;
 
@@ -420,7 +408,7 @@ export class SocialOverlay {
 
     if (this.leaderboard.length === 0) {
       this.leaderboardEl.innerHTML =
-        `<div style="font-size:12px;color:#c4cee6;border:1px solid #2f3a55;border-radius:8px;padding:8px;">Sem dados de leaderboard para o mundo selecionado.</div>`;
+        '<div class="legacy-empty-state">Sem dados de leaderboard para o mundo selecionado.</div>';
       return;
     }
 
@@ -429,21 +417,21 @@ export class SocialOverlay {
         const discord = entry.discord_tag ? ` • ${entry.discord_tag}` : "";
         return `
           <tr>
-            <td style="padding:4px 6px;border-bottom:1px solid #2f3a55;color:#c2d6ff;">${index + 1}</td>
-            <td style="padding:4px 6px;border-bottom:1px solid #2f3a55;color:#ffffff;">${escapeHtml(entry.username)}${escapeHtml(discord)}</td>
-            <td style="padding:4px 6px;border-bottom:1px solid #2f3a55;color:#9ad8a9;text-align:right;">${entry.outpost_count}</td>
+            <td class="legacy-social-rank-cell">${index + 1}</td>
+            <td class="legacy-social-player-cell">${escapeHtml(entry.username)}${escapeHtml(discord)}</td>
+            <td class="legacy-social-outpost-cell">${entry.outpost_count}</td>
           </tr>
         `;
       })
       .join("");
 
     this.leaderboardEl.innerHTML = `
-      <table style="width:100%;border-collapse:collapse;font-size:12px;border:1px solid #2f3a55;border-radius:8px;overflow:hidden;">
+      <table class="legacy-social-table">
         <thead>
-          <tr style="background:#1a2944;color:#d8e4ff;">
-            <th style="padding:6px;text-align:left;">#</th>
-            <th style="padding:6px;text-align:left;">Jogador</th>
-            <th style="padding:6px;text-align:right;">Outposts</th>
+          <tr>
+            <th>#</th>
+            <th>Jogador</th>
+            <th class="legacy-align-right">Outposts</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -456,7 +444,7 @@ export class SocialOverlay {
 
     if (this.attackLogs.length === 0) {
       this.attackLogsEl.innerHTML =
-        `<div style="font-size:12px;color:#c4cee6;border:1px solid #2f3a55;border-radius:8px;padding:8px;">Nenhum attack log para o filtro atual.</div>`;
+        '<div class="legacy-empty-state">Nenhum attack log para o filtro atual.</div>';
       return;
     }
 
@@ -471,15 +459,15 @@ export class SocialOverlay {
         const time = formatAttackLogTime(entry.attacktime);
 
         return `
-          <div style="border:1px solid #2f3a55;border-radius:8px;padding:8px;background:#131c30;margin-bottom:6px;">
-            <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;">
-              <strong style="color:#dbe6ff;">${escapeHtml(headline)}</strong>
-              <span style="color:#93a7cd;">${escapeHtml(time)}</span>
+          <div class="legacy-social-log-card">
+            <div class="legacy-social-log-head">
+              <strong>${escapeHtml(headline)}</strong>
+              <span>${escapeHtml(time)}</span>
             </div>
-            <div style="margin-top:4px;font-size:12px;color:#bdcae8;">
+            <div class="legacy-social-log-type">
               tipo=${escapeHtml(entry.type)}${escapeHtml(coords)}
             </div>
-            <div style="margin-top:4px;font-size:12px;color:#99d8a8;">
+            <div class="legacy-social-log-loot">
               loot=${escapeHtml(loot)}
             </div>
           </div>
@@ -494,8 +482,7 @@ export class SocialOverlay {
     if (!this.threadsEl) return;
 
     if (this.threads.length === 0) {
-      this.threadsEl.innerHTML =
-        `<div style="font-size:12px;color:#c4cee6;border:1px solid #2f3a55;border-radius:8px;padding:8px;">Nenhuma thread disponível.</div>`;
+      this.threadsEl.innerHTML = '<div class="legacy-empty-state">Nenhuma thread disponível.</div>';
       return;
     }
 
@@ -507,11 +494,11 @@ export class SocialOverlay {
         const stamp = formatAttackLogTime(thread.updatedAt);
         return `
           <button data-social-thread-id="${thread.threadId}"
-            style="display:block;width:100%;text-align:left;border:1px solid ${selected ? "#4a74d1" : "#2f3a55"};background:${selected ? "#1f2f50" : "#131c30"};color:#fff;border-radius:8px;padding:8px;margin-bottom:6px;cursor:pointer;">
-            <div style="font-size:12px;color:#dbe6ff;"><strong>#${thread.threadId}</strong> com ${escapeHtml(targetName)} (${thread.peerUserId})${escapeHtml(unread)}</div>
-            <div style="font-size:12px;color:#a9b9dd;margin-top:2px;">${escapeHtml(thread.subject)}</div>
-            <div style="font-size:12px;color:#8ea2cb;margin-top:2px;">${escapeHtml(thread.preview || "(sem texto)")}</div>
-            <div style="font-size:11px;color:#7f92b8;margin-top:2px;">${escapeHtml(stamp)}</div>
+            class="legacy-social-thread-btn${selected ? " is-selected" : ""}">
+            <div class="legacy-social-thread-head"><strong>#${thread.threadId}</strong> com ${escapeHtml(targetName)} (${thread.peerUserId})${escapeHtml(unread)}</div>
+            <div class="legacy-social-thread-subject">${escapeHtml(thread.subject)}</div>
+            <div class="legacy-social-thread-preview">${escapeHtml(thread.preview || "(sem texto)")}</div>
+            <div class="legacy-social-thread-time">${escapeHtml(stamp)}</div>
           </button>
         `;
       })
@@ -532,13 +519,13 @@ export class SocialOverlay {
 
     if (!this.selectedThreadId) {
       this.threadDetailEl.innerHTML =
-        `<div style="font-size:12px;color:#c4cee6;border:1px solid #2f3a55;border-radius:8px;padding:8px;">Selecione uma thread para ver mensagens.</div>`;
+        '<div class="legacy-empty-state">Selecione uma thread para ver mensagens.</div>';
       return;
     }
 
     if (this.threadMessages.length === 0) {
       this.threadDetailEl.innerHTML =
-        `<div style="font-size:12px;color:#c4cee6;border:1px solid #2f3a55;border-radius:8px;padding:8px;">Thread ${this.selectedThreadId} sem mensagens.</div>`;
+        `<div class="legacy-empty-state">Thread ${this.selectedThreadId} sem mensagens.</div>`;
       return;
     }
 
@@ -546,11 +533,11 @@ export class SocialOverlay {
       .map((message) => {
         const stamp = formatAttackLogTime(message.updatetime ?? 0);
         return `
-          <div style="border:1px solid #2f3a55;border-radius:8px;padding:8px;background:#131c30;margin-bottom:6px;">
-            <div style="font-size:12px;color:#d7e2ff;"><strong>${escapeHtml(message.subject ?? "(sem assunto)")}</strong></div>
-            <div style="font-size:12px;color:#b7c8eb;margin-top:2px;">from=${message.userid} to=${message.targetid ?? "?"} type=${escapeHtml(message.messagetype)}</div>
-            <div style="font-size:12px;color:#dce7ff;margin-top:4px;white-space:pre-wrap;">${escapeHtml(message.message ?? "")}</div>
-            <div style="font-size:11px;color:#8398bf;margin-top:4px;">${escapeHtml(stamp)}</div>
+          <div class="legacy-social-message-card">
+            <div class="legacy-social-message-title"><strong>${escapeHtml(message.subject ?? "(sem assunto)")}</strong></div>
+            <div class="legacy-social-message-meta">from=${message.userid} to=${message.targetid ?? "?"} type=${escapeHtml(message.messagetype)}</div>
+            <div class="legacy-social-message-body">${escapeHtml(message.message ?? "")}</div>
+            <div class="legacy-social-message-time">${escapeHtml(stamp)}</div>
           </div>
         `;
       })

@@ -1,13 +1,30 @@
-import { Assets, Container, Graphics, Rectangle, Sprite, Text, Texture } from "pixi.js";
+import { Assets, Container, Graphics, Rectangle, Sprite, Text, Texture, Ticker } from "pixi.js";
 import type { ApiClient, StateStreamSubscription } from "../../lib/api/client";
-import type { ParsedBaseLoad, YardBuilding } from "../../lib/base/baseLoad";
+import type { ParsedBaseLoad, StoreInventoryEntry, YardBuilding } from "../../lib/base/baseLoad";
 import {
+  listBuildingCatalogTabs,
+  listPlacementTypeCatalogEntriesForTab,
+  paginatePlacementTypeCatalogEntries,
   describePlacementType,
   getPlacementTypeExamples,
-  listPlacementTypeCatalogEntries,
   normalizePlacementBuildingTypeInput,
-  type PlacementTypeCatalogEntry,
+  type BuildingCatalogSubTabId,
+  type BuildingCatalogTabId,
 } from "../../lib/base/buildingType";
+import {
+  DEFAULT_BUILDING_TEXTURE_PATH,
+  FALLBACK_BUILDING_TEXTURE_PATH,
+  resolveBuildingTexturePath,
+} from "../../lib/base/buildingTextureCatalog";
+import {
+  DEFAULT_BUILDING_CATALOG_THUMBNAIL_PATH,
+  resolveBuildingCatalogThumbnailPath,
+} from "../../lib/base/buildingThumbnailCatalog";
+import {
+  getBuildingInfoContextActions,
+  isBuildingContextActionId,
+  type BuildingContextActionId,
+} from "../../lib/base/buildingInfoContext";
 import {
   getFootprintCells,
   getLegacyFootprintTilesByType,
@@ -16,7 +33,21 @@ import {
 import { stateSnapshotToParsedBaseLoad } from "../../lib/base/stateSnapshot";
 import type { StateStreamEvent } from "../../lib/contracts/stream";
 import type { StateSnapshotResponse } from "../../lib/contracts/state";
+import type { StoreCatalogItem } from "../../lib/contracts/store";
+import type { YardPlannerTemplate } from "../../lib/contracts/yardPlanner";
 import { applyCmdDeltaToBase } from "../../lib/game/cmdDelta";
+import { LegacyHud } from "../../lib/ui/legacyHud";
+import {
+  LEGACY_SCREEN_INIT_HEIGHT,
+  LEGACY_SCREEN_INIT_WIDTH,
+  LEGACY_WHEEL_MAGNIFICATION_MAX,
+  LEGACY_WHEEL_MAGNIFICATION_MIN,
+  LEGACY_WHEEL_MAGNIFICATION_STEP,
+  LEGACY_ZOOM_DEFAULT_SCALE,
+  LEGACY_ZOOM_TOGGLE_SCALE,
+  clampLegacyCameraTarget,
+  stepLegacyCameraAxis,
+} from "./legacyCamera";
 import { TILE_H, TILE_W, roundDeterministic, worldToScreen } from "./iso";
 import { MaproomOverlay } from "./MaproomOverlay";
 import { SocialOverlay } from "./SocialOverlay";
@@ -34,10 +65,86 @@ type Camera = {
   zoom: number;
 };
 
-const MIN_ZOOM = 0.45;
-const MAX_ZOOM = 2.2;
 const STREAM_RETRY_BASE_MS = 1200;
 const STREAM_RETRY_MAX_MS = 15000;
+const BUILDING_CATALOG_PAGE_SIZE = 10;
+const DEFAULT_STORE_REFRESH_COOLDOWN_MS = 15_000;
+const LEGACY_ZOOMED_TOGGLE_EPSILON = 0.005;
+
+type BuildingFlowMode =
+  | "store"
+  | "academy"
+  | "hatchery"
+  | "bunker"
+  | "lockers"
+  | "juice"
+  | "housing"
+  | "baiter"
+  | "yard_planner";
+
+type StoreFlowMode = Exclude<BuildingFlowMode, "yard_planner" | "academy">;
+
+type StoreFallbackItem = {
+  t: string;
+  d: string;
+  du: number;
+  c: number[];
+  i: number;
+  a: number;
+};
+
+const STORE_FLOW_DEFINITIONS: Record<
+  StoreFlowMode,
+  { title: string; description: string; itemKeys?: string[] }
+> = {
+  store: {
+    title: "Store",
+    description: "Catálogo completo de compras com persistência autoritativa em /cmd.",
+  },
+  hatchery: {
+    title: "Hatchery/HCC",
+    description: "Boosts e aceleração de produção de hatchery.",
+    itemKeys: ["HOD", "HOD2", "HOD3", "HODI", "HOD2I", "HOD3I", "SP4"],
+  },
+  bunker: {
+    title: "Monster Bunker",
+    description: "Ações de aceleração do bunker e itens relacionados.",
+    itemKeys: ["BUNK", "SP4", "CLOD"],
+  },
+  lockers: {
+    title: "Lockers/Strongbox",
+    description: "Itens ligados a locker e aceleração associada.",
+    itemKeys: ["CLOD", "SP4"],
+  },
+  juice: {
+    title: "Juice Monsters",
+    description: "Aceleração de juice/housing e itens de suporte.",
+    itemKeys: ["MUSK", "SP4", "BLK4", "BLK5", "BLK2I", "BLK3I"],
+  },
+  housing: {
+    title: "Housing/Compound",
+    description: "Boosts de capacidade e speedups de housing.",
+    itemKeys: ["BLK2", "BLK3", "BLK4", "BLK5", "BLK2I", "BLK3I", "SP4"],
+  },
+  baiter: {
+    title: "Monster Baiter",
+    description: "Top-up do baiter e aceleração.",
+    itemKeys: ["MUSK", "SP4"],
+  },
+};
+
+const STORE_FALLBACK_ITEMS: Record<string, StoreFallbackItem> = {
+  BUNK: {
+    t: "Bunker Instant Monsters",
+    d: "Compra instantânea de suporte ao Monster Bunker.",
+    du: 0,
+    c: [1],
+    i: 0,
+    a: 1,
+  },
+};
+
+const YARD_PLANNER_SLOT_IDS = [1, 2, 3, 4, 5, 6];
 
 const TERRAIN_ASSET_BY_THEME: Record<NonNullable<ParsedBaseLoad["yardTheme"]>, string[]> = {
   grass: [
@@ -51,8 +158,8 @@ const TERRAIN_ASSET_BY_THEME: Record<NonNullable<ParsedBaseLoad["yardTheme"]>, s
 };
 
 const BUILDING_ASSET_CANDIDATES = [
-  "assets/buildings/yardplanner/top.1.png",
-  "assets/yard/building-placeholder.png",
+  DEFAULT_BUILDING_TEXTURE_PATH,
+  FALLBACK_BUILDING_TEXTURE_PATH,
 ];
 
 export class YardScene {
@@ -64,7 +171,9 @@ export class YardScene {
   private terrainSpriteLayer = new Container();
   private terrainFallbackLayer = new Graphics();
   private buildingLayer = new Container();
-  private buildingTexture: Texture | null = null;
+  private defaultBuildingTexture: Texture | null = null;
+  private buildingTexturesByType = new Map<string, Texture>();
+  private buildingTextureLoadsInFlight = new Set<string>();
   private terrainTexture: Texture | null = null;
 
   private tooltip = new Text({ text: "", style: { fill: 0xffffff, fontSize: 13 } as any });
@@ -76,9 +185,12 @@ export class YardScene {
   private resourcesText = new Text({ text: "", style: { fill: 0x7ed39e, fontSize: 12 } as any });
   private placementType = "hq";
 
-  private camera: Camera = { x: 0, y: 0, zoom: 1 };
+  private camera: Camera = { x: 0, y: 0, zoom: LEGACY_ZOOM_DEFAULT_SCALE };
+  private cameraTarget = { x: 0, y: 0 };
+  private legacyZoomed = false;
   private dragging = false;
   private lastPointer = { x: 0, y: 0 };
+  private yardOrigin = { x: 0, y: 0 };
   private baseState: ParsedBaseLoad;
   private selectedBuildingId: string | null = null;
   private lastAppliedSeq = 0;
@@ -93,9 +205,34 @@ export class YardScene {
 
   private buildingControlWrapper: HTMLDivElement | null = null;
   private buildingControlDetails: HTMLDivElement | null = null;
-  private buildingControlTypeSelect: HTMLSelectElement | null = null;
   private buildingControlSearchInput: HTMLInputElement | null = null;
+  private buildingControlTabs: HTMLDivElement | null = null;
+  private buildingControlSubTabs: HTMLDivElement | null = null;
+  private buildingControlCatalog: HTMLDivElement | null = null;
+  private buildingControlPagination: HTMLDivElement | null = null;
+  private buildingControlContextActions: HTMLDivElement | null = null;
   private buildingControlVisible = true;
+  private buildingControlTab: BuildingCatalogTabId = "resources";
+  private buildingControlSubTab: BuildingCatalogSubTabId = "all";
+  private buildingControlPage = 0;
+
+  private storeCatalogItems: Record<string, StoreCatalogItem> = {};
+  private lastStoreCatalogRefreshAt = 0;
+  private buildingFlowMode: BuildingFlowMode | null = null;
+  private buildingFlowWrapper: HTMLDivElement | null = null;
+  private buildingFlowTitleEl: HTMLElement | null = null;
+  private buildingFlowDescriptionEl: HTMLElement | null = null;
+  private buildingFlowStatusEl: HTMLElement | null = null;
+  private buildingFlowSearchInput: HTMLInputElement | null = null;
+  private buildingFlowContentEl: HTMLDivElement | null = null;
+  private buildingFlowSearchQuery = "";
+  private yardPlannerTemplates: YardPlannerTemplate[] = [];
+  private legacyHud: LegacyHud | null = null;
+  private lastHudStatusText = "";
+  private windowKeydownHandler: ((event: KeyboardEvent) => void) | null = null;
+  private windowWheelHandler: ((event: WheelEvent) => void) | null = null;
+  private readonly cameraTick = () => this.tickCamera();
+  private readonly handleResize = () => this.handleViewportResize();
 
   constructor(private readonly deps: YardSceneDeps) {
     this.baseState = deps.base;
@@ -125,23 +262,31 @@ export class YardScene {
     root.addChild(this.world, this.overlay, this.uiLayer);
 
     this.terrainTexture = await this.loadTerrainTexture(terrainTheme);
-    this.buildingTexture = await this.loadBuildingTexture();
+    this.defaultBuildingTexture = await this.loadBuildingTexture();
+    this.queueBuildingTextureLoads(this.baseState.buildings);
     this.buildGrid(base.yardWidth, base.yardHeight);
     this.renderBuildings(this.baseState.buildings);
     this.initCamera(base.yardWidth, base.yardHeight);
     this.setupInput(base.yardWidth, base.yardHeight);
     this.setupTooltip();
+    Ticker.shared.add(this.cameraTick);
+    window.addEventListener("resize", this.handleResize);
 
     const terrainSource = this.terrainTexture ? "texture" : "fallback";
-    const buildingSource = this.buildingTexture ? "texture" : "fallback";
+    const buildingSource = this.defaultBuildingTexture
+      ? `texture(${this.buildingTexturesByType.size} loaded)`
+      : "fallback";
 
     const footer = new Text({
-      text: `Buildings: ${base.buildings.length} • Wheel: zoom • Drag: pan • Click: selecionar tile • Shift+Click: Place/Move rápido • Alt+Click/U: Upgrade • X: Cancel upgrade • C: Collect • B/O: painel de building • M: Maproom • L: Social`,
+      text: `Legacy HUD ativo • Wheel: magnify • Z: zoom legado (1x/0.5x) • Shift+Click: Place/Move • Alt+Click/U: Upgrade • X: Cancel • C: Collect • M: Maproom • L: Social`,
       style: { fill: 0x8fa5d6, fontSize: 12 } as any,
     });
     footer.position.set(12, 110);
+    footer.visible = false;
     this.statusText.position.set(12, 132);
     this.resourcesText.position.set(12, 154);
+    this.statusText.visible = false;
+    this.resourcesText.visible = false;
     const placementFootprint = getLegacyFootprintTilesByType(this.placementType);
     this.statusText.text =
       `Build mode: ready • placeType=${this.placementType} (${placementFootprint.width}x${placementFootprint.height}) ` +
@@ -149,34 +294,29 @@ export class YardScene {
     this.updateResourcesText();
     this.uiLayer.addChild(footer, this.statusText, this.resourcesText);
     this.ensureBuildingControlPanel();
+    this.ensureBuildingFlowOverlay();
+    void this.refreshStoreCatalog({ force: true, silentStatus: true });
 
     this.maproomOverlay = new MaproomOverlay(this.deps.api);
     this.socialOverlay = new SocialOverlay(this.deps.api);
+    this.initLegacyHud();
     this.startStateStream();
-    window.addEventListener("beforeunload", () => this.stopStateStream(), { once: true });
+    window.addEventListener("beforeunload", () => this.teardown(), { once: true });
   }
 
   private initCamera(cols: number, rows: number): void {
-    const center = worldToScreen(cols / 2, rows / 2);
+    this.updateYardOrigin(cols, rows);
     const viewport = getViewportSize();
-
-    const mapPixelWidth = (cols + rows) * (TILE_W / 2);
-    const mapPixelHeight = (cols + rows) * (TILE_H / 2) + TILE_H * 2;
-
-    const fitZoom = clamp(
-      roundDeterministic(
-        Math.min((viewport.width * 0.72) / mapPixelWidth, (viewport.height * 0.72) / mapPixelHeight),
-        4
-      ),
-      MIN_ZOOM,
-      1.15
-    );
-
     this.camera = {
-      x: viewport.width / 2 - center.x * fitZoom,
-      y: viewport.height / 2 - center.y * fitZoom,
-      zoom: fitZoom,
+      x: viewport.width / 2,
+      y: viewport.height / 2,
+      zoom: LEGACY_ZOOM_DEFAULT_SCALE,
     };
+    this.cameraTarget = { x: this.camera.x, y: this.camera.y };
+    this.legacyZoomed = false;
+    this.clampCameraTargetToLegacyBounds();
+    this.camera.x = this.cameraTarget.x;
+    this.camera.y = this.cameraTarget.y;
 
     this.applyCamera();
   }
@@ -186,6 +326,134 @@ export class YardScene {
     this.world.scale.set(this.camera.zoom);
     this.overlay.position.set(this.camera.x, this.camera.y);
     this.overlay.scale.set(this.camera.zoom);
+  }
+
+  private tickCamera(): void {
+    this.syncLegacyHud();
+    this.clampCameraTargetToLegacyBounds();
+    const nextX = stepLegacyCameraAxis(this.camera.x, this.cameraTarget.x);
+    const nextY = stepLegacyCameraAxis(this.camera.y, this.cameraTarget.y);
+
+    if (nextX === this.camera.x && nextY === this.camera.y) {
+      return;
+    }
+
+    this.camera.x = roundDeterministic(nextX, 3);
+    this.camera.y = roundDeterministic(nextY, 3);
+    this.applyCamera();
+  }
+
+  private clampCameraTargetToLegacyBounds(): void {
+    this.cameraTarget = clampLegacyCameraTarget(this.cameraTarget, getViewportSize(), this.legacyZoomed);
+  }
+
+  private centerCameraOnLegacyOrigin(immediate: boolean): void {
+    const viewport = getViewportSize();
+    this.cameraTarget = {
+      x: viewport.width / 2,
+      y: viewport.height / 2,
+    };
+    this.clampCameraTargetToLegacyBounds();
+    if (immediate) {
+      this.camera.x = this.cameraTarget.x;
+      this.camera.y = this.cameraTarget.y;
+      this.applyCamera();
+    }
+  }
+
+  private handleViewportResize(): void {
+    this.clampCameraTargetToLegacyBounds();
+    const clampedCurrent = clampLegacyCameraTarget(
+      { x: this.camera.x, y: this.camera.y },
+      getViewportSize(),
+      this.legacyZoomed
+    );
+    this.camera.x = clampedCurrent.x;
+    this.camera.y = clampedCurrent.y;
+    this.applyCamera();
+  }
+
+  private applyLegacyWheelMagnification(deltaY: number): void {
+    if (!Number.isFinite(deltaY) || deltaY === 0) return;
+
+    const legacyNotch = deltaY > 0 ? -1 : 1;
+    const nextZoom = clamp(
+      roundDeterministic(this.camera.zoom + legacyNotch * LEGACY_WHEEL_MAGNIFICATION_STEP, 4),
+      LEGACY_WHEEL_MAGNIFICATION_MIN,
+      LEGACY_WHEEL_MAGNIFICATION_MAX
+    );
+
+    if (nextZoom === this.camera.zoom) return;
+
+    this.camera.zoom = nextZoom;
+    this.legacyZoomed = this.camera.zoom <= LEGACY_ZOOM_TOGGLE_SCALE + LEGACY_ZOOMED_TOGGLE_EPSILON;
+    this.centerCameraOnLegacyOrigin(true);
+  }
+
+  private toggleLegacyZoomMode(): void {
+    this.legacyZoomed = !this.legacyZoomed;
+    this.camera.zoom = this.legacyZoomed
+      ? LEGACY_ZOOM_TOGGLE_SCALE
+      : LEGACY_ZOOM_DEFAULT_SCALE;
+    this.centerCameraOnLegacyOrigin(false);
+    this.applyCamera();
+  }
+
+  private teardown(): void {
+    window.removeEventListener("resize", this.handleResize);
+    if (this.windowKeydownHandler) {
+      window.removeEventListener("keydown", this.windowKeydownHandler);
+      this.windowKeydownHandler = null;
+    }
+    if (this.windowWheelHandler) {
+      window.removeEventListener("wheel", this.windowWheelHandler);
+      this.windowWheelHandler = null;
+    }
+    this.legacyHud?.dispose();
+    this.legacyHud = null;
+    Ticker.shared.remove(this.cameraTick);
+    this.stopStateStream();
+  }
+
+  private initLegacyHud(): void {
+    if (typeof document === "undefined") return;
+    if (this.legacyHud) return;
+
+    this.legacyHud = new LegacyHud({
+      onOpenBuildOps: () => this.toggleBuildingControlPanel(true),
+      onOpenStore: () => {
+        void this.openStoreFlow("store");
+      },
+      onOpenMaproom: () => {
+        void this.maproomOverlay?.open();
+      },
+      onOpenSocial: () => {
+        void this.socialOverlay?.open();
+      },
+      onToggleZoom: () => this.toggleLegacyZoomMode(),
+      onCenterYard: () => this.centerCameraOnLegacyOrigin(false),
+      onCollectAll: () => {
+        void this.executeCollectAllHarvesters();
+      },
+    });
+
+    this.syncLegacyHud();
+  }
+
+  private syncLegacyHud(): void {
+    if (!this.legacyHud) return;
+
+    this.legacyHud.updateResources(this.baseState.resources, this.baseState.credits);
+    this.legacyHud.updateCounters({
+      gift: 0,
+      inbox: 0,
+      alert: 0,
+    });
+
+    const nextStatus = this.statusText.text.trim();
+    if (nextStatus === this.lastHudStatusText) return;
+    this.lastHudStatusText = nextStatus;
+    this.legacyHud.updateStatus(nextStatus);
   }
 
   private setupInput(cols: number, rows: number): void {
@@ -209,9 +477,9 @@ export class YardScene {
         const dx = current.x - this.lastPointer.x;
         const dy = current.y - this.lastPointer.y;
         this.lastPointer = current;
-        this.camera.x += dx;
-        this.camera.y += dy;
-        this.applyCamera();
+        this.cameraTarget.x += dx;
+        this.cameraTarget.y += dy;
+        this.clampCameraTargetToLegacyBounds();
       }
 
       const tile = this.pointerToTile(current.x, current.y);
@@ -255,7 +523,7 @@ export class YardScene {
       await this.executePlaceAtTile(tile.tx, tile.ty);
     });
 
-    window.addEventListener("keydown", (e) => {
+    this.windowKeydownHandler = (e) => {
       if (isTypingTarget(e.target)) return;
 
       const key = e.key.toLowerCase();
@@ -279,6 +547,11 @@ export class YardScene {
         return;
       }
 
+      if (key === "z") {
+        this.toggleLegacyZoomMode();
+        return;
+      }
+
       if (key === "u") {
         void this.executeUpgradeForSelected();
         return;
@@ -291,24 +564,24 @@ export class YardScene {
 
       if (key === "c") {
         void this.executeCollectForSelected();
+        return;
       }
-    });
 
-    window.addEventListener(
-      "wheel",
-      (e) => {
-        const direction = e.deltaY > 0 ? -1 : 1;
-        const factor = direction > 0 ? 1.08 : 0.92;
-        this.camera.zoom = clamp(roundDeterministic(this.camera.zoom * factor, 4), MIN_ZOOM, MAX_ZOOM);
-        this.applyCamera();
-      },
-      { passive: true }
-    );
+      if (key === "r") {
+        void this.executeStartRepairForSelected();
+      }
+    };
+    window.addEventListener("keydown", this.windowKeydownHandler);
+
+    this.windowWheelHandler = (e) => {
+      this.applyLegacyWheelMagnification(e.deltaY);
+    };
+    window.addEventListener("wheel", this.windowWheelHandler, { passive: true });
   }
 
   private pointerToTile(screenX: number, screenY: number): { tx: number; ty: number } | null {
-    const worldX = (screenX - this.camera.x) / this.camera.zoom;
-    const worldY = (screenY - this.camera.y) / this.camera.zoom;
+    const worldX = (screenX - this.camera.x) / this.camera.zoom + this.yardOrigin.x;
+    const worldY = (screenY - this.camera.y) / this.camera.zoom + this.yardOrigin.y;
 
     const tx = (worldY / (TILE_H / 2) + worldX / (TILE_W / 2)) / 2;
     const ty = (worldY / (TILE_H / 2) - worldX / (TILE_W / 2)) / 2;
@@ -320,14 +593,29 @@ export class YardScene {
     };
   }
 
+  private updateYardOrigin(cols: number, rows: number): void {
+    const centerTileX = Math.max(0, (cols - 1) / 2);
+    const centerTileY = Math.max(0, (rows - 1) / 2);
+    this.yardOrigin = worldToScreen(centerTileX, centerTileY);
+  }
+
+  private tileToYardWorld(tx: number, ty: number): { x: number; y: number } {
+    const point = worldToScreen(tx, ty);
+    return {
+      x: point.x - this.yardOrigin.x,
+      y: point.y - this.yardOrigin.y,
+    };
+  }
+
   private buildGrid(cols: number, rows: number): void {
+    this.updateYardOrigin(cols, rows);
     this.terrainSpriteLayer.removeChildren();
     this.terrainFallbackLayer.clear();
     this.grid.clear();
 
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
-        const p = worldToScreen(x, y);
+        const p = this.tileToYardWorld(x, y);
 
         if (this.terrainTexture) {
           const tileSprite = new Sprite(this.terrainTexture);
@@ -373,24 +661,38 @@ export class YardScene {
 
   private renderBuildings(buildings: YardBuilding[]): void {
     this.buildingLayer.removeChildren();
+    this.queueBuildingTextureLoads(buildings);
 
     buildings.forEach((building) => {
-      const p = worldToScreen(building.x, building.y);
-      const sprite = new Sprite(this.buildingTexture ?? Texture.WHITE);
+      const footprint = this.resolveFootprintForBuilding(building);
+      const p = this.tileToYardWorld(building.x, building.y);
+      const texture = this.resolveBuildingTexture(building);
+      const hasTexture = Boolean(texture);
+      const sprite = new Sprite(texture ?? Texture.WHITE);
 
-      sprite.anchor.set(0.5, this.buildingTexture ? 0.86 : 0.9);
+      sprite.anchor.set(0.5, hasTexture ? 0.86 : 0.9);
       sprite.position.set(p.x, p.y + TILE_H * 0.58);
-      sprite.width = this.buildingTexture ? 78 : 56;
-      sprite.height = this.buildingTexture ? 74 : 48;
+      if (hasTexture) {
+        const textureWidth = Math.max(1, texture?.width ?? 1);
+        const targetWidth = Math.max(58, footprint.width * TILE_W * 0.9);
+        const textureScale = clamp(
+          roundDeterministic(targetWidth / textureWidth, 4),
+          0.25,
+          2.4
+        );
+        sprite.scale.set(textureScale);
+      } else {
+        sprite.width = Math.max(56, footprint.width * TILE_W * 0.58);
+        sprite.height = Math.max(48, footprint.height * TILE_H * 1.45);
+      }
       sprite.eventMode = "static";
       sprite.cursor = "pointer";
-      sprite.tint = this.buildingTexture ? 0xffffff : 0x8be28d;
+      sprite.tint = hasTexture ? 0xffffff : 0x8be28d;
       sprite.zIndex = building.y * 100 + building.x;
 
       sprite.on("pointerenter", (e) => {
-        sprite.tint = this.buildingTexture ? 0xddf7df : 0xb9f5bb;
+        sprite.tint = hasTexture ? 0xddf7df : 0xb9f5bb;
         const suffix = typeof building.level === "number" ? ` Lv.${building.level}` : "";
-        const footprint = this.resolveFootprintForBuilding(building);
         const pending =
           typeof building.countdownUpgrade === "number" && building.countdownUpgrade > 0
             ? ` -> Lv.${building.upgradeToLevel ?? "?"} (${building.countdownUpgrade}s)`
@@ -402,7 +704,7 @@ export class YardScene {
         );
       });
       sprite.on("pointerleave", () => {
-        sprite.tint = this.buildingTexture ? 0xffffff : 0x8be28d;
+        sprite.tint = hasTexture ? 0xffffff : 0x8be28d;
         this.hideTooltip();
       });
       sprite.on("click", async (e) => {
@@ -439,6 +741,41 @@ export class YardScene {
     return this.loadFirstRenderableTexture(BUILDING_ASSET_CANDIDATES);
   }
 
+  private resolveBuildingTexture(building: YardBuilding): Texture | null {
+    const normalized = normalizePlacementBuildingTypeInput(building.type);
+    const canonicalType = normalized?.canonicalType ?? building.type.trim().toLowerCase();
+    return this.buildingTexturesByType.get(canonicalType) ?? this.defaultBuildingTexture;
+  }
+
+  private queueBuildingTextureLoads(buildings: YardBuilding[]): void {
+    for (const building of buildings) {
+      this.queueBuildingTextureLoad(building.type);
+    }
+  }
+
+  private queueBuildingTextureLoad(rawType: string): void {
+    const normalized = normalizePlacementBuildingTypeInput(rawType);
+    if (!normalized) return;
+
+    const canonicalType = normalized.canonicalType;
+    if (this.buildingTexturesByType.has(canonicalType)) return;
+    if (this.buildingTextureLoadsInFlight.has(canonicalType)) return;
+
+    const relativePath = resolveBuildingTexturePath(canonicalType);
+    if (!relativePath) return;
+
+    this.buildingTextureLoadsInFlight.add(canonicalType);
+    void this.loadFirstRenderableTexture([relativePath])
+      .then((texture) => {
+        if (!texture) return;
+        this.buildingTexturesByType.set(canonicalType, texture);
+        this.renderBuildings(this.baseState.buildings);
+      })
+      .finally(() => {
+        this.buildingTextureLoadsInFlight.delete(canonicalType);
+      });
+  }
+
   private async loadFirstRenderableTexture(relativePaths: string[]): Promise<Texture | null> {
     const seenUrls = new Set<string>();
 
@@ -473,7 +810,7 @@ export class YardScene {
 
     const cells = getFootprintCells(tx, ty, footprint);
     for (const cell of cells) {
-      const p = worldToScreen(cell.x, cell.y);
+      const p = this.tileToYardWorld(cell.x, cell.y);
       target.poly([
         p.x,
         p.y,
@@ -603,6 +940,9 @@ export class YardScene {
 
     this.renderBuildings(nextBase.buildings);
     this.updateResourcesText();
+    if (this.buildingFlowMode === "academy") {
+      this.renderAcademyFlow();
+    }
   }
 
   private scheduleReconnect(): void {
@@ -640,6 +980,9 @@ export class YardScene {
     this.baseState = applyCmdDeltaToBase(this.baseState, items);
     this.renderBuildings(this.baseState.buildings);
     this.updateResourcesText();
+    if (this.buildingFlowMode === "academy") {
+      this.renderAcademyFlow();
+    }
   }
 
   private applyCmdResponse(response: { seq?: number; delta?: unknown }): void {
@@ -652,17 +995,23 @@ export class YardScene {
   private updateResourcesText(): void {
     const resources = this.baseState.resources;
     if (!resources) {
-      this.resourcesText.text = "Resources: n/a";
+      const creditsLabel =
+        typeof this.baseState.credits === "number" ? ` • Credits=${this.baseState.credits}` : "";
+      this.resourcesText.text = `Resources: n/a${creditsLabel}`;
       this.renderBuildingControlPanel();
+      this.syncLegacyHud();
       return;
     }
 
+    const creditsLabel =
+      typeof this.baseState.credits === "number" ? ` • Credits=${this.baseState.credits}` : "";
     this.resourcesText.text =
       `Resources r1=${resources.r1}/${resources.r1max} ` +
       `r2=${resources.r2}/${resources.r2max} ` +
       `r3=${resources.r3}/${resources.r3max} ` +
-      `r4=${resources.r4}/${resources.r4max}`;
+      `r4=${resources.r4}/${resources.r4max}${creditsLabel}`;
     this.renderBuildingControlPanel();
+    this.syncLegacyHud();
   }
 
   private getSelectedBuildingId(): string | null {
@@ -732,6 +1081,166 @@ export class YardScene {
     }
   }
 
+  private async executeCollectAllHarvesters(): Promise<void> {
+    const resourceBuildings = this.baseState.buildings.filter((building) => {
+      const entry = describePlacementType(building.type);
+      return entry?.category === "resource";
+    });
+
+    if (resourceBuildings.length === 0) {
+      this.statusText.text = "Nenhum coletor de recurso encontrado para coletar.";
+      this.renderBuildingControlPanel();
+      return;
+    }
+
+    this.statusText.text = `CollectHarvester all (${resourceBuildings.length})...`;
+    this.renderBuildingControlPanel();
+
+    let okCount = 0;
+    let failCount = 0;
+    let firstError = "";
+
+    for (const building of resourceBuildings) {
+      try {
+        const response = await this.deps.api.collectHarvester({ buildingId: building.id });
+        this.applyCmdResponse(response);
+        okCount += 1;
+      } catch (error) {
+        failCount += 1;
+        if (!firstError) {
+          firstError = String((error as Error)?.message ?? error);
+        }
+      }
+    }
+
+    if (failCount === 0) {
+      this.statusText.text = `Collect all ok (${okCount}/${resourceBuildings.length}).`;
+    } else {
+      this.statusText.text =
+        `Collect all parcial (${okCount} ok / ${failCount} falhas).` +
+        (firstError ? ` Primeiro erro: ${firstError}` : "");
+    }
+
+    this.renderBuildingControlPanel();
+  }
+
+  private async executeStartRepairForSelected(): Promise<void> {
+    const building = this.getSelectedBuilding();
+    if (!building) {
+      this.statusText.text = "Nenhum building selecionado para reparar.";
+      this.renderBuildingControlPanel();
+      return;
+    }
+
+    if (!this.isBuildingDamaged(building)) {
+      this.statusText.text = "Building selecionado nao esta danificado.";
+      this.renderBuildingControlPanel();
+      return;
+    }
+
+    try {
+      this.statusText.text = `StartRepairBuilding #${building.id}...`;
+      const response = await this.deps.api.startRepairBuilding({ buildingId: building.id });
+      this.applyCmdResponse(response);
+      this.statusText.text = `StartRepairBuilding ok (seq=${response.seq ?? "?"})`;
+    } catch (err) {
+      this.statusText.text = `Repair falhou: ${String((err as Error)?.message ?? err)}`;
+      this.renderBuildingControlPanel();
+    }
+  }
+
+  private async executeStartRepairAll(): Promise<void> {
+    const damagedCount = this.countDamagedBuildings();
+    if (damagedCount <= 0) {
+      this.statusText.text = "Nao ha buildings danificados para reparar.";
+      this.renderBuildingControlPanel();
+      return;
+    }
+
+    try {
+      this.statusText.text = `StartRepairAllBuildings (${damagedCount})...`;
+      const response = await this.deps.api.startRepairAllBuildings({});
+      this.applyCmdResponse(response);
+      const queuedCount =
+        response.delta?.filter((deltaItem) => deltaItem.op === "setBuildingRepairState")
+          .length ?? 0;
+      this.statusText.text = `StartRepairAllBuildings ok (${queuedCount}/${damagedCount})`;
+    } catch (err) {
+      this.statusText.text = `Repair all falhou: ${String((err as Error)?.message ?? err)}`;
+      this.renderBuildingControlPanel();
+    }
+  }
+
+  private async executeBuildingContextAction(actionId: BuildingContextActionId): Promise<void> {
+    switch (actionId) {
+      case "upgrade_selected":
+        await this.executeUpgradeForSelected();
+        return;
+      case "cancel_upgrade_selected":
+        await this.executeCancelUpgradeForSelected();
+        return;
+      case "start_repair_selected":
+        await this.executeStartRepairForSelected();
+        return;
+      case "start_repair_all":
+        await this.executeStartRepairAll();
+        return;
+      case "collect_selected":
+        await this.executeCollectForSelected();
+        return;
+      case "collect_all_resources":
+        await this.executeCollectAllHarvesters();
+        return;
+      case "open_maproom":
+        if (!this.maproomOverlay) {
+          this.statusText.text = "Maproom indisponível neste runtime.";
+          this.renderBuildingControlPanel();
+          return;
+        }
+        await this.maproomOverlay.open();
+        this.statusText.text = "Maproom aberta.";
+        this.renderBuildingControlPanel();
+        return;
+      case "open_social":
+        if (!this.socialOverlay) {
+          this.statusText.text = "Social indisponível neste runtime.";
+          this.renderBuildingControlPanel();
+          return;
+        }
+        await this.socialOverlay.open();
+        this.statusText.text = "Social aberta.";
+        this.renderBuildingControlPanel();
+        return;
+      case "open_store":
+        await this.openStoreFlow("store");
+        return;
+      case "open_academy":
+        await this.openAcademyFlow();
+        return;
+      case "open_hatchery":
+        await this.openStoreFlow("hatchery");
+        return;
+      case "open_bunker":
+        await this.openStoreFlow("bunker");
+        return;
+      case "open_yard_planner":
+        await this.openYardPlannerFlow();
+        return;
+      case "open_lockers":
+        await this.openStoreFlow("lockers");
+        return;
+      case "open_juice":
+        await this.openStoreFlow("juice");
+        return;
+      case "open_housing":
+        await this.openStoreFlow("housing");
+        return;
+      case "open_baiter":
+        await this.openStoreFlow("baiter");
+        return;
+    }
+  }
+
   private async executePlaceAtTile(x: number, y: number): Promise<void> {
     try {
       this.statusText.text = `PlaceBuilding -> (${x}, ${y})...`;
@@ -775,40 +1284,36 @@ export class YardScene {
     if (typeof document === "undefined" || this.buildingControlWrapper) return;
 
     const wrapper = document.createElement("div");
-    wrapper.style.position = "fixed";
-    wrapper.style.left = "12px";
-    wrapper.style.top = "184px";
-    wrapper.style.width = "min(94vw, 410px)";
-    wrapper.style.maxHeight = "42vh";
-    wrapper.style.overflow = "auto";
-    wrapper.style.zIndex = "9997";
-    wrapper.style.background = "rgba(9, 16, 28, 0.96)";
-    wrapper.style.border = "1px solid #2f3a55";
-    wrapper.style.borderRadius = "10px";
-    wrapper.style.padding = "10px";
-    wrapper.style.color = "#ffffff";
+    wrapper.className = "legacy-window legacy-window-building";
+    wrapper.dataset.legacyTheme = "active";
+    wrapper.dataset.legacyFrame = "frame2";
     wrapper.style.display = "block";
 
     wrapper.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
-        <strong style="font-size:13px;">Building Ops</strong>
-        <button data-building-toggle style="padding:4px 8px;background:#2d3d60;border:none;color:#fff;border-radius:6px;cursor:pointer;">Ocultar (O)</button>
+      <div class="legacy-window-header">
+        <strong class="legacy-window-title">Building Ops</strong>
+        <button data-building-toggle class="legacy-btn legacy-btn-ghost">Ocultar (O)</button>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+      <div class="legacy-form-row">
         <input data-building-search placeholder="Filtrar tipo/código/classe"
-          style="flex:1;min-width:170px;padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;" />
-        <select data-building-type
-          style="flex:1;min-width:170px;padding:6px;border-radius:6px;border:1px solid #2f3a55;background:#10172b;color:#fff;"></select>
+          class="legacy-input legacy-input-wide" />
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
-        <button data-building-place style="padding:6px 8px;background:#3a78e0;border:none;color:#fff;border-radius:6px;cursor:pointer;">Place no tile</button>
-        <button data-building-move style="padding:6px 8px;background:#2a9d7b;border:none;color:#fff;border-radius:6px;cursor:pointer;">Mover selecionado</button>
-        <button data-building-upgrade style="padding:6px 8px;background:#7b57d6;border:none;color:#fff;border-radius:6px;cursor:pointer;">Upgrade</button>
-        <button data-building-cancel style="padding:6px 8px;background:#a65a2a;border:none;color:#fff;border-radius:6px;cursor:pointer;">Cancelar</button>
-        <button data-building-collect style="padding:6px 8px;background:#20905e;border:none;color:#fff;border-radius:6px;cursor:pointer;">Coletar</button>
-        <button data-building-clear style="padding:6px 8px;background:#37445f;border:none;color:#fff;border-radius:6px;cursor:pointer;">Desselecionar</button>
+      <div data-building-tabs class="legacy-chip-row"></div>
+      <div data-building-subtabs class="legacy-chip-row"></div>
+      <div data-building-catalog class="legacy-building-catalog"></div>
+      <div data-building-pagination class="legacy-form-row legacy-form-row-spread"></div>
+      <div data-building-context-actions class="legacy-chip-row"></div>
+      <div class="legacy-form-row legacy-form-row-wrap">
+        <button data-building-place class="legacy-btn legacy-btn-primary">Place no tile</button>
+        <button data-building-move class="legacy-btn legacy-btn-positive">Mover selecionado</button>
+        <button data-building-upgrade class="legacy-btn legacy-btn-primary">Upgrade</button>
+        <button data-building-cancel class="legacy-btn legacy-btn-danger">Cancelar</button>
+        <button data-building-repair class="legacy-btn legacy-btn-primary">Reparar</button>
+        <button data-building-repair-all class="legacy-btn legacy-btn-primary">Reparar todos</button>
+        <button data-building-collect class="legacy-btn legacy-btn-positive">Coletar</button>
+        <button data-building-clear class="legacy-btn legacy-btn-ghost">Desselecionar</button>
       </div>
-      <div data-building-details style="font-size:12px;color:#d5e0ff;line-height:1.45;background:#141f36;border:1px solid #2f3a55;border-radius:8px;padding:8px;"></div>
+      <div data-building-details class="legacy-info-box"></div>
     `;
 
     wrapper.querySelector<HTMLButtonElement>("[data-building-toggle]")?.addEventListener("click", () => {
@@ -843,6 +1348,14 @@ export class YardScene {
       void this.executeCancelUpgradeForSelected();
     });
 
+    wrapper.querySelector<HTMLButtonElement>("[data-building-repair]")?.addEventListener("click", () => {
+      void this.executeStartRepairForSelected();
+    });
+
+    wrapper.querySelector<HTMLButtonElement>("[data-building-repair-all]")?.addEventListener("click", () => {
+      void this.executeStartRepairAll();
+    });
+
     wrapper.querySelector<HTMLButtonElement>("[data-building-collect]")?.addEventListener("click", () => {
       void this.executeCollectForSelected();
     });
@@ -866,42 +1379,84 @@ export class YardScene {
       this.renderBuildingControlPanel();
     });
 
-    this.buildingControlTypeSelect = wrapper.querySelector<HTMLSelectElement>("[data-building-type]");
     this.buildingControlSearchInput = wrapper.querySelector<HTMLInputElement>("[data-building-search]");
+    this.buildingControlTabs = wrapper.querySelector<HTMLDivElement>("[data-building-tabs]");
+    this.buildingControlSubTabs = wrapper.querySelector<HTMLDivElement>("[data-building-subtabs]");
+    this.buildingControlCatalog = wrapper.querySelector<HTMLDivElement>("[data-building-catalog]");
+    this.buildingControlPagination = wrapper.querySelector<HTMLDivElement>("[data-building-pagination]");
+    this.buildingControlContextActions = wrapper.querySelector<HTMLDivElement>(
+      "[data-building-context-actions]"
+    );
     this.buildingControlDetails = wrapper.querySelector<HTMLDivElement>("[data-building-details]");
 
-    this.buildingControlTypeSelect?.addEventListener("change", () => {
-      const nextType = this.buildingControlTypeSelect?.value;
-      if (!nextType) return;
+    this.buildingControlTabs?.addEventListener("click", (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-building-tab]");
+      const nextTabRaw = button?.dataset.buildingTab;
+      if (!nextTabRaw || !isBuildingCatalogTabId(nextTabRaw)) return;
+      if (this.buildingControlTab === nextTabRaw) return;
+      this.buildingControlTab = nextTabRaw;
+      this.buildingControlSubTab = "all";
+      this.buildingControlPage = 0;
+      this.renderBuildingControlPanel();
+    });
 
-      const normalized = normalizePlacementBuildingTypeInput(nextType);
-      if (!normalized) {
-        this.statusText.text = `Tipo inválido: ${nextType}`;
-        this.renderBuildingControlPanel();
+    this.buildingControlSubTabs?.addEventListener("click", (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-building-subtab]");
+      const nextSubTabRaw = button?.dataset.buildingSubtab;
+      if (!nextSubTabRaw || !isBuildingCatalogSubTabId(nextSubTabRaw)) return;
+      if (this.buildingControlSubTab === nextSubTabRaw) return;
+      this.buildingControlSubTab = nextSubTabRaw;
+      this.buildingControlPage = 0;
+      this.renderBuildingControlPanel();
+    });
+
+    this.buildingControlPagination?.addEventListener("click", (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-building-page]");
+      const pageAction = button?.dataset.buildingPage;
+      if (pageAction === "prev") {
+        this.buildingControlPage = Math.max(0, this.buildingControlPage - 1);
+      } else if (pageAction === "next") {
+        this.buildingControlPage += 1;
+      } else {
+        return;
+      }
+      this.renderBuildingControlPanel();
+    });
+
+    this.buildingControlCatalog?.addEventListener("click", (event) => {
+      const storeButton = (event.target as HTMLElement).closest<HTMLButtonElement>(
+        "[data-building-store-buy]"
+      );
+      const storeItem = storeButton?.dataset.buildingStoreBuy;
+      if (storeItem) {
+        const quantity = parseIntSafe(storeButton.dataset.buildingStoreQuantity, 1);
+        void this.executeStoreFlowPurchase(storeItem, quantity);
         return;
       }
 
-      this.placementType = normalized.canonicalType;
-      const footprint = getLegacyFootprintTilesByType(this.placementType);
-      this.statusText.text = `placeType atualizado: ${this.placementType} (${footprint.width}x${footprint.height})`;
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
+        "[data-building-type-card]"
+      );
+      const nextType = button?.dataset.buildingTypeCard;
+      if (!nextType) return;
+      this.setPlacementType(nextType, "placeType atualizado");
+    });
 
-      if (this.selectedTileCoord) {
-        this.drawFootprintOutline(
-          this.selectedTile,
-          this.selectedTileCoord.x,
-          this.selectedTileCoord.y,
-          this.resolveCurrentActionFootprint(),
-          0xf7d774,
-          3
-        );
-      }
-
-      this.renderBuildingControlPanel();
+    this.buildingControlContextActions?.addEventListener("click", (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
+        "[data-building-context-action]"
+      );
+      const actionId = button?.dataset.buildingContextAction;
+      if (!actionId || !isBuildingContextActionId(actionId)) return;
+      void this.executeBuildingContextAction(actionId);
     });
 
     this.buildingControlSearchInput?.addEventListener("input", () => {
+      this.buildingControlPage = 0;
       this.renderBuildingControlPanel();
     });
+
+    this.alignCatalogStateToPlacementType(true);
 
     this.buildingControlWrapper = wrapper;
     document.body.appendChild(wrapper);
@@ -921,9 +1476,8 @@ export class YardScene {
   private renderBuildingControlPanel(): void {
     const wrapper = this.buildingControlWrapper;
     const details = this.buildingControlDetails;
-    const typeSelect = this.buildingControlTypeSelect;
     const searchInput = this.buildingControlSearchInput;
-    if (!wrapper || !details || !typeSelect) return;
+    if (!wrapper || !details) return;
 
     if (!this.buildingControlVisible) {
       wrapper.style.display = "none";
@@ -937,8 +1491,55 @@ export class YardScene {
       this.selectedBuildingId = null;
     }
 
+    const tabs = listBuildingCatalogTabs();
+    if (tabs.length === 0) {
+      details.innerHTML = escapeHtml("Catálogo de buildings indisponível.");
+      return;
+    }
+
+    if (!tabs.some((tab) => tab.id === this.buildingControlTab)) {
+      this.buildingControlTab = tabs[0].id;
+      this.buildingControlSubTab = "all";
+      this.buildingControlPage = 0;
+    }
+
+    const activeTab = tabs.find((tab) => tab.id === this.buildingControlTab) ?? tabs[0];
+    const activeSubTabs = activeTab.subTabs ?? [];
+    if (activeTab.id !== "decorations") {
+      this.buildingControlSubTab = "all";
+    } else if (!activeSubTabs.some((subTab) => subTab.id === this.buildingControlSubTab)) {
+      this.buildingControlSubTab = "all";
+    }
+
+    if (this.buildingControlTabs) {
+      this.buildingControlTabs.innerHTML = tabs
+        .map((tab) => {
+          const active = tab.id === this.buildingControlTab;
+          return `<button data-building-tab="${tab.id}" class="legacy-btn legacy-btn-ghost legacy-building-tab${active ? " is-active" : ""}">${escapeHtml(tab.label)}</button>`;
+        })
+        .join("");
+    }
+
+    if (this.buildingControlSubTabs) {
+      if (activeTab.id === "decorations" && activeSubTabs.length > 0) {
+        this.buildingControlSubTabs.style.display = "flex";
+        this.buildingControlSubTabs.innerHTML = activeSubTabs
+          .map((subTab) => {
+            const active = subTab.id === this.buildingControlSubTab;
+            return `<button data-building-subtab="${subTab.id}" class="legacy-btn legacy-btn-ghost legacy-building-subtab${active ? " is-active" : ""}">${escapeHtml(subTab.label)}</button>`;
+          })
+          .join("");
+      } else {
+        this.buildingControlSubTabs.style.display = "none";
+        this.buildingControlSubTabs.innerHTML = "";
+      }
+    }
+
     const filterRaw = searchInput?.value.trim().toLowerCase() ?? "";
-    const filtered = listPlacementTypeCatalogEntries().filter((entry) => {
+    const filtered = listPlacementTypeCatalogEntriesForTab(
+      this.buildingControlTab,
+      this.buildingControlSubTab
+    ).filter((entry) => {
       if (!filterRaw) return true;
       return (
         String(entry.code).includes(filterRaw) ||
@@ -949,63 +1550,1048 @@ export class YardScene {
       );
     });
 
-    this.renderPlacementTypeSelectOptions(typeSelect, filtered);
+    const pagination = paginatePlacementTypeCatalogEntries(
+      filtered,
+      this.buildingControlPage,
+      BUILDING_CATALOG_PAGE_SIZE
+    );
+    this.buildingControlPage = pagination.page;
+
+    const buildingCountsByCode = this.countBuildingCatalogEntriesByCode();
+    const selectedBuildingCatalogEntry = selectedBuilding
+      ? describePlacementType(selectedBuilding.type)
+      : null;
+    const selectedBuildingCode = selectedBuildingCatalogEntry?.code ?? null;
+    const selectedBuildingCategory = selectedBuildingCatalogEntry?.category ?? null;
+    const selectedBuildingHasPendingUpgrade =
+      typeof selectedBuilding?.countdownUpgrade === "number" &&
+      selectedBuilding.countdownUpgrade > 0;
+    const resourceBuildingCount = this.countResourceBuildings();
+    const damagedBuildingCount = this.countDamagedBuildings();
+    const selectedBuildingIsDamaged = this.isBuildingDamaged(selectedBuilding);
+    const contextActions = getBuildingInfoContextActions({
+      selectedBuildingCode,
+      selectedBuildingCategory,
+      selectedBuildingHasPendingUpgrade,
+      selectedBuildingIsDamaged,
+      resourceBuildingCount,
+      damagedBuildingCount,
+    });
+
+    if (this.buildingControlCatalog) {
+      if (pagination.totalEntries === 0) {
+        const noDataText = filterRaw
+          ? `Nenhum item para o filtro "${filterRaw}".`
+          : "Building coming soon.";
+        this.buildingControlCatalog.innerHTML =
+          `<div class="legacy-empty-state legacy-building-catalog-empty">${escapeHtml(noDataText)}</div>`;
+      } else {
+        this.buildingControlCatalog.innerHTML = pagination.pageEntries
+          .map((entry) => {
+            const placedCount = buildingCountsByCode.get(entry.code) ?? 0;
+            const maxPerYardLabel =
+              typeof entry.maxPerYard === "number" ? String(entry.maxPerYard) : "∞";
+            const isLimitReached =
+              typeof entry.maxPerYard === "number" &&
+              entry.maxPerYard > 0 &&
+              placedCount >= entry.maxPerYard;
+            const availabilityLabel = isLimitReached ? "Limite atingido" : "Disponível";
+            const isActive = entry.canonicalType === this.placementType;
+            const decorationLabel = entry.decorationGroupId
+              ? ` • ${entry.decorationGroupId}`
+              : "";
+            const storeSku = this.resolveBuildingStoreSku(entry.code);
+            const storeItem = storeSku ? this.storeCatalogItems[storeSku] : undefined;
+            const storeOwned = storeSku ? this.getStoreItemOwnedQuantity(storeSku) : 0;
+            const storeCost = storeItem?.c?.[0] ?? null;
+            const storeMetaLine = storeSku
+              ? storeCost !== null
+                ? `Store ${storeSku}: ${storeOwned}x • ${storeCost} shiny`
+                : `Store ${storeSku}: ${storeOwned}x`
+              : "";
+            const storeAction = storeSku
+              ? `<button data-building-store-buy="${escapeHtml(storeSku)}" data-building-store-quantity="1"
+                    class="legacy-btn legacy-btn-primary legacy-btn-sm">Comprar 1</button>`
+              : "";
+            const availabilityLine = `No yard: ${placedCount}/${maxPerYardLabel} • ${availabilityLabel}`;
+            const thumbnailPath = this.resolveCatalogThumbnailPath(entry.canonicalType);
+            const cardClasses = [
+              "legacy-building-card",
+              isActive ? "is-active" : "",
+              isLimitReached ? "is-limit-reached" : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+            const availabilityClass = isLimitReached
+              ? "legacy-building-availability is-limit"
+              : "legacy-building-availability is-available";
+
+            return `
+              <div class="${cardClasses}">
+                <div class="legacy-building-card-main">
+                  <img
+                    src="${escapeHtml(thumbnailPath)}"
+                    alt="${escapeHtml(entry.label)}"
+                    class="legacy-building-thumb"
+                  />
+                  <div class="legacy-building-card-content">
+                    <div class="legacy-building-card-header">
+                      <div class="legacy-building-card-title">${escapeHtml(entry.label)}</div>
+                      <button data-building-type-card="${escapeHtml(entry.canonicalType)}"
+                        class="legacy-btn legacy-btn-primary legacy-btn-sm">Selecionar</button>
+                    </div>
+                    <div class="legacy-building-meta-line">#${entry.code} • ${escapeHtml(entry.legacyClass)}</div>
+                    <div class="legacy-building-meta-line">${escapeHtml(entry.category)}${escapeHtml(decorationLabel)}</div>
+                    <div class="${availabilityClass}${storeAction ? " has-store-action" : ""}">${availabilityLine}</div>
+                  </div>
+                </div>
+                ${
+                  storeAction
+                    ? `<div class="legacy-building-store-row">
+                         <div class="legacy-building-store-line">${escapeHtml(storeMetaLine)}</div>
+                         ${storeAction}
+                       </div>`
+                    : ""
+                }
+              </div>
+            `;
+          })
+          .join("");
+      }
+    }
+
+    if (this.buildingControlPagination) {
+      const hasEntries = pagination.totalEntries > 0;
+      const currentPageDisplay = hasEntries ? pagination.page + 1 : 0;
+      const prevDisabled = !hasEntries || pagination.page <= 0;
+      const nextDisabled = !hasEntries || pagination.page >= pagination.totalPages - 1;
+
+      this.buildingControlPagination.innerHTML = `
+        <button data-building-page="prev" class="legacy-btn legacy-btn-ghost legacy-btn-sm" ${prevDisabled ? "disabled" : ""}>◀ Prev</button>
+        <span class="legacy-pagination-label">Página ${currentPageDisplay}/${pagination.totalPages} • ${pagination.totalEntries} item(ns)</span>
+        <button data-building-page="next" class="legacy-btn legacy-btn-ghost legacy-btn-sm" ${nextDisabled ? "disabled" : ""}>Next ▶</button>
+      `;
+    }
+
+    if (this.buildingControlContextActions) {
+      if (contextActions.length === 0) {
+        this.buildingControlContextActions.style.display = "none";
+        this.buildingControlContextActions.innerHTML = "";
+      } else {
+        this.buildingControlContextActions.style.display = "flex";
+        this.buildingControlContextActions.innerHTML = contextActions
+          .map((action) => {
+            const title = action.reason ?? "";
+            const classes = [
+              "legacy-btn",
+              action.implemented ? "legacy-btn-primary" : "legacy-btn-ghost",
+              "legacy-btn-sm",
+              "legacy-context-action",
+              action.disabled ? "is-disabled" : "",
+              !action.implemented ? "is-pending" : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+
+            return `<button data-building-context-action="${action.id}" ${
+              action.disabled ? "disabled" : ""
+            } title="${escapeHtml(title)}"
+              class="${classes}">${
+                escapeHtml(action.label)
+              }</button>`;
+          })
+          .join("");
+      }
+    }
 
     const placementInfo = describePlacementType(this.placementType);
     const placementFootprint = getLegacyFootprintTilesByType(this.placementType);
     const tileLabel = this.selectedTileCoord
       ? `(${this.selectedTileCoord.x}, ${this.selectedTileCoord.y})`
       : "nenhum";
+    const placementCount = placementInfo ? (buildingCountsByCode.get(placementInfo.code) ?? 0) : 0;
+    const placementMax =
+      placementInfo && typeof placementInfo.maxPerYard === "number"
+        ? String(placementInfo.maxPerYard)
+        : "∞";
 
     const selectedBuildingText = selectedBuilding
       ? `${selectedBuilding.type} #${selectedBuilding.id} @ (${selectedBuilding.x}, ${selectedBuilding.y})` +
-        `${selectedBuilding.level ? ` Lv.${selectedBuilding.level}` : ""}` +
-        `${selectedBuilding.countdownUpgrade ? ` | upgrade em ${selectedBuilding.countdownUpgrade}s` : ""}`
+        `${typeof selectedBuilding.level === "number" ? ` Lv.${selectedBuilding.level}` : ""}` +
+        `${
+          typeof selectedBuilding.hp === "number" && typeof selectedBuilding.maxHp === "number"
+            ? ` | HP ${selectedBuilding.hp}/${selectedBuilding.maxHp}${selectedBuilding.repairing ? " (repair)" : ""}`
+            : ""
+        }` +
+        `${
+          typeof selectedBuilding.countdownUpgrade === "number" &&
+          selectedBuilding.countdownUpgrade > 0
+            ? ` | upgrade em ${selectedBuilding.countdownUpgrade}s`
+            : ""
+        }`
       : "nenhum";
+    const activeContextActionCount = contextActions.filter(
+      (action) => action.implemented && !action.disabled
+    ).length;
+    const pendingContextActionCount = contextActions.filter(
+      (action) => !action.implemented
+    ).length;
 
     const lines = [
       `Tipo de place: ${placementInfo?.label ?? this.placementType} (${this.placementType})`,
+      `Catálogo: ${activeTab.label} / ${activeTab.id === "decorations" ? this.buildingControlSubTab : "all"}`,
+      `Capacidade no yard: ${placementCount}/${placementMax}`,
       `Footprint atual: ${placementFootprint.width}x${placementFootprint.height}`,
       `Tile selecionado: ${tileLabel}`,
       `Building selecionado: ${selectedBuildingText}`,
+      `Ações contextuais: ${activeContextActionCount}/${contextActions.length} ativas (${pendingContextActionCount} pendentes)`,
       `Status: ${this.statusText.text || "ready"}`,
-      "Ações: clique em um tile e use os botões (ou Shift+Click para atalho).",
+      "Ações: selecione tipo no catálogo, clique em tile e use os botões (ou Shift+Click para atalho).",
     ];
 
     details.innerHTML = lines.map((line) => escapeHtml(line)).join("<br>");
   }
 
-  private renderPlacementTypeSelectOptions(
-    selectEl: HTMLSelectElement,
-    entries: PlacementTypeCatalogEntry[]
-  ): void {
-    const activeType = this.placementType;
-    const nextEntries = entries.length > 0 ? entries : listPlacementTypeCatalogEntries();
+  private ensureBuildingFlowOverlay(): void {
+    if (typeof document === "undefined" || this.buildingFlowWrapper) return;
 
-    selectEl.innerHTML = nextEntries
-      .map((entry) => {
-        const label = `${entry.code} • ${entry.label} [${entry.category}]`;
-        return `<option value=\"${escapeHtml(entry.canonicalType)}\">${escapeHtml(label)}</option>`;
-      })
-      .join("");
+    const wrapper = document.createElement("div");
+    wrapper.className = "legacy-window legacy-window-flow";
+    wrapper.dataset.legacyTheme = "active";
+    wrapper.dataset.legacyFrame = "frame2";
+    wrapper.style.display = "none";
 
-    const hasActive = nextEntries.some((entry) => entry.canonicalType === activeType);
-    if (hasActive) {
-      selectEl.value = activeType;
-      return;
-    }
+    wrapper.innerHTML = `
+      <div class="legacy-window-header">
+        <strong data-building-flow-title class="legacy-window-title">Building Flow</strong>
+        <div class="legacy-form-row">
+          <button data-building-flow-refresh class="legacy-btn legacy-btn-primary">Atualizar</button>
+          <button data-building-flow-close class="legacy-btn legacy-btn-ghost">Fechar</button>
+        </div>
+      </div>
+      <div data-building-flow-description class="legacy-muted-text"></div>
+      <input data-building-flow-search placeholder="Filtrar item por chave/título"
+        class="legacy-input legacy-input-wide" />
+      <div data-building-flow-status class="legacy-muted-text"></div>
+      <div data-building-flow-content></div>
+    `;
 
-    const fallback = nextEntries[0];
-    if (fallback) {
-      this.placementType = fallback.canonicalType;
-      selectEl.value = fallback.canonicalType;
+    wrapper.querySelector<HTMLButtonElement>("[data-building-flow-close]")?.addEventListener("click", () => {
+      this.closeBuildingFlowOverlay();
+    });
+
+    wrapper.querySelector<HTMLButtonElement>("[data-building-flow-refresh]")?.addEventListener("click", () => {
+      if (this.buildingFlowMode === "yard_planner") {
+        void this.executeYardPlannerRefresh();
+        return;
+      }
+      if (this.buildingFlowMode === "academy") {
+        void this.executeAcademyRefresh();
+        return;
+      }
+      if (this.buildingFlowMode) {
+        void this.openStoreFlow(this.buildingFlowMode);
+      }
+    });
+
+    this.buildingFlowSearchInput = wrapper.querySelector<HTMLInputElement>("[data-building-flow-search]");
+    this.buildingFlowSearchInput?.addEventListener("input", () => {
+      this.buildingFlowSearchQuery = this.buildingFlowSearchInput?.value.trim().toLowerCase() ?? "";
+      if (this.buildingFlowMode === "academy") {
+        this.renderAcademyFlow();
+      } else if (isStoreFlowMode(this.buildingFlowMode)) {
+        this.renderStoreFlow(this.buildingFlowMode);
+      }
+    });
+
+    this.buildingFlowContentEl = wrapper.querySelector<HTMLDivElement>("[data-building-flow-content]");
+    this.buildingFlowContentEl?.addEventListener("click", (event) => {
+      const buyButton = (event.target as HTMLElement).closest<HTMLButtonElement>(
+        "[data-building-flow-buy]"
+      );
+      const buyItem = buyButton?.dataset.buildingFlowBuy;
+      if (buyItem) {
+        const qtyInput = this.buildingFlowContentEl?.querySelector<HTMLInputElement>(
+          `[data-building-flow-qty="${buyItem}"]`
+        );
+        const quantity = parseIntSafe(qtyInput?.value, 1);
+        void this.executeStoreFlowPurchase(buyItem, quantity);
+        return;
+      }
+
+      const academyStartButton = (event.target as HTMLElement).closest<HTMLButtonElement>(
+        "[data-building-flow-academy-start]"
+      );
+      const academyStartMonsterId = academyStartButton?.dataset.buildingFlowAcademyStart;
+      if (academyStartMonsterId) {
+        void this.executeAcademyStart(academyStartMonsterId);
+        return;
+      }
+
+      const academyCancelButton = (event.target as HTMLElement).closest<HTMLButtonElement>(
+        "[data-building-flow-academy-cancel]"
+      );
+      const academyCancelMonsterId = academyCancelButton?.dataset.buildingFlowAcademyCancel;
+      if (academyCancelMonsterId) {
+        void this.executeAcademyCancel(academyCancelMonsterId);
+        return;
+      }
+
+      const academyFinishButton = (event.target as HTMLElement).closest<HTMLButtonElement>(
+        "[data-building-flow-academy-finish]"
+      );
+      const academyFinishMonsterId = academyFinishButton?.dataset.buildingFlowAcademyFinish;
+      if (academyFinishMonsterId) {
+        void this.executeAcademyFinishNow(academyFinishMonsterId);
+        return;
+      }
+
+      const templateSaveButton = (event.target as HTMLElement).closest<HTMLButtonElement>(
+        "[data-building-flow-template-save]"
+      );
+      const slotRaw = templateSaveButton?.dataset.buildingFlowTemplateSave;
+      if (slotRaw) {
+        const slotId = parseIntSafe(slotRaw, 0);
+        if (slotId > 0) {
+          void this.executeYardPlannerSave(slotId);
+        }
+        return;
+      }
+
+      const templateApplyButton = (event.target as HTMLElement).closest<HTMLButtonElement>(
+        "[data-building-flow-template-apply]"
+      );
+      const templateApplySlotRaw = templateApplyButton?.dataset.buildingFlowTemplateApply;
+      if (templateApplySlotRaw) {
+        const slotId = parseIntSafe(templateApplySlotRaw, 0);
+        if (slotId > 0) {
+          void this.executeYardPlannerApply(slotId);
+        }
+        return;
+      }
+
+      const templateRefreshButton = (event.target as HTMLElement).closest<HTMLButtonElement>(
+        "[data-building-flow-templates-refresh]"
+      );
+      if (templateRefreshButton) {
+        void this.executeYardPlannerRefresh();
+      }
+    });
+
+    this.buildingFlowTitleEl = wrapper.querySelector<HTMLElement>("[data-building-flow-title]");
+    this.buildingFlowDescriptionEl = wrapper.querySelector<HTMLElement>(
+      "[data-building-flow-description]"
+    );
+    this.buildingFlowStatusEl = wrapper.querySelector<HTMLElement>("[data-building-flow-status]");
+
+    this.buildingFlowWrapper = wrapper;
+    document.body.appendChild(wrapper);
+  }
+
+  private closeBuildingFlowOverlay(): void {
+    this.buildingFlowMode = null;
+    if (this.buildingFlowWrapper) {
+      this.buildingFlowWrapper.style.display = "none";
     }
   }
 
+  private setBuildingFlowStatus(text: string): void {
+    if (this.buildingFlowStatusEl) {
+      this.buildingFlowStatusEl.textContent = text;
+    }
+  }
+
+  private async openStoreFlow(mode: StoreFlowMode): Promise<void> {
+    this.ensureBuildingFlowOverlay();
+    if (!this.buildingFlowWrapper) return;
+
+    const flow = STORE_FLOW_DEFINITIONS[mode];
+    this.buildingFlowMode = mode;
+    this.buildingFlowSearchQuery = "";
+    if (this.buildingFlowSearchInput) {
+      this.buildingFlowSearchInput.value = "";
+      this.buildingFlowSearchInput.style.display = "block";
+    }
+
+    this.buildingFlowWrapper.style.display = "block";
+    if (this.buildingFlowTitleEl) this.buildingFlowTitleEl.textContent = flow.title;
+    if (this.buildingFlowDescriptionEl) this.buildingFlowDescriptionEl.textContent = flow.description;
+    this.setBuildingFlowStatus("Carregando catálogo...");
+    this.renderBuildingControlPanel();
+
+    try {
+      await this.refreshStoreCatalog({ force: false, silentStatus: true });
+      this.renderStoreFlow(mode);
+      this.setBuildingFlowStatus(`Catálogo ${flow.title} carregado.`);
+      this.statusText.text = `${flow.title} aberta.`;
+    } catch (error) {
+      const message = String((error as Error)?.message ?? error);
+      this.setBuildingFlowStatus(`Falha ao carregar catálogo: ${message}`);
+      this.statusText.text = `Falha ao abrir ${flow.title}: ${message}`;
+    }
+
+    this.renderBuildingControlPanel();
+  }
+
+  private async openAcademyFlow(): Promise<void> {
+    this.ensureBuildingFlowOverlay();
+    if (!this.buildingFlowWrapper) return;
+
+    this.buildingFlowMode = "academy";
+    this.buildingFlowSearchQuery = "";
+    if (this.buildingFlowSearchInput) {
+      this.buildingFlowSearchInput.value = "";
+      this.buildingFlowSearchInput.style.display = "block";
+    }
+
+    this.buildingFlowWrapper.style.display = "block";
+    if (this.buildingFlowTitleEl) this.buildingFlowTitleEl.textContent = "Academy";
+    if (this.buildingFlowDescriptionEl) {
+      this.buildingFlowDescriptionEl.textContent =
+        "Treine monstros via /cmd autoritativo (start/cancel) com custo real em r3.";
+    }
+
+    this.renderAcademyFlow();
+    this.setBuildingFlowStatus("Academy carregada.");
+    this.statusText.text = "Academy aberta.";
+    this.renderBuildingControlPanel();
+  }
+
+  private async executeAcademyRefresh(): Promise<void> {
+    this.setBuildingFlowStatus("Atualizando academy...");
+    try {
+      const snapshot = await this.deps.api.stateSnapshot({ scope: "main", baseId: "home" });
+      this.applySnapshot(snapshot);
+      this.renderAcademyFlow();
+      this.setBuildingFlowStatus("Academy sincronizada com /state.");
+    } catch (error) {
+      const message = String((error as Error)?.message ?? error);
+      this.setBuildingFlowStatus(`Falha ao sincronizar academy: ${message}`);
+    }
+  }
+
+  private renderAcademyFlow(): void {
+    if (!this.buildingFlowContentEl || this.buildingFlowMode !== "academy") return;
+
+    const academy = this.baseState.academy;
+    if (!academy) {
+      this.buildingFlowContentEl.innerHTML =
+        '<div class="legacy-empty-state">Academy indisponível no snapshot atual.</div>';
+      return;
+    }
+
+    const allMonsters = Object.entries(academy.monsters)
+      .map(([monsterId, monsterState]) => ({ monsterId, ...monsterState }))
+      .sort((a, b) => {
+        const aRunning = a.training ? 1 : 0;
+        const bRunning = b.training ? 1 : 0;
+        if (aRunning !== bRunning) return bRunning - aRunning;
+        const aUnlocked = a.inLocker ? 1 : 0;
+        const bUnlocked = b.inLocker ? 1 : 0;
+        if (aUnlocked !== bUnlocked) return bUnlocked - aUnlocked;
+        return a.monsterId.localeCompare(b.monsterId, "pt-BR");
+      })
+      .filter((entry) => {
+        if (!this.buildingFlowSearchQuery) return true;
+        return (
+          entry.monsterId.toLowerCase().includes(this.buildingFlowSearchQuery) ||
+          `lv${entry.level}`.includes(this.buildingFlowSearchQuery)
+        );
+      });
+
+    if (allMonsters.length === 0) {
+      this.buildingFlowContentEl.innerHTML =
+        '<div class="legacy-empty-state">Nenhum monstro para o filtro atual.</div>';
+      return;
+    }
+
+    const buildingLabel =
+      academy.buildingId && academy.buildingLevel > 0
+        ? `Academy #${academy.buildingId} Lv.${academy.buildingLevel}`
+        : "Academy não construída";
+    const activeMonsterLabel = academy.activeMonsterId ?? "nenhum";
+    const headerStatus = academy.busy ? "ocupada" : "livre";
+
+    this.buildingFlowContentEl.innerHTML = `
+      <div class="legacy-form-row legacy-form-row-spread">
+        <div class="legacy-flow-summary">${escapeHtml(buildingLabel)} • status ${escapeHtml(
+          headerStatus
+        )} • ativo: ${escapeHtml(activeMonsterLabel)}</div>
+      </div>
+      <div class="legacy-flow-grid legacy-flow-grid-store">
+        ${allMonsters
+          .map((monster) => {
+            const isTraining = Boolean(monster.training);
+            const canStart = monster.canTrain;
+            const isLocked = !monster.inLocker;
+            const isMaxed = monster.level >= monster.maxLevel;
+            const needsAcademyUpgrade =
+              academy.buildingLevel > 0 && monster.level > academy.buildingLevel;
+            const estimatedInstantCost = isTraining
+              ? calculateAcademyTimeSpeedupCost(monster.training?.remainingSec ?? 0)
+              : calculateAcademyTimeSpeedupCost(monster.nextTrainingDurationSec ?? 0) +
+                calculateAcademyResourceSpeedupCost(monster.nextTrainingCostR3 ?? 0);
+            const canInstantFinish = isTraining
+              ? true
+              : academy.buildingLevel > 0 &&
+                monster.inLocker &&
+                !isMaxed &&
+                !needsAcademyUpgrade &&
+                !academy.busy;
+            const statusLine = isTraining
+              ? `Treinando -> Lv.${monster.training?.targetLevel ?? "?"} (${formatDuration(
+                  monster.training?.remainingSec ?? 0
+                )})`
+              : isLocked
+                ? "Bloqueado no locker"
+                : isMaxed
+                  ? "Treino máximo alcançado"
+                  : needsAcademyUpgrade
+                    ? `Requer Academy Lv.${monster.level}`
+                    : academy.busy
+                      ? "Aguardando fila (academy ocupada)"
+                      : "Pronto para treinar";
+            const nextTrainingLine =
+              monster.nextTrainingCostR3 && monster.nextTrainingDurationSec
+                ? `Próximo treino: ${monster.nextTrainingCostR3} r3 • ${formatDuration(
+                    monster.nextTrainingDurationSec
+                  )}`
+                : "Próximo treino: n/a";
+            const instantLabel =
+              estimatedInstantCost > 0
+                ? `Finalizar (${estimatedInstantCost} shiny)`
+                : "Finalizar agora";
+            const buttonHtml = isTraining
+              ? `<button data-building-flow-academy-cancel="${escapeHtml(monster.monsterId)}"
+                    class="legacy-btn legacy-btn-danger legacy-btn-sm">Cancelar</button>
+                 <button data-building-flow-academy-finish="${escapeHtml(monster.monsterId)}"
+                    class="legacy-btn legacy-btn-primary legacy-btn-sm">${escapeHtml(
+                      instantLabel
+                    )}</button>`
+              : `<button data-building-flow-academy-start="${escapeHtml(monster.monsterId)}"
+                    class="legacy-btn legacy-btn-primary legacy-btn-sm" ${
+                      canStart ? "" : "disabled"
+                    }>Treinar</button>
+                 <button data-building-flow-academy-finish="${escapeHtml(monster.monsterId)}"
+                    class="legacy-btn legacy-btn-primary legacy-btn-sm" ${
+                      canInstantFinish ? "" : "disabled"
+                    }>${escapeHtml(instantLabel)}</button>`;
+
+            return `
+              <div class="legacy-flow-card legacy-store-card">
+                <div class="legacy-flow-card-head">
+                  <div class="legacy-flow-card-title">${escapeHtml(monster.monsterId)}</div>
+                  <div class="legacy-flow-card-code">Lv.${monster.level}/${monster.maxLevel}</div>
+                </div>
+                <div class="legacy-flow-card-text">${escapeHtml(statusLine)}</div>
+                <div class="legacy-flow-card-subtext">${escapeHtml(nextTrainingLine)}</div>
+                <div class="legacy-flow-card-stock">Locker: ${
+                  monster.inLocker ? "desbloqueado" : "bloqueado"
+                }</div>
+                <div class="legacy-flow-card-actions">${buttonHtml}</div>
+              </div>
+            `;
+          })
+          .join("")}
+      </div>
+    `;
+  }
+
+  private async executeAcademyStart(monsterId: string): Promise<void> {
+    const normalizedMonsterId = monsterId.trim().toUpperCase();
+    if (!normalizedMonsterId) return;
+
+    this.setBuildingFlowStatus(`Iniciando treino ${normalizedMonsterId}...`);
+    try {
+      const response = await this.deps.api.startAcademyUpgrade({
+        monsterId: normalizedMonsterId,
+      });
+      this.applyCmdResponse(response);
+      this.renderAcademyFlow();
+      this.setBuildingFlowStatus(`Treino iniciado para ${normalizedMonsterId}.`);
+      this.statusText.text = `Academy start ok (${normalizedMonsterId}).`;
+    } catch (error) {
+      const message = String((error as Error)?.message ?? error);
+      this.setBuildingFlowStatus(`Falha ao iniciar ${normalizedMonsterId}: ${message}`);
+      this.statusText.text = `Academy start falhou: ${message}`;
+    }
+
+    this.renderBuildingControlPanel();
+  }
+
+  private async executeAcademyCancel(monsterId: string): Promise<void> {
+    const normalizedMonsterId = monsterId.trim().toUpperCase();
+    if (!normalizedMonsterId) return;
+
+    this.setBuildingFlowStatus(`Cancelando treino ${normalizedMonsterId}...`);
+    try {
+      const response = await this.deps.api.cancelAcademyUpgrade({
+        monsterId: normalizedMonsterId,
+      });
+      this.applyCmdResponse(response);
+      this.renderAcademyFlow();
+      this.setBuildingFlowStatus(`Treino cancelado para ${normalizedMonsterId}.`);
+      this.statusText.text = `Academy cancel ok (${normalizedMonsterId}).`;
+    } catch (error) {
+      const message = String((error as Error)?.message ?? error);
+      this.setBuildingFlowStatus(`Falha ao cancelar ${normalizedMonsterId}: ${message}`);
+      this.statusText.text = `Academy cancel falhou: ${message}`;
+    }
+
+    this.renderBuildingControlPanel();
+  }
+
+  private async executeAcademyFinishNow(monsterId: string): Promise<void> {
+    const normalizedMonsterId = monsterId.trim().toUpperCase();
+    if (!normalizedMonsterId) return;
+
+    this.setBuildingFlowStatus(`Finalizando treino ${normalizedMonsterId}...`);
+    try {
+      const response = await this.deps.api.finishAcademyUpgradeNow({
+        monsterId: normalizedMonsterId,
+      });
+      this.applyCmdResponse(response);
+      this.renderAcademyFlow();
+      this.setBuildingFlowStatus(`Treino finalizado para ${normalizedMonsterId}.`);
+      this.statusText.text = `Academy finish now ok (${normalizedMonsterId}).`;
+    } catch (error) {
+      const message = String((error as Error)?.message ?? error);
+      this.setBuildingFlowStatus(`Falha ao finalizar ${normalizedMonsterId}: ${message}`);
+      this.statusText.text = `Academy finish falhou: ${message}`;
+    }
+
+    this.renderBuildingControlPanel();
+  }
+
+  private async openYardPlannerFlow(): Promise<void> {
+    this.ensureBuildingFlowOverlay();
+    if (!this.buildingFlowWrapper) return;
+
+    this.buildingFlowMode = "yard_planner";
+    this.buildingFlowSearchQuery = "";
+    if (this.buildingFlowSearchInput) {
+      this.buildingFlowSearchInput.value = "";
+      this.buildingFlowSearchInput.style.display = "none";
+    }
+
+    this.buildingFlowWrapper.style.display = "block";
+    if (this.buildingFlowTitleEl) this.buildingFlowTitleEl.textContent = "Yard Planner";
+    if (this.buildingFlowDescriptionEl) {
+      this.buildingFlowDescriptionEl.textContent =
+        "Gerencie templates (slots) de layout via endpoints autoritativos do planner (salvar + aplicar).";
+    }
+    await this.executeYardPlannerRefresh();
+    this.statusText.text = "Yard planner aberto.";
+    this.renderBuildingControlPanel();
+  }
+
+  private async executeYardPlannerRefresh(): Promise<void> {
+    this.setBuildingFlowStatus("Carregando templates...");
+    try {
+      const response = await this.deps.api.getYardPlannerTemplates();
+      this.yardPlannerTemplates = response.templates;
+      this.renderYardPlannerFlow();
+      this.setBuildingFlowStatus(`Templates carregados (${this.yardPlannerTemplates.length}).`);
+    } catch (error) {
+      const message = String((error as Error)?.message ?? error);
+      this.setBuildingFlowStatus(`Falha ao carregar templates: ${message}`);
+    }
+  }
+
+  private renderYardPlannerFlow(): void {
+    if (!this.buildingFlowContentEl || this.buildingFlowMode !== "yard_planner") return;
+
+    const templateBySlot = new Map<number, YardPlannerTemplate>(
+      this.yardPlannerTemplates.map((template) => [template.slotId, template])
+    );
+
+    this.buildingFlowContentEl.innerHTML = `
+      <div class="legacy-form-row legacy-form-row-spread">
+        <div class="legacy-flow-summary">Snapshots atuais: ${Object.keys(this.buildCurrentYardTemplateData()).length} building(s).</div>
+        <button data-building-flow-templates-refresh class="legacy-btn legacy-btn-primary legacy-btn-sm">Recarregar</button>
+      </div>
+      <div class="legacy-flow-grid legacy-flow-grid-templates">
+        ${YARD_PLANNER_SLOT_IDS.map((slotId) => {
+          const template = templateBySlot.get(slotId);
+          const templateName = template?.name || `Slot ${slotId}`;
+          const buildingCount = template ? Object.keys(template.data).length : 0;
+
+          return `
+            <div class="legacy-flow-card">
+              <div class="legacy-flow-card-title">Slot ${slotId}</div>
+              <div class="legacy-flow-card-text">${escapeHtml(templateName)}</div>
+              <div class="legacy-flow-card-subtext">${buildingCount} building(s)</div>
+              <button data-building-flow-template-save="${slotId}"
+                class="legacy-btn legacy-btn-primary legacy-btn-sm">Salvar layout atual</button>
+              <button data-building-flow-template-apply="${slotId}"
+                class="legacy-btn legacy-btn-ghost legacy-btn-sm" ${template ? "" : "disabled"}>Aplicar slot</button>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
+  private async executeYardPlannerSave(slotId: number): Promise<void> {
+    const existing = this.yardPlannerTemplates.find((template) => template.slotId === slotId);
+    const suggestedName = existing?.name || `Layout ${slotId}`;
+    const nameInput = window.prompt(`Nome do template (slot ${slotId})`, suggestedName);
+    if (nameInput === null) return;
+
+    const name = nameInput.trim();
+    if (!name) {
+      this.setBuildingFlowStatus("Nome do template é obrigatório.");
+      return;
+    }
+
+    const data = this.buildCurrentYardTemplateData();
+    const buildingCount = Object.keys(data).length;
+    if (buildingCount === 0) {
+      this.setBuildingFlowStatus("Não há buildings no yard para salvar no template.");
+      return;
+    }
+
+    this.setBuildingFlowStatus(`Salvando slot ${slotId}...`);
+    try {
+      const response = await this.deps.api.saveYardPlannerTemplate({
+        slotId,
+        name,
+        data,
+      });
+      this.yardPlannerTemplates = response.templates;
+      this.renderYardPlannerFlow();
+      this.setBuildingFlowStatus(
+        `Slot ${slotId} salvo com ${buildingCount} building(s).`
+      );
+      this.statusText.text = `Yard planner: slot ${slotId} salvo.`;
+    } catch (error) {
+      const message = String((error as Error)?.message ?? error);
+      this.setBuildingFlowStatus(`Falha ao salvar slot ${slotId}: ${message}`);
+      this.statusText.text = `Yard planner falhou: ${message}`;
+    }
+
+    this.renderBuildingControlPanel();
+  }
+
+  private async executeYardPlannerApply(slotId: number): Promise<void> {
+    const existing = this.yardPlannerTemplates.find((template) => template.slotId === slotId);
+    if (!existing) {
+      this.setBuildingFlowStatus(`Slot ${slotId} não possui template salvo.`);
+      return;
+    }
+
+    this.setBuildingFlowStatus(`Aplicando slot ${slotId}...`);
+    try {
+      const response = await this.deps.api.applyYardPlannerTemplate({ slotId });
+      this.applyCmdResponse(response);
+      this.renderYardPlannerFlow();
+
+      const movedCount =
+        response.delta?.filter((deltaItem) => deltaItem.op === "moveBuilding").length ?? 0;
+      this.setBuildingFlowStatus(`Slot ${slotId} aplicado (${movedCount} building(s) movidos).`);
+      this.statusText.text = `Yard planner: slot ${slotId} aplicado.`;
+    } catch (error) {
+      const message = String((error as Error)?.message ?? error);
+      this.setBuildingFlowStatus(`Falha ao aplicar slot ${slotId}: ${message}`);
+      this.statusText.text = `Yard planner falhou: ${message}`;
+    }
+
+    this.renderBuildingControlPanel();
+  }
+
+  private buildCurrentYardTemplateData(): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    for (const building of this.baseState.buildings) {
+      const normalized = normalizePlacementBuildingTypeInput(building.type);
+      if (normalized && normalized.code === 7) {
+        // Legacy BASE.getYardPlannerBuildings excludes type 7 (mushroom).
+        continue;
+      }
+      const numericId = parseIntSafe(building.id, Number.NaN);
+      out[building.id] = {
+        id: Number.isFinite(numericId) ? numericId : building.id,
+        buildingId: building.id,
+        ...(normalized ? { t: normalized.code } : {}),
+        x: building.x,
+        y: building.y,
+        ...(typeof building.level === "number" ? { l: building.level } : {}),
+        ...(typeof building.footprintW === "number" ? { fw: building.footprintW } : {}),
+        ...(typeof building.footprintH === "number" ? { fh: building.footprintH } : {}),
+      };
+    }
+
+    return out;
+  }
+
+  private async refreshStoreCatalog(opts: { force?: boolean; silentStatus?: boolean } = {}): Promise<void> {
+    const now = Date.now();
+    if (
+      !opts.force &&
+      this.lastStoreCatalogRefreshAt > 0 &&
+      now - this.lastStoreCatalogRefreshAt < DEFAULT_STORE_REFRESH_COOLDOWN_MS &&
+      Object.keys(this.storeCatalogItems).length > 0
+    ) {
+      return;
+    }
+
+    const response = await this.deps.api.getStoreCatalog();
+    const normalizedItems: Record<string, StoreCatalogItem> = {};
+    for (const [key, value] of Object.entries(response.items)) {
+      normalizedItems[key.toUpperCase()] = value;
+    }
+
+    this.storeCatalogItems = normalizedItems;
+    this.lastStoreCatalogRefreshAt = now;
+    this.baseState = {
+      ...this.baseState,
+      credits: response.credits,
+      storeData: normalizeStoreDataEntries(response.storeData),
+    };
+
+    if (!opts.silentStatus) {
+      this.statusText.text = `Store sincronizada (${Object.keys(normalizedItems).length} item(ns)).`;
+    }
+
+    this.updateResourcesText();
+    this.renderBuildingControlPanel();
+  }
+
+  private renderStoreFlow(mode: StoreFlowMode): void {
+    if (!this.buildingFlowContentEl || this.buildingFlowMode !== mode) return;
+
+    const itemKeys = this.getStoreFlowItemKeys(mode).filter((itemKey) => {
+      if (!this.buildingFlowSearchQuery) return true;
+      const definition = this.resolveStoreItemDefinition(itemKey);
+      if (!definition) return false;
+
+      return (
+        itemKey.toLowerCase().includes(this.buildingFlowSearchQuery) ||
+        definition.t.toLowerCase().includes(this.buildingFlowSearchQuery) ||
+        definition.d.toLowerCase().includes(this.buildingFlowSearchQuery)
+      );
+    });
+
+    if (itemKeys.length === 0) {
+      this.buildingFlowContentEl.innerHTML =
+        '<div class="legacy-empty-state">Nenhum item para este fluxo/filtro.</div>';
+      return;
+    }
+
+    this.buildingFlowContentEl.innerHTML = `
+      <div class="legacy-flow-grid legacy-flow-grid-store">
+        ${itemKeys
+          .map((itemKey) => {
+            const definition = this.resolveStoreItemDefinition(itemKey);
+            if (!definition) return "";
+
+            const owned = this.getStoreItemOwnedQuantity(itemKey);
+            const firstCost = definition.c[0] ?? 0;
+            const maxCost = definition.c[definition.c.length - 1] ?? firstCost;
+            const duration = definition.du > 0 ? `${Math.round(definition.du / 60)} min` : "instant";
+            const inventory = this.baseState.storeData?.[itemKey];
+            const expiresAt =
+              inventory?.e && inventory.e > 0
+                ? ` • expira ${new Date(inventory.e * 1000).toLocaleString()}`
+                : "";
+
+            return `
+              <div class="legacy-flow-card legacy-store-card">
+                <div class="legacy-flow-card-head">
+                  <div class="legacy-flow-card-title">${escapeHtml(definition.t)}</div>
+                  <div class="legacy-flow-card-code">${escapeHtml(itemKey)}</div>
+                </div>
+                <div class="legacy-flow-card-text">${escapeHtml(definition.d || "Sem descrição.")}</div>
+                <div class="legacy-flow-card-cost">Custo ${firstCost}${
+                  maxCost !== firstCost ? `..${maxCost}` : ""
+                } shiny • ${duration}</div>
+                <div class="legacy-flow-card-stock">No inventário: ${owned}x${escapeHtml(expiresAt)}</div>
+                <div class="legacy-flow-card-actions">
+                  <input data-building-flow-qty="${escapeHtml(itemKey)}" type="number" min="1" max="999" value="1"
+                    class="legacy-input legacy-flow-qty-input" />
+                  <button data-building-flow-buy="${escapeHtml(itemKey)}"
+                    class="legacy-btn legacy-btn-primary legacy-btn-sm">Comprar</button>
+                </div>
+              </div>
+            `;
+          })
+          .join("")}
+      </div>
+    `;
+  }
+
+  private getStoreFlowItemKeys(mode: StoreFlowMode): string[] {
+    const flow = STORE_FLOW_DEFINITIONS[mode];
+    if (!flow.itemKeys || flow.itemKeys.length === 0) {
+      const dynamicKeys = Object.entries(this.storeCatalogItems)
+        .filter(([, item]) => item.a > 0 || item.i === 0)
+        .map(([key]) => key);
+      return [...new Set([...dynamicKeys, ...Object.keys(STORE_FALLBACK_ITEMS)])].sort();
+    }
+
+    return flow.itemKeys
+      .map((key) => key.trim().toUpperCase())
+      .filter((key) => key.length > 0)
+      .filter((key) => this.resolveStoreItemDefinition(key) !== null);
+  }
+
+  private resolveStoreItemDefinition(itemKey: string): StoreCatalogItem | StoreFallbackItem | null {
+    const key = itemKey.trim().toUpperCase();
+    return this.storeCatalogItems[key] ?? STORE_FALLBACK_ITEMS[key] ?? null;
+  }
+
+  private getStoreItemOwnedQuantity(itemKey: string): number {
+    const key = itemKey.trim().toUpperCase();
+    return this.baseState.storeData?.[key]?.q ?? 0;
+  }
+
+  private resolveBuildingStoreSku(code: number): string | null {
+    const sku = `BUILDING${Math.trunc(code)}`;
+    if (this.resolveStoreItemDefinition(sku)) {
+      return sku;
+    }
+    return null;
+  }
+
+  private resolveCatalogThumbnailPath(canonicalType: string): string {
+    const catalogThumb = resolveBuildingCatalogThumbnailPath(canonicalType);
+    if (catalogThumb && catalogThumb !== DEFAULT_BUILDING_CATALOG_THUMBNAIL_PATH) {
+      return catalogThumb;
+    }
+
+    const buildingTexture = resolveBuildingTexturePath(canonicalType);
+    return buildingTexture ?? DEFAULT_BUILDING_CATALOG_THUMBNAIL_PATH;
+  }
+
+  private async executeStoreFlowPurchase(itemKey: string, quantity: number): Promise<void> {
+    const normalizedItem = itemKey.trim().toUpperCase();
+    const normalizedQuantity = Math.max(1, Math.min(999, Math.trunc(quantity)));
+    this.setBuildingFlowStatus(`Comprando ${normalizedItem} x${normalizedQuantity}...`);
+
+    try {
+      const response = await this.deps.api.purchaseStoreItem({
+        item: normalizedItem,
+        quantity: normalizedQuantity,
+      });
+      this.applyCmdResponse(response);
+      await this.refreshStoreCatalog({ force: true, silentStatus: true });
+
+      const owned = this.getStoreItemOwnedQuantity(normalizedItem);
+      this.setBuildingFlowStatus(`Compra concluída: ${normalizedItem} x${normalizedQuantity} (inventário: ${owned}).`);
+      this.statusText.text = `Store: compra ok ${normalizedItem} x${normalizedQuantity}.`;
+
+      if (isStoreFlowMode(this.buildingFlowMode)) {
+        this.renderStoreFlow(this.buildingFlowMode);
+      }
+    } catch (error) {
+      const message = String((error as Error)?.message ?? error);
+      this.setBuildingFlowStatus(`Falha na compra (${normalizedItem}): ${message}`);
+      this.statusText.text = `Store falhou: ${message}`;
+    }
+
+    this.renderBuildingControlPanel();
+  }
+
+  private setPlacementType(nextType: string, statusPrefix: string): void {
+    const normalized = normalizePlacementBuildingTypeInput(nextType);
+    if (!normalized) {
+      this.statusText.text = `Tipo inválido: ${nextType}`;
+      this.renderBuildingControlPanel();
+      return;
+    }
+
+    this.placementType = normalized.canonicalType;
+    this.queueBuildingTextureLoad(this.placementType);
+    const footprint = getLegacyFootprintTilesByType(this.placementType);
+    this.statusText.text = `${statusPrefix}: ${this.placementType} (${footprint.width}x${footprint.height})`;
+    this.alignCatalogStateToPlacementType(true);
+
+    if (this.selectedTileCoord) {
+      this.drawFootprintOutline(
+        this.selectedTile,
+        this.selectedTileCoord.x,
+        this.selectedTileCoord.y,
+        this.resolveCurrentActionFootprint(),
+        0xf7d774,
+        3
+      );
+    }
+
+    this.renderBuildingControlPanel();
+  }
+
+  private alignCatalogStateToPlacementType(resetPage: boolean): void {
+    const placementInfo = describePlacementType(this.placementType);
+    if (!placementInfo) return;
+
+    this.buildingControlTab = placementInfo.tabId;
+    if (placementInfo.tabId === "decorations") {
+      this.buildingControlSubTab = placementInfo.decorationGroupId ?? "all";
+    } else {
+      this.buildingControlSubTab = "all";
+    }
+
+    if (!resetPage) return;
+
+    const entries = listPlacementTypeCatalogEntriesForTab(
+      this.buildingControlTab,
+      this.buildingControlSubTab
+    );
+    const selectedIndex = entries.findIndex(
+      (entry) => entry.canonicalType === placementInfo.canonicalType
+    );
+    this.buildingControlPage =
+      selectedIndex >= 0 ? Math.floor(selectedIndex / BUILDING_CATALOG_PAGE_SIZE) : 0;
+  }
+
+  private countBuildingCatalogEntriesByCode(): Map<number, number> {
+    const counts = new Map<number, number>();
+
+    for (const building of this.baseState.buildings) {
+      const normalized = normalizePlacementBuildingTypeInput(building.type);
+      const entry = normalized
+        ? describePlacementType(normalized.code)
+        : describePlacementType(building.type);
+      if (!entry) continue;
+      counts.set(entry.code, (counts.get(entry.code) ?? 0) + 1);
+    }
+
+    return counts;
+  }
+
+  private countResourceBuildings(): number {
+    let count = 0;
+    for (const building of this.baseState.buildings) {
+      const entry = describePlacementType(building.type);
+      if (entry?.category === "resource") {
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  private countDamagedBuildings(): number {
+    let count = 0;
+    for (const building of this.baseState.buildings) {
+      if (this.isBuildingDamaged(building)) {
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  private isBuildingDamaged(building: YardBuilding | null | undefined): boolean {
+    if (!building) return false;
+    if (typeof building.hp !== "number" || typeof building.maxHp !== "number") {
+      return false;
+    }
+    return building.maxHp > 0 && building.hp >= 0 && building.hp < building.maxHp;
+  }
+
   private promptPlacementType(): void {
-    if (this.buildingControlTypeSelect) {
+    if (this.buildingControlSearchInput) {
       this.toggleBuildingControlPanel(true);
-      this.buildingControlTypeSelect.focus();
+      this.buildingControlSearchInput.focus();
+      this.buildingControlSearchInput.select();
       this.statusText.text = "Use o painel Building Ops para alterar o tipo.";
       this.renderBuildingControlPanel();
       return;
@@ -1017,18 +2603,7 @@ export class YardScene {
       this.placementType
     );
     if (!nextType) return;
-
-    const normalized = normalizePlacementBuildingTypeInput(nextType);
-    if (!normalized) {
-      this.statusText.text = `Tipo inválido: ${nextType}`;
-      this.renderBuildingControlPanel();
-      return;
-    }
-
-    this.placementType = normalized.canonicalType;
-    const footprint = getLegacyFootprintTilesByType(this.placementType);
-    this.statusText.text = `placeType atualizado: ${this.placementType} (${footprint.width}x${footprint.height})`;
-    this.renderBuildingControlPanel();
+    this.setPlacementType(nextType, "placeType atualizado");
   }
 }
 
@@ -1042,10 +2617,31 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return target.isContentEditable || tag === "input" || tag === "textarea" || tag === "select";
 }
 
+function isBuildingCatalogTabId(value: string): value is BuildingCatalogTabId {
+  return (
+    value === "resources" ||
+    value === "buildings" ||
+    value === "defensive" ||
+    value === "decorations"
+  );
+}
+
+function isBuildingCatalogSubTabId(value: string): value is BuildingCatalogSubTabId {
+  return (
+    value === "all" ||
+    value === "evil" ||
+    value === "plants" ||
+    value === "good" ||
+    value === "flags" ||
+    value === "premium"
+  );
+}
+
 function getViewportSize(): { width: number; height: number } {
-  const width = typeof window !== "undefined" ? Math.max(window.innerWidth, 320) : 1280;
-  const height = typeof window !== "undefined" ? Math.max(window.innerHeight, 240) : 720;
-  return { width, height };
+  return {
+    width: LEGACY_SCREEN_INIT_WIDTH,
+    height: LEGACY_SCREEN_INIT_HEIGHT,
+  };
 }
 
 function buildAssetCandidateUrls(cdnUrl: string, relativePath: string): string[] {
@@ -1082,6 +2678,87 @@ function resolveRuntimeAssetUrl(relativePath: string): string | null {
 
 function ensureTrailingSlash(url: string): string {
   return url.endsWith("/") ? url : `${url}/`;
+}
+
+function parseIntSafe(value: unknown, fallback: number): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.trunc(value);
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return fallback;
+}
+
+function isStoreFlowMode(mode: BuildingFlowMode | null): mode is StoreFlowMode {
+  return (
+    mode === "store" ||
+    mode === "hatchery" ||
+    mode === "bunker" ||
+    mode === "lockers" ||
+    mode === "juice" ||
+    mode === "housing" ||
+    mode === "baiter"
+  );
+}
+
+function formatDuration(totalSeconds: number): string {
+  const safe = Math.max(0, Math.trunc(totalSeconds));
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const seconds = safe % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+  }
+
+  if (minutes > 0) {
+    return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+  }
+
+  return `${seconds}s`;
+}
+
+function calculateAcademyTimeSpeedupCost(seconds: number): number {
+  const clampedSeconds = Math.max(0, Math.trunc(seconds));
+  if (clampedSeconds <= 0) return 0;
+
+  const linearCost = Math.ceil((clampedSeconds * 20) / 60 / 60);
+  const sqrtCost = Math.trunc(Math.sqrt(clampedSeconds * 0.8));
+  return Math.max(0, Math.min(linearCost, sqrtCost));
+}
+
+function calculateAcademyResourceSpeedupCost(resourceCost: number): number {
+  const clampedResourceCost = Math.max(0, Math.trunc(resourceCost));
+  if (clampedResourceCost <= 0) return 0;
+  return Math.ceil(Math.pow(Math.sqrt(clampedResourceCost / 2), 0.75));
+}
+
+function normalizeStoreDataEntries(
+  raw: Record<string, { q: number; e?: number }>
+): Record<string, StoreInventoryEntry> {
+  const normalized: Record<string, StoreInventoryEntry> = {};
+
+  for (const [rawKey, rawEntry] of Object.entries(raw)) {
+    const key = rawKey.trim().toUpperCase();
+    if (!key) continue;
+
+    const quantity = parseIntSafe(rawEntry?.q, Number.NaN);
+    if (!Number.isFinite(quantity) || quantity < 0) continue;
+
+    const expiresAt = parseIntSafe(rawEntry?.e, Number.NaN);
+    normalized[key] = {
+      q: quantity,
+      ...(Number.isFinite(expiresAt) && expiresAt >= 0 ? { e: expiresAt } : {}),
+    };
+  }
+
+  return normalized;
 }
 
 function escapeHtml(text: string): string {

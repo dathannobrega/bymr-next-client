@@ -4,11 +4,11 @@ buttons/DefineButton2_2187/1.png	image_asset_numeric_id	reuse_with_symbol_mappin
 buttons/DefineButton2_2189/1.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 buttons/DefineButton2_2723/1.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 buttons/DefineButton2_2864/1.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
-fonts/1764_GROBOLD.ttf	font_asset	reuse_after_license_check	pending		
-fonts/2465_Verdana.ttf	font_asset	reuse_after_license_check	pending		
+fonts/1764_GROBOLD.ttf	font_asset	reuse_after_license_check	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
+fonts/2465_Verdana.ttf	font_asset	reuse_after_license_check	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
 fonts/2488_Verdana.ttf	font_asset	reuse_after_license_check	pending		
 fonts/2491_GROBOLDpro.ttf	font_asset	reuse_after_license_check	pending		
-fonts/2960_Verdana Bold.ttf	font_asset	reuse_after_license_check	pending		
+fonts/2960_Verdana Bold.ttf	font_asset	reuse_after_license_check	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
 fonts/3014_Verdana.ttf	font_asset	reuse_after_license_check	pending		
 fonts/3057_Groboldov Bold.ttf	font_asset	reuse_after_license_check	pending		
 fonts/31_Groboldov.ttf	font_asset	reuse_after_license_check	pending		
@@ -63,9 +63,9 @@ images/1687.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending
 images/1689.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/1691.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/1693.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
-images/1699_frame_button_help_frame_button_help.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
+images/1699_frame_button_help_frame_button_help.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
 images/1704_bmp_healthbarlarge_bmp_healthbarlarge.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/1705_bmp_overlaytext_bmp_overlaytext.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
+images/1705_bmp_overlaytext_bmp_overlaytext.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Overlay text strip legado aplicado em titulos de secao das janelas (maproom/social/building flow)
 images/1706_bmp_progressbarlarge_bmp_progressbarlarge.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
 images/173.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/1732.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
@@ -86,25 +86,25 @@ images/1925.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	pending
 images/1927.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/193.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/1944.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
-images/2045_frame2_bottom_right_frame2_bottom_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2046_frame3_filler_right_frame3_filler_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2047_frame2_filler_top_frame2_filler_top.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2048_frame3_top_right_frame3_top_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2049_frame3_background_frame3_background.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2050_frame_button_close_frame_button_close.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2051_frame2_top_right_frame2_top_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2052_frame2_background_frame2_background.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2053_frame2_top_left_frame2_top_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2054_frame2_filler_bottom_frame2_filler_bottom.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2055_frame3_top_left_frame3_top_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2056_frame3_filler_left_frame3_filler_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2057_frame3_filler_bottom_frame3_filler_bottom.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2058_frame2_filler_right_frame2_filler_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2059_frame2_filler_left_frame2_filler_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2060_frame3_bottom_left_frame3_bottom_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2061_frame2_bottom_left_frame2_bottom_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2062_frame3_bottom_right_frame3_bottom_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2063_frame3_filler_top_frame3_filler_top.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
+images/2045_frame2_bottom_right_frame2_bottom_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame2 aplicado nas janelas Building Ops e Store Flow (skin legado)
+images/2046_frame3_filler_right_frame3_filler_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame3 aplicado nas janelas Maproom e Social (skin legado)
+images/2047_frame2_filler_top_frame2_filler_top.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame2 aplicado nas janelas Building Ops e Store Flow (skin legado)
+images/2048_frame3_top_right_frame3_top_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame3 aplicado nas janelas Maproom e Social (skin legado)
+images/2049_frame3_background_frame3_background.jpg	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame3 aplicado nas janelas Maproom e Social (skin legado)
+images/2050_frame_button_close_frame_button_close.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
+images/2051_frame2_top_right_frame2_top_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame2 aplicado nas janelas Building Ops e Store Flow (skin legado)
+images/2052_frame2_background_frame2_background.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame2 aplicado nas janelas Building Ops e Store Flow (skin legado)
+images/2053_frame2_top_left_frame2_top_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame2 aplicado nas janelas Building Ops e Store Flow (skin legado)
+images/2054_frame2_filler_bottom_frame2_filler_bottom.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame2 aplicado nas janelas Building Ops e Store Flow (skin legado)
+images/2055_frame3_top_left_frame3_top_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame3 aplicado nas janelas Maproom e Social (skin legado)
+images/2056_frame3_filler_left_frame3_filler_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame3 aplicado nas janelas Maproom e Social (skin legado)
+images/2057_frame3_filler_bottom_frame3_filler_bottom.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame3 aplicado nas janelas Maproom e Social (skin legado)
+images/2058_frame2_filler_right_frame2_filler_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame2 aplicado nas janelas Building Ops e Store Flow (skin legado)
+images/2059_frame2_filler_left_frame2_filler_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame2 aplicado nas janelas Building Ops e Store Flow (skin legado)
+images/2060_frame3_bottom_left_frame3_bottom_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame3 aplicado nas janelas Maproom e Social (skin legado)
+images/2061_frame2_bottom_left_frame2_bottom_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame2 aplicado nas janelas Building Ops e Store Flow (skin legado)
+images/2062_frame3_bottom_right_frame3_bottom_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame3 aplicado nas janelas Maproom e Social (skin legado)
+images/2063_frame3_filler_top_frame3_filler_top.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	Frame3 aplicado nas janelas Maproom e Social (skin legado)
 images/2065.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/2070.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/2132.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
@@ -172,20 +172,20 @@ images/264.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending
 images/2654_screenshot_border3_screenshot_border3.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
 images/2655_screenshot_border2_screenshot_border2.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
 images/2656_screenshot_border1_screenshot_border1.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2671_frame1_bottom_left_frame1_bottom_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2672_frame1_bottom_middle_frame1_bottom_middle.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2673_frame1_top_right_frame1_top_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2674_frame1_button_fullscreen_frame1_button_fullscreen.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2675_frame1_filler_left_frame1_filler_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2676_frame1_bottom_right_frame1_bottom_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2677_frame1_filler_right_frame1_filler_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2678_frame1_filler_bottom_frame1_filler_bottom.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2679_frame1_button_help_frame1_button_help.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2680_frame1_top_middle_frame1_top_middle.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2681_frame1_filler_top_frame1_filler_top.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2682_frame1_top_middle_2_frame1_top_middle_2.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2683_frame1_top_left_frame1_top_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
-images/2684_frame1_button_close_frame1_button_close.png	image_asset_semantic_name	reuse_via_atlas_pipeline	pending		
+images/2671_frame1_bottom_left_frame1_bottom_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
+images/2672_frame1_bottom_middle_frame1_bottom_middle.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
+images/2673_frame1_top_right_frame1_top_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
+images/2674_frame1_button_fullscreen_frame1_button_fullscreen.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
+images/2675_frame1_filler_left_frame1_filler_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
+images/2676_frame1_bottom_right_frame1_bottom_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
+images/2677_frame1_filler_right_frame1_filler_right.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
+images/2678_frame1_filler_bottom_frame1_filler_bottom.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
+images/2679_frame1_button_help_frame1_button_help.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
+images/2680_frame1_top_middle_frame1_top_middle.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
+images/2681_frame1_filler_top_frame1_filler_top.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
+images/2682_frame1_top_middle_2_frame1_top_middle_2.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
+images/2683_frame1_top_left_frame1_top_left.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
+images/2684_frame1_button_close_frame1_button_close.png	image_asset_semantic_name	reuse_via_atlas_pipeline	migrated	public/assets/ui/legacy + src/style.css	UI2 HUD/window skin legado em producao
 images/2724.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/2728.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/2736.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
@@ -326,19 +326,19 @@ images/690.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending
 images/696.jpg	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 images/87.png	image_asset_numeric_id	reuse_with_symbol_mapping	pending		
 morphshapes/1817.swf	flash_binary_morphshape	extract_and_convert	pending		
-scripts/ACADEMY.as	core_gameplay_or_flow	split_port	pending		
-scripts/ACADEMYPOPUP.as	ui_behavior_flash	rewrite_ui	pending		
-scripts/ACADEMYPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	pending		
+scripts/ACADEMY.as	core_gameplay_or_flow	split_port	migrated	server/src/controllers/cmd/cmd.ts,server/src/services/state/academyState.ts,server/src/controllers/state/getState.ts,server/src/controllers/state/streamState.ts	Fluxo autoritativo migrado com start/cancel/tick de treino por monstro, validações de locker/nível/custo e snapshot canônico de academy no `/state` + stream
+scripts/ACADEMYPOPUP.as	ui_behavior_flash	rewrite_ui	migrated	src/game/scenes/YardScene.ts,src/lib/base/buildingInfoContext.ts,server/src/controllers/cmd/cmd.ts	Overlay Academy do client novo com lista de monstros, start/cancel e finalização instantânea (`FinishAcademyUpgradeNow`) para paridade de treino/speedup legado
+scripts/ACADEMYPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts	Símbolo Flash substituído por overlay HTML/CSS no runtime Pixi para fluxo Academy
 scripts/ACHIEVEMENTS.as	core_gameplay_or_flow	split_port	pending		
 scripts/AIATTACKPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	pending		
-scripts/ATTACK.as	core_gameplay_or_flow	split_port	in_progress	server/src/controllers/combat/startReplay.ts,server/src/controllers/combat/streamReplay.ts,server/src/services/combat/replayEngine.ts,src/lib/contracts/combat.ts	Baseline de replay autoritativo migrado (start + stream SSE); regras completas ainda pendentes (E05-S02)
-scripts/BASE.as	core_gameplay_or_flow	split_port	in_progress	server/src/controllers/cmd/cmd.ts,server/src/services/state/normalizeState.ts,server/src/controllers/state/getState.ts,src/game/scenes/YardScene.ts,server/src/controllers/base/save/baseSave.ts	Fluxo core expandido com footprint/render de área, snapshot canônico `/state` e gate de deprecação gradual de base/save para next-client
+scripts/ATTACK.as	core_gameplay_or_flow	split_port	migrated	server/src/controllers/combat/startReplay.ts,server/src/controllers/combat/streamReplay.ts,server/src/services/combat/replayEngine.ts,src/lib/contracts/combat.ts,scripts/smoke-combat-replay.sh	Paridade autoritativa fechada para núcleo de combate legado: composição real por grupos, pathfinding por perfil (`direct/ground`), projéteis com tempo de voo, skills (`explode/splits/zombie/support`), torres com range/cooldown e vitória por HQ; validado em Docker com `smoke-combat-replay`
+scripts/BASE.as	core_gameplay_or_flow	split_port	in_progress	server/src/controllers/cmd/cmd.ts,server/src/services/state/normalizeState.ts,server/src/controllers/state/getState.ts,server/src/controllers/state/streamState.ts,src/lib/base/stateSnapshot.ts,src/game/scenes/YardScene.ts,server/src/controllers/base/save/baseSave.ts,server/src/services/state/applyLegacyBuildingProgress.ts	Fluxo core expandido com footprint/render de área, snapshot canônico `/state`, stream autoritativo com `snapshot resync`, aplicação server-authoritative de templates (`ApplyYardPlannerTemplate`) e repair autoritativo (`StartRepairBuilding/StartRepairAllBuildings`) com estado explícito `hp/maxHp/repairing` e delta `setBuildingRepairState`
 scripts/BDECORATION.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BEXPIRABLE.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BFOUNDATION.as	building_gameplay_logic	port_rules_and_data	in_progress	server/src/controllers/cmd/cmd.ts,server/src/utils/buildingFootprint.ts,src/lib/base/footprint.ts	Regras de footprint/ocupação migradas parcialmente para contratos autoritativos
+scripts/BFOUNDATION.as	building_gameplay_logic	port_rules_and_data	migrated	server/src/controllers/cmd/cmd.ts,server/src/services/state/applyLegacyBuildingProgress.ts,server/src/services/state/legacyBuildingRuleEffects.ts,server/src/data/buildings/legacyMainYardRules.ts,scripts/smoke-cmd-hardening.sh	Fechamento server-authoritative das regras legadas: limites/requirements/custos reais + efeitos derivados por regra (`maxHp`, reparo, ciclos/capacidade) aplicados em `/cmd` e na progressão temporal (upgrade/build/fortify)
 scripts/BHEAVYTRAP.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BMUSHROOM.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BRESOURCE.as	building_gameplay_logic	port_rules_and_data	in_progress	server/src/controllers/cmd/cmd.ts,src/lib/game/cmdDelta.ts,src/game/scenes/YardScene.ts	Produção/coleta de resource migrada via CollectHarvester + setResources
+scripts/BRESOURCE.as	building_gameplay_logic	port_rules_and_data	migrated	server/src/controllers/cmd/cmd.ts,server/src/services/state/applyLegacyBuildingProgress.ts,server/src/services/state/legacyBuildingRuleEffects.ts,src/lib/game/cmdDelta.ts,src/game/scenes/YardScene.ts,scripts/smoke-cmd-hardening.sh	Paridade de recurso concluída: coletores `1..4` com produção/capacidade/ciclo derivados de `YARD_PROPS`, clamp autoritativo de `st/stored`, coleta bloqueada em estados inválidos e sincronização por delta/snapshot
 scripts/BSTORAGE.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BTOTEM.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BTOWER.as	building_gameplay_logic	port_rules_and_data	pending		
@@ -353,7 +353,7 @@ scripts/BUILDING117.as	building_gameplay_logic	port_rules_and_data	pending
 scripts/BUILDING118.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING12.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING13.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BUILDING14.as	building_gameplay_logic	port_rules_and_data	in_progress	src/lib/base/footprint.ts,server/src/utils/buildingFootprint.ts,server/src/controllers/cmd/cmd.ts	TownHall/hq com footprint legado aplicado em place/move server-authoritative
+scripts/BUILDING14.as	building_gameplay_logic	port_rules_and_data	migrated	server/src/controllers/cmd/cmd.ts,server/src/services/state/applyLegacyBuildingProgress.ts,server/src/services/state/legacyBuildingRuleEffects.ts,server/src/data/buildings/legacyMainYardRules.ts,scripts/generate-legacy-main-yard-rules.mjs,scripts/smoke-cmd-hardening.sh	TownHall/HQ fechado no servidor: matriz legada de unlock/quantidade/custos, gates de upgrade/recursos, aplicação de `maxHp/repair` derivada por regra e progressão temporal consistente em `/cmd` + `/state`
 scripts/BUILDING15.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING16.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING17.as	building_gameplay_logic	port_rules_and_data	pending		
@@ -366,7 +366,7 @@ scripts/BUILDING22.as	building_gameplay_logic	port_rules_and_data	pending
 scripts/BUILDING23.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING24.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING25.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BUILDING26.as	building_gameplay_logic	port_rules_and_data	pending		
+scripts/BUILDING26.as	building_gameplay_logic	port_rules_and_data	migrated	server/src/controllers/cmd/cmd.ts,server/src/services/state/academyState.ts,server/src/controllers/state/getState.ts	Building 26 (Academy) fechado no autoritativo: `_upgrading`, gates de nível/locker, custo `r3`, cancelamento/refund e finalização instantânea com débito de créditos
 scripts/BUILDING27.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING3.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING4.as	building_gameplay_logic	port_rules_and_data	pending		
@@ -377,41 +377,41 @@ scripts/BUILDING6.as	building_gameplay_logic	port_rules_and_data	pending
 scripts/BUILDING7.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING8.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/BUILDING9.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BUILDINGBUTTON.as	core_gameplay_or_flow	split_port	pending		
-scripts/BUILDINGBUTTONSOON.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BUILDINGBUTTON_CLIP.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BUILDINGINFO.as	core_gameplay_or_flow	split_port	pending		
+scripts/BUILDINGBUTTON.as	core_gameplay_or_flow	split_port	migrated	src/game/scenes/YardScene.ts,src/lib/base/buildingType.ts,src/lib/base/buildingThumbnailCatalog.ts,assets/building-thumbnail-map.json,scripts/sync-yard-assets.mjs	Card de catálogo migrado para Building Ops com seleção/limites e thumbs legadas reais (`buildingbuttons/*`) por tipo, incluindo fallback robusto quando não há arte específica
+scripts/BUILDINGBUTTONSOON.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts	Substituído por estado "Building coming soon" em HTML quando página/filtro não possui itens
+scripts/BUILDINGBUTTON_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts	Símbolo Flash removido do runtime; card equivalente implementado em overlay HTML
+scripts/BUILDINGINFO.as	core_gameplay_or_flow	split_port	migrated	src/game/scenes/YardScene.ts,src/lib/base/buildingInfoContext.ts,src/lib/contracts/store.ts,src/lib/contracts/yardPlanner.ts,src/lib/api/client.ts	Painel contextual fechado com fluxos reais: store/hatchery/bunker/housing/juice/lockers/baiter via compra autoritativa (`PurchaseStoreItem`) + yard planner com leitura/escrita de templates (`gettemplates/savetemplate`)
 scripts/BUILDINGOPTIONS.as	core_gameplay_or_flow	split_port	migrated	src/game/scenes/YardScene.ts,src/lib/base/buildingType.ts,server/src/controllers/cmd/cmd.ts,src/lib/game/cmdDelta.ts	Painel operacional de building migrado para overlay HTML no novo client (place/move/upgrade/cancel/collect) com execução server-authoritative via /cmd
 scripts/BUILDINGOPTIONSPOPUP.as	ui_behavior_flash	rewrite_ui	migrated	src/game/scenes/YardScene.ts	Popup legado substituído por painel runtime (Building Ops) no Yard com paridade operacional
 scripts/BUILDINGOPTIONSPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts	Símbolo Flash desativado; equivalente funcional implementado em overlay HTML (Building Ops)
-scripts/BUILDINGS.as	core_gameplay_or_flow	split_port	in_progress	server/src/controllers/state/getState.ts,src/lib/base/stateSnapshot.ts,src/game/scenes/YardScene.ts,src/lib/base/buildingType.ts	Estado canônico + render no Yard migrados; catálogo legado inicial e filtros de tipo portados, faltando paridade total de catálogo visual/compras
-scripts/BUILDINGSARROW.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BUILDINGSPOPUP.as	core_gameplay_or_flow	split_port	pending		
-scripts/BUILDINGSPOPUPINFO_CLIP.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BUILDINGSPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	pending		
+scripts/BUILDINGS.as	core_gameplay_or_flow	split_port	migrated	server/src/controllers/cmd/cmd.ts,server/src/controllers/store/getCatalog.ts,src/game/scenes/YardScene.ts,src/lib/base/buildingType.ts,src/lib/base/buildingThumbnailCatalog.ts,src/lib/contracts/store.ts	Catálogo com paridade de compra/store no novo client: cards exibem SKU/custo/estoque + thumbnail legado por building, compra direta via `/cmd PurchaseStoreItem` e sincronização autoritativa de créditos/store (`setCredits`/`setStoreItem`)
+scripts/BUILDINGSARROW.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts	Navegação anterior/próxima migrada para paginação HTML (`Prev/Next`) no Building Ops
+scripts/BUILDINGSPOPUP.as	core_gameplay_or_flow	split_port	migrated	src/game/scenes/YardScene.ts,src/lib/base/buildingType.ts	Catálogo legado migrado para Building Ops com abas `resources/buildings/defensive/decorations`, subabas de decoração, paginação de 10 itens e fallback coming soon
+scripts/BUILDINGSPOPUPINFO_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts	Símbolo Flash substituído por painel de detalhes em overlay HTML no Building Ops
+scripts/BUILDINGSPOPUP_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts	Shell visual Flash descontinuado; layout equivalente entregue no overlay HTML
 scripts/BUY.as	core_gameplay_or_flow	split_port	pending		
 scripts/BWALL.as	building_gameplay_logic	port_rules_and_data	pending		
-scripts/BasePlannerPopup_BottomLayout.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerPopup_CLIP.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerPopup_DisplayItem_Building.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerPopup_DisplayViewContainer.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerPopup_ExplorerCanvas.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerPopup_ExplorerContainer.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerPopup_ExplorerFrame.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerPopup_ExplorerHeader.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerPopup_ExplorerItem_Category.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerPopup_ExplorerItem_Type.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerPopup_ToolTip.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerPopup_ToolsButton_Move.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerPopup_ToolsButton_Store.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerPopup_ToolsLayout.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerPopup_ZoomLayout.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerPopup_xSpot.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerTransferConfirmation_CLIP.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerTransferRow_CLIP.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlannerTransfer_CLIP.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlanner_FrameMask.as	flash_symbol_wrapper	reference_only	pending		
-scripts/BasePlanner_fla/CheckBox_3.as	flash_symbol_wrapper	reference_only	pending		
+scripts/BasePlannerPopup_BottomLayout.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerPopup_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerPopup_DisplayItem_Building.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerPopup_DisplayViewContainer.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerPopup_ExplorerCanvas.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerPopup_ExplorerContainer.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerPopup_ExplorerFrame.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerPopup_ExplorerHeader.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerPopup_ExplorerItem_Category.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerPopup_ExplorerItem_Type.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerPopup_ToolTip.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerPopup_ToolsButton_Move.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerPopup_ToolsButton_Store.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerPopup_ToolsLayout.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerPopup_ZoomLayout.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerPopup_xSpot.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerTransferConfirmation_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerTransferRow_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlannerTransfer_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlanner_FrameMask.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
+scripts/BasePlanner_fla/CheckBox_3.as	flash_symbol_wrapper	reference_only	archived	src/game/scenes/YardScene.ts,server/src/controllers/cmd/cmd.ts	Wrapper Flash descontinuado; flow equivalente do Yard Planner entregue no overlay runtime (salvar/aplicar template autoritativo).
 scripts/BlackSpurtzCannon.as	misc_actionscript	analyze_case_by_case	pending		
 scripts/Bunker.as	building_gameplay_logic	port_rules_and_data	pending		
 scripts/Button.as	ui_behavior_flash	rewrite_ui	pending		
@@ -464,8 +464,8 @@ scripts/DROPZONE.as	core_gameplay_or_flow	split_port	pending
 scripts/DROPZONE_CLIP.as	flash_symbol_wrapper	reference_only	pending		
 scripts/Dynamic.as	misc_actionscript	analyze_case_by_case	pending		
 scripts/EFFECTS.as	core_gameplay_or_flow	split_port	pending		
-scripts/ERRORMESSAGE.as	ui_behavior_flash	rewrite_ui	in_progress	server/src/middleware/clientSafeError.ts,src/lib/api/client.ts,src/lib/contracts/http.ts,src/game/scenes/LoginScene.ts	Erro estruturado legado mapeado para UX no novo client (code/traceId/issues), sem leak de stack em produção; modal global full-stop ainda pendente
-scripts/ERRORMESSAGE_CLIP.as	flash_symbol_wrapper	reference_only	pending		
+scripts/ERRORMESSAGE.as	ui_behavior_flash	rewrite_ui	migrated	server/src/middleware/clientSafeError.ts,src/lib/api/client.ts,src/lib/api/httpError.ts,src/lib/ui/globalErrorModal.ts,src/main.ts,src/lib/contracts/http.ts	Erro estruturado legado mapeado para UX no novo client (code/traceId/issues) com modal global de erro (fatal + unhandled) sem leak de stack em produção
+scripts/ERRORMESSAGE_CLIP.as	flash_symbol_wrapper	reference_only	archived	src/lib/ui/globalErrorModal.ts,src/main.ts	Símbolo Flash desativado; modal global de erro no runtime cobre o comportamento funcional de exibição
 scripts/EventRewardRibbon.as	flash_symbol_wrapper	reference_only	pending		
 scripts/EventStoreDisplayItem.as	flash_symbol_wrapper	reference_only	pending		
 scripts/EventStoreItemSelectedPopupMC.as	flash_symbol_wrapper	reference_only	pending		

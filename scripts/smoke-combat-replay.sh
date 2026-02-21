@@ -198,31 +198,80 @@ fi
 
 echo "[smoke-combat] Streaming replay SSE"
 STREAM_FILE="$(mktemp)"
+EVENTS_FILE="$(mktemp)"
 curl -sS --max-time 20 \
   "${API_BASE_URL}/api/${API_VERSION}/combat/replay/${REPLAY_ID}?speed=fast" \
   -H 'Accept: text/event-stream' \
   -H "Authorization: Bearer ${TOKEN}" >"${STREAM_FILE}"
 
-if ! grep -q "^event: ready" "${STREAM_FILE}"; then
-  echo "[smoke-combat] Missing ready event"
-  cat "${STREAM_FILE}"
-  rm -f "${STREAM_FILE}"
+if [ ! -s "${STREAM_FILE}" ]; then
+  echo "[smoke-combat] Empty SSE stream"
+  rm -f "${STREAM_FILE}" "${EVENTS_FILE}"
   exit 1
 fi
 
-if ! grep -q "^event: frame" "${STREAM_FILE}"; then
-  echo "[smoke-combat] Missing frame event"
+awk '
+  /^event: / { event = $2; next }
+  /^data: / {
+    sub(/^data: /, "");
+    if (event != "") {
+      print event "|" $0;
+    }
+  }
+' "${STREAM_FILE}" >"${EVENTS_FILE}"
+
+if [ ! -s "${EVENTS_FILE}" ]; then
+  echo "[smoke-combat] Could not parse SSE events"
   cat "${STREAM_FILE}"
-  rm -f "${STREAM_FILE}"
+  rm -f "${STREAM_FILE}" "${EVENTS_FILE}"
   exit 1
 fi
 
-if ! grep -q "^event: result" "${STREAM_FILE}"; then
-  echo "[smoke-combat] Missing result event"
+READY_JSON="$(awk -F'|' '$1 == "ready" { print $2; exit }' "${EVENTS_FILE}")"
+SNAPSHOT_JSON="$(awk -F'|' '$1 == "snapshot" { print $2; exit }' "${EVENTS_FILE}")"
+RESULT_JSON="$(awk -F'|' '$1 == "result" { print $2; exit }' "${EVENTS_FILE}")"
+FRAMES_JSON="$(
+  awk -F'|' '$1 == "frame" { print $2 }' "${EVENTS_FILE}" \
+    | jq -s '.'
+)"
+
+if [ -z "${READY_JSON}" ] || [ -z "${SNAPSHOT_JSON}" ] || [ -z "${RESULT_JSON}" ]; then
+  echo "[smoke-combat] Missing one or more mandatory SSE payloads (ready/snapshot/result)"
   cat "${STREAM_FILE}"
-  rm -f "${STREAM_FILE}"
+  rm -f "${STREAM_FILE}" "${EVENTS_FILE}"
   exit 1
 fi
 
-rm -f "${STREAM_FILE}"
+assert_json "SSE ready payload" "${READY_JSON}" \
+  '.schemaVersion == 1 and (.tickMs | type == "number") and (.totalTicks | type == "number" and . >= 1)'
+assert_json "SSE snapshot payload" "${SNAPSHOT_JSON}" \
+  '(.seed | type == "number" and . > 0) and (.attacker.hpMax | type == "number" and . > 0) and (.defender.hpMax | type == "number" and . > 0)'
+assert_json "SSE frames exist" "${FRAMES_JSON}" 'length > 0'
+assert_json "SSE frame shape" "${FRAMES_JSON}" \
+  'all(.[]; (.tick | type == "number" and . >= 1) and (.attackerHp | type == "number" and . >= 0) and (.defenderHp | type == "number" and . >= 0) and (.attackerDamage | type == "number" and . >= 0) and (.defenderDamage | type == "number" and . >= 0))'
+assert_json "SSE frame monotonic" "${FRAMES_JSON}" \
+  '. as $frames | ($frames | length == 1) or all(range(1; ($frames | length)); . as $i | ($frames[$i].tick > $frames[$i - 1].tick and $frames[$i].attackerHp <= $frames[$i - 1].attackerHp and $frames[$i].defenderHp <= $frames[$i - 1].defenderHp))'
+assert_json "SSE frame damage totals" "${FRAMES_JSON}" \
+  '([.[].attackerDamage] | add) > 0 and ([.[].defenderDamage] | add) >= 0'
+assert_json "SSE result payload" "${RESULT_JSON}" \
+  '(.winner == "attacker" or .winner == "defender" or .winner == "draw")'
+
+FRAME_COUNT="$(echo "${FRAMES_JSON}" | jq -r 'length')"
+RESULT_TICKS="$(echo "${RESULT_JSON}" | jq -r '.durationTicks')"
+START_TOTAL_TICKS="$(echo "${START_RESP}" | jq -r '.totalTicks')"
+if [ "${FRAME_COUNT}" -ne "${RESULT_TICKS}" ]; then
+  echo "[smoke-combat] Frame/result mismatch: frames=${FRAME_COUNT} durationTicks=${RESULT_TICKS}"
+  cat "${STREAM_FILE}"
+  rm -f "${STREAM_FILE}" "${EVENTS_FILE}"
+  exit 1
+fi
+
+if [ "${RESULT_TICKS}" -lt 1 ] || [ "${RESULT_TICKS}" -gt "${START_TOTAL_TICKS}" ]; then
+  echo "[smoke-combat] Invalid result durationTicks=${RESULT_TICKS} (start totalTicks=${START_TOTAL_TICKS})"
+  cat "${STREAM_FILE}"
+  rm -f "${STREAM_FILE}" "${EVENTS_FILE}"
+  exit 1
+fi
+
+rm -f "${STREAM_FILE}" "${EVENTS_FILE}"
 echo "[smoke-combat] OK"

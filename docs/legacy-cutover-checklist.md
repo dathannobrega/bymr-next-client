@@ -30,11 +30,16 @@ Objetivo: garantir migração completa sem perda de feature/asset antes da exclu
   - `evidence`: arquivo(s)/PR/testes que comprovam migração
   - `notes`: decisão técnica, risco e justificativa
 
+Critério de uso de `archived`:
+- Aplicado apenas para wrappers/símbolos Flash sem regra de negócio (`flash_symbol_wrapper`).
+- Só pode ser marcado `archived` quando existe equivalente funcional no novo runtime (com `evidence`).
+- Regras de gameplay/fluxo (`core_gameplay_or_flow`, `building_gameplay_logic`) não devem ir para `archived`; nesses casos fica `migrated`, `in_progress` ou `n/a` justificado.
+
 Status atual desta rodada:
-- `pending`: 442
-- `in_progress`: 7
-- `migrated`: 21
-- `archived`: 1
+- `pending`: 433
+- `in_progress`: 5
+- `migrated`: 26
+- `archived`: 7
 
 ## Execução iniciada nesta rodada
 - [x] Comandos autoritativos adicionais migrados: `CancelUpgrade` e `CollectHarvester`
@@ -58,6 +63,10 @@ Status atual desta rodada:
 - [x] Container de orquestração de release desktop (`desktop-release-orchestrator`) para disparar build Windows/macOS via GitHub Actions e baixar artefatos
 - [x] `BUILDINGOPTIONS`/`BUILDINGOPTIONSPOPUP` migrados para painel runtime `Building Ops` no Yard (place/move/upgrade/cancel/collect sem dependência de atalhos ocultos)
 - [x] Catálogo legado inicial de tipos de building migrado (`src/lib/base/buildingType.ts`) com filtro por código/tipo/classe no painel
+- [x] Fluxo `BUILDINGSPOPUP/BUILDINGBUTTON/BUILDINGSARROW` migrado para catálogo visual no `Building Ops` (abas/subabas, paginação de 10 itens, cards com contagem e status de limite + fallback coming soon)
+- [x] `BUILDINGINFO` fechado com fluxos reais de contexto (`store/hatchery/bunker/housing/juice/lockers/baiter`) + yard planner (`gettemplates/savetemplate`) no novo client
+- [x] `BUILDINGS` fechado com paridade de compra/store no catálogo (`SKU/custo/estoque`, compra direta por card e sincronização de `credits/storeData` via delta autoritativo)
+- [x] `ERRORMESSAGE` migrado para modal global (fatal + unhandled) com detalhes estruturados (`code/traceId/issue`) a partir dos erros do `ApiClient`
 - [x] Hardening de erro HTTP no client para envelope `errorDetails` (code/traceId/issues) mantendo mensagens estruturadas no novo client
 - [x] Login server com compatibilidade legada restaurada (senha no login aceita formato legado; política forte mantida em `register/reset`)
 

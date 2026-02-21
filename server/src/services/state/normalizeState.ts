@@ -19,6 +19,11 @@ export type ResourceSummary = {
   r4max: number;
 };
 
+export type StoreItemSummary = {
+  q: number;
+  e?: number;
+};
+
 export type NormalizedBuilding = {
   id: string;
   type: string;
@@ -29,6 +34,9 @@ export type NormalizedBuilding = {
   footprintH?: number;
   countdownUpgrade?: number;
   upgradeToLevel?: number;
+  hp?: number;
+  maxHp?: number;
+  repairing?: boolean;
 };
 
 export function toNormalizedBuildings(
@@ -81,6 +89,24 @@ export function toNormalizedBuildings(
         ? upgradeToLevelRaw
         : undefined;
 
+    const hpRaw = parseIntSafe(raw.hp, Number.NaN);
+    const hp =
+      Number.isFinite(hpRaw) && hpRaw >= 0
+        ? hpRaw
+        : undefined;
+
+    const maxHpRaw = parseIntSafe(raw.maxHp ?? raw.maxHealth, Number.NaN);
+    const maxHp =
+      Number.isFinite(maxHpRaw) && maxHpRaw > 0
+        ? maxHpRaw
+        : undefined;
+
+    const repairingRaw = parseBooleanish(raw.rE ?? raw.repairing);
+    const repairing =
+      repairingRaw !== undefined
+        ? repairingRaw
+        : undefined;
+
     out.push({
       id,
       type,
@@ -91,6 +117,9 @@ export function toNormalizedBuildings(
       ...(footprintH > 1 ? { footprintH } : {}),
       ...(countdownUpgrade !== undefined ? { countdownUpgrade } : {}),
       ...(upgradeToLevel !== undefined ? { upgradeToLevel } : {}),
+      ...(hp !== undefined ? { hp } : {}),
+      ...(maxHp !== undefined ? { maxHp } : {}),
+      ...(repairing !== undefined ? { repairing } : {}),
     });
   }
 
@@ -113,6 +142,33 @@ export function toResourceSummary(
     r3max: normalizeNonNegative(parseIntSafe(value.r3max, defaultCapacity), defaultCapacity),
     r4max: normalizeNonNegative(parseIntSafe(value.r4max, defaultCapacity), defaultCapacity),
   };
+}
+
+export function toStoreDataSummary(storeData: unknown): Record<string, StoreItemSummary> | undefined {
+  const value = asRecord(storeData);
+  if (!value) return undefined;
+
+  const out: Record<string, StoreItemSummary> = {};
+  for (const [rawKey, rawEntry] of Object.entries(value)) {
+    const key = rawKey.trim().toUpperCase();
+    if (!key) continue;
+
+    const entry = asRecord(rawEntry);
+    if (!entry) continue;
+
+    const quantity = parseIntSafe(entry.q, Number.NaN);
+    if (!Number.isFinite(quantity) || quantity < 0) continue;
+
+    const expiryRaw = parseIntSafe(entry.e, Number.NaN);
+    const expiry = Number.isFinite(expiryRaw) && expiryRaw >= 0 ? expiryRaw : undefined;
+
+    out[key] = {
+      q: quantity,
+      ...(expiry !== undefined ? { e: expiry } : {}),
+    };
+  }
+
+  return out;
 }
 
 export function deriveYardTheme(save: Save): YardTheme {
@@ -144,6 +200,21 @@ export function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null
     ? (value as Record<string, unknown>)
     : null;
+}
+
+function parseBooleanish(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return undefined;
+    return Math.trunc(value) > 0;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim().toLowerCase();
+    if (!trimmed) return undefined;
+    if (trimmed === "1" || trimmed === "true" || trimmed === "yes") return true;
+    if (trimmed === "0" || trimmed === "false" || trimmed === "no") return false;
+  }
+  return undefined;
 }
 
 function normalizeNonNegative(value: number, fallback: number): number {

@@ -17,6 +17,7 @@ Fonte do inventário: `../backyard-monsters-refitted/server/src/app.routes.ts`.
 | POST | `/api/:apiVersion/combat/start` | Sim (`verifyUserAuth`) | `startCombatReplay` | Inicia sessão de replay de combate autoritativo (TTL + idempotência opcional) |
 | GET | `/api/:apiVersion/combat/replay/:replayId` | Sim (`verifyUserAuth`) | `streamCombatReplay` | Stream SSE de replay (`ready/snapshot/frame/result`) |
 | POST | `/api/:apiVersion/cmd` | Sim (`verifyUserAuth`) | `cmd` | Server-authoritative com seq/idempotência/rate-limit |
+| GET | `/api/:apiVersion/store/catalog` | Sim (`verifyUserAuth`) | `getStoreCatalog` | Catálogo de store + inventário (`credits/storeData`) para fluxos `BUILDINGINFO/BUILDINGS` |
 | POST | `/base/updatesaved` | Sim (`verifyUserAuth`) | `updateSaved` | Compat legado |
 | POST | `/api/:apiVersion/bm/base/load` | Sim (`verifyUserAuth`) | `baseLoad` | Variante inferno |
 | POST | `/api/:apiVersion/bm/base/save` | Sim (`verifyUserAuth`) | `infernoSave` | Variante inferno |
